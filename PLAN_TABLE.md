@@ -3,16 +3,31 @@
 |------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|--------------|
 | Ядро пользователя и безопасности | Создай базовую аутентификацию в Laravel 12: регистрация, вход, выход. Используй laravel/breeze с API-режимом (Sanctum). Настрой маршруты /api/register, /api/login. Ответ должен возвращать токен. Сохрани токен во фронтенде (Vue 3) в localStorage. <br><br>**Реализация**: <ul><li>Установлен `laravel/breeze` с флагом `--api`</li><li>Опубликованы миграции Sanctum, таблица `personal_access_tokens` создана вручную (миграция пропущена)</li><li>В `routes/api.php` добавлены маршруты: `POST /register`, `POST /login`, `POST /logout`</li><li>Контроллеры: `RegisteredUserController@store`, `AuthenticatedSessionController@store/destroy`</li><li>Модель `User` использует `HasApiTokens`</li><li>Фронтенд: создан `useAuth.js` (composable), сохраняет токен в `localStorage`, устанавливает `Authorization: Bearer ...`</li><li>Компоненты: `LoginView.vue`, `RegisterView.vue`</li><li>Nginx настроен: `/` → `index.html` (SPA), `/api/*` → Laravel</li><li>Production-сборка Vue скопирована в `public/`</li></ul> | ✅ Выполнено |
 
-Ядро пользователя и безопасности | Реализуй обязательное подтверждение аккаунта через Telegram при регистрации. При регистрации генерируется одноразовый 6-значный код (telegram_verification_code), который пользователь передаёт боту. Заблокируй доступ к защищённым маршрутам до установки telegram_verified_at. Отключи email-верификацию.| ✅ Выполнено |
-
+Ядро пользователя и безопасности | Реализуй обязательное подтверждение аккаунта через Telegram при регистрации. При регистрации генерируется одноразовый 6-значный код (telegram_verification_code), который отправляется пользователю через бота. Заблокируй доступ к защищённым маршрутам до установки telegram_verified_at. Отключи email-верификацию.
 Реализация:
-Добавлены поля в таблицу users: telegram_id (BIGINT, уникальный), telegram_username, telegram_verification_code (VARCHAR(6)), telegram_verified_at (TIMESTAMP)
+База данных:
+Добавлены поля в таблицу users:
+telegram_id (BIGINT, уникальный) — для привязки к аккаунту
+telegram_username (VARCHAR) — ник в Telegram
+telegram_verification_code (VARCHAR(6)) — одноразовый код
+telegram_verified_at (TIMESTAMP) — дата верификации
+Middleware:
 Создано и зарегистрировано middleware EnsureTelegramVerified для проверки верификации
-Обновлена модель User: добавлены методы isTelegramVerified() и markTelegramAsVerified(), поля в $fillable и $hidden
-Контроллер RegisteredUserController@store генерирует 6-значный цифровой код и возвращает его вместе с токеном
 Все защищённые маршруты используют middleware ensure.telegram.verified
-Email-верификация отключена (нет трейта MustVerifyEmail)
-API-маршрут /api/test-verification для тестирования доступа после верификации
+Модель User:
+Добавлены методы isTelegramVerified() и markTelegramAsVerified()
+Поля добавлены в $fillable и $hidden (код верификации скрыт)
+Контроллер регистрации:
+RegisteredUserController@store генерирует 6-значный цифровой код
+Код НЕ возвращается во фронтенд (только логируется для тестов)
+Отправка кода через бота реализуется отдельно (шаг 4)
+API-маршруты:
+/api/register — регистрация, возвращает токен и статус верификации
+/api/telegram/verify — принимает код от бота, верифицирует пользователя
+/api/user — возвращает данные пользователя (требует авторизации)
+/api/test-verification — тестовый маршрут для проверки доступа после верификации
+Email-верификация:
+Отключена (нет трейта MustVerifyEmail)
 
 
 Ядро пользователя и безопасности | Настрой междоменные запросы (CORS) для API. Разреши запросы с фронтенда на домене https://ec-dn.ru:98. Убедись, что заголовки Authorization и Content-Type разрешены. Настрой Laravel Sanctum для работы с токенами (API-режим, не сессии).
