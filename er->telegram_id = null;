@@ -1,0 +1,14 @@
+[90m= [39m[34;4mApp\Models\User[39;24m {#6108
+    [34mid[39m: [35m11[39m,
+    [34mname[39m: "[32mtest2[39m",
+    [34memail[39m: "[32mtest2@gmail.com[39m",
+    [34memail_verified_at[39m: [36mnull[39m,
+    #[33mpassword[39m: "[32m$2y$12$it6GgT1kMdKxrP2tpNc0dO0t60n7T4FqHMKYIWVXAwFX2gD.Au2dG[39m",
+    #[33mremember_token[39m: [36mnull[39m,
+    [34mcreated_at[39m: "[32m2026-02-01 17:02:26[39m",
+    [34mupdated_at[39m: "[32m2026-02-02 15:40:08[39m",
+    [34mtelegram_id[39m: [35m954773719[39m,
+    [34mtelegram_username[39m: "[32mvveb_front[39m",
+    [34mtelegram_linked_at[39m: "[32m2026-02-02 15:40:08[39m",
+  }
+

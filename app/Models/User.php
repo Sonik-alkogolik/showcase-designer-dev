@@ -22,8 +22,7 @@ class User extends Authenticatable
         'password',
         'telegram_id',
         'telegram_username',
-        'telegram_verification_code',
-        'telegram_verified_at',
+        'telegram_linked_at',
     ];
 
     /**
@@ -34,7 +33,6 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
-        'telegram_verification_code',
     ];
 
     /**
@@ -47,31 +45,45 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'telegram_verified_at' => 'datetime',
+            'telegram_linked_at' => 'datetime',
         ];
     }
 
     /**
-     * Проверяет, подтверждён ли пользователь через Telegram.
+     * Проверяет, привязан ли пользователь к Telegram.
      *
      * @return bool
      */
-    public function isTelegramVerified(): bool
+    public function isTelegramLinked(): bool
     {
-        return ! is_null($this->telegram_verified_at);
+        return !is_null($this->telegram_id) && !is_null($this->telegram_linked_at);
     }
 
-
-        /**
-     * Отмечает пользователя как верифицированного через Telegram.
+    /**
+     * Привязывает пользовательский аккаунт к Telegram.
      *
-     * @return bool
+     * @param int $telegramId
+     * @param string|null $username
+     * @return void
      */
-    public function markTelegramAsVerified(): bool
+    public function linkTelegram(int $telegramId, ?string $username = null): void
     {
-        return $this->update([
-            'telegram_verified_at' => now(),
-            'telegram_verification_code' => null,
-        ]);
+        $this->telegram_id = $telegramId;
+        $this->telegram_username = $username ?: 'user_' . $telegramId;
+        $this->telegram_linked_at = now();
+        $this->save();
+    }
+
+    /**
+     * Отвязывает пользователя от Telegram.
+     *
+     * @return void
+     */
+    public function unlinkTelegram(): void
+    {
+        $this->telegram_id = null;
+        $this->telegram_username = null;
+        $this->telegram_linked_at = null;
+        $this->save();
     }
 }

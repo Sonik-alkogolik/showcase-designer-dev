@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Telegram;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Telegram\Bot\Laravel\Facades\Telegram;
 
 /**
@@ -12,9 +13,8 @@ use Telegram\Bot\Laravel\Facades\Telegram;
  * 
  * Этот контроллер принимает все входящие сообщения от бота,
  * анализирует их и выполняет соответствующие действия:
- * - Обработка команды /start
- * - Верификация пользователя по 6-значному коду
- * - Отправка инструкций по умолчанию
+ * - Обработка команды /start {token} для привязки аккаунта
+ * - Обработка команды /start без токена (инструкция)
  * 
  * Вебхук настраивается на маршрут /api/telegram/webhook
  */
@@ -23,84 +23,57 @@ class WebhookController extends Controller
     /**
      * Основной метод обработки входящих сообщений от бота
      * 
-     * Этот метод вызывается каждый раз, когда пользователь отправляет
-     * сообщение боту. Он анализирует тип сообщения и вызывает
-     * соответствующий обработчик.
-     * 
      * @param Request $request - HTTP запрос от Telegram
      * @return \Illuminate\Http\JsonResponse - Ответ в формате JSON
      */
     public function handle(Request $request)
     {
         // Получаем обновления от бота через Telegram Bot API
-        // Telegram::getWebhookUpdates() возвращает массив с данными о сообщении
         $updates = Telegram::getWebhookUpdates();
         
         // Проверяем, есть ли в обновлениях сообщение от пользователя
-        // Если нет (например, это системное обновление или ошибка), 
-        // просто возвращаем успешный ответ
         if (!isset($updates['message'])) {
             return response()->json(['ok' => true]);
         }
         
         // Извлекаем данные из сообщения
-        $message = $updates['message'];  // Полные данные сообщения
-        $chatId = $message['chat']['id'];  // Уникальный ID чата пользователя
-        $text = $message['text'] ?? '';  // Текст сообщения, если есть
+        $message = $updates['message'];
+        $chatId = $message['chat']['id'];
+        $text = $message['text'] ?? '';
         
-        // Проверяем, отправил ли пользователь команду /start
-        // Команда /start обычно вызывается при первом запуске бота
+        // Обработка команды /start {token} - привязка аккаунта
+        if (preg_match('/^\/start\s+(\w+)$/', $text, $matches)) {
+            $token = $matches[1];
+            $this->handleLinkAccount($chatId, $token, $message['from']);
+            return response()->json(['ok' => true]);
+        }
+        
+        // Обработка команды /start без токена
         if ($text === '/start') {
-            // Вызываем метод для обработки команды /start
             $this->handleStartCommand($chatId);
-            // Возвращаем успешный ответ Telegram
             return response()->json(['ok' => true]);
         }
         
-        // Проверяем, отправил ли пользователь 6-значный числовой код
-        // Регулярное выражение /^\d{6}$/ означает:
-        // ^ - начало строки
-        // \d{6} - ровно 6 цифр
-        // $ - конец строки
-        if (preg_match('/^\d{6}$/', $text)) {
-            // Вызываем метод для обработки кода верификации
-            $this->handleVerificationCode($chatId, $text);
-            // Возвращаем успешный ответ Telegram
-            return response()->json(['ok' => true]);
-        }
-        
-        // Если сообщение не является командой /start и не является 6-значным кодом,
-        // отправляем пользователю стандартное сообщение с инструкциями
+        // Стандартное сообщение для других команд
         $this->sendDefaultMessage($chatId);
         
-        // Возвращаем успешный ответ Telegram
         return response()->json(['ok' => true]);
     }
 
     /**
      * Обработка команды /start от пользователя
      * 
-     * Когда пользователь впервые запускает бота или вводит команду /start,
-     * бот отправляет приветственное сообщение с инструкциями.
-     * 
      * @param int $chatId - Уникальный идентификатор чата пользователя в Telegram
      * @return void
      */
     private function handleStartCommand($chatId)
     {
-        // Формируем текст приветственного сообщения
-        // Используем символы \n для переноса строк в Telegram
-        $message = "👋 Привет! Я бот для верификации аккаунта.\n\n" .
-                   "Чтобы подтвердить ваш аккаунт:\n" .
-                   "1. Зарегистрируйтесь на сайте\n" .
-                   "2. Получите 6-значный код верификации в логах (пока)\n" .
-                   "3. Отправьте этот код мне сюда\n\n" .
-                   "После этого ваш аккаунт будет подтверждён!";
+        $message = "👋 Привет! Я бот для привязки вашего аккаунта.\n\n" .
+                   "Чтобы привязать Telegram к сайту:\n" .
+                   "1. Зайдите в личный кабинет на сайте\n" .
+                   "2. Нажмите 'Подключить Telegram'\n" .
+                   "3. Перейдите по ссылке и отправьте команду /start с токеном";
         
-        // Отправляем сообщение пользователю через Telegram Bot API
-        // Параметры:
-        // - chat_id: идентификатор чата, куда отправляем сообщение
-        // - text: текст сообщения
         Telegram::sendMessage([
             'chat_id' => $chatId,
             'text' => $message
@@ -108,69 +81,74 @@ class WebhookController extends Controller
     }
     
     /**
-     * Обработка кода верификации от пользователя
-     * 
-     * Когда пользователь отправляет 6-значный код верификации,
-     * этот метод ищет пользователя в базе данных по этому коду
-     * и помечает его аккаунт как верифицированный.
+     * Обработка привязки аккаунта через токен
      * 
      * @param int $chatId - Уникальный идентификатор чата пользователя в Telegram
-     * @param string $code - 6-значный код верификации, отправленный пользователем
+     * @param string $token - Токен для привязки из кэша
+     * @param array $from - Данные пользователя из Telegram
      * @return void
      */
-    private function handleVerificationCode($chatId, $code)
+    private function handleLinkAccount($chatId, $token, $from)
     {
-        // Ищем пользователя в базе данных по коду верификации
-        // Условия поиска:
-        // - Код верификации совпадает с отправленным
-        // - Аккаунт ещё не верифицирован (telegram_verified_at = NULL)
-        $user = User::where('telegram_verification_code', $code)
-            ->whereNull('telegram_verified_at')
-            ->first();
+        // Получаем ID пользователя из кэша по токену
+        $userId = Cache::get("telegram_link_{$token}");
         
-        // Если пользователь не найден или код уже использован
-        if (!$user) {
-            // Отправляем сообщение об ошибке
+        // Проверяем, не привязан ли уже этот Telegram аккаунт
+        $existingUser = User::where('telegram_id', $chatId)->first();
+        if ($existingUser) {
             Telegram::sendMessage([
                 'chat_id' => $chatId,
-                'text' => "❌ Неверный или устаревший код верификации.\nПопробуйте ещё раз."
+                'text' => "⚠️ Этот Telegram аккаунт уже привязан к другому пользователю."
             ]);
-            // Прекращаем выполнение метода
             return;
         }
         
-        // Обновляем данные пользователя в базе данных:
-        // - Сохраняем ID чата в Telegram для будущих уведомлений
-        // - Устанавливаем дату верификации (текущее время)
-        $user->telegram_id = $chatId;
-        $user->telegram_verified_at = now();
-        $user->save();
+        // Если токен не найден или устарел
+        if (!$userId) {
+            Telegram::sendMessage([
+                'chat_id' => $chatId,
+                'text' => "❌ Ссылка устарела или недействительна.\n\n" .
+                          "Пожалуйста, сгенерируйте новую ссылку в личном кабинете на сайте."
+            ]);
+            return;
+        }
         
-        // Отправляем сообщение об успешной верификации
+        // Находим пользователя
+        $user = User::find($userId);
+        
+        if (!$user) {
+            Telegram::sendMessage([
+                'chat_id' => $chatId,
+                'text' => "❌ Пользователь не найден. Пожалуйста, попробуйте снова."
+            ]);
+            return;
+        }
+        
+        // Привязываем аккаунт
+        $telegramUsername = $from['username'] ?? null;
+        $user->linkTelegram($chatId, $telegramUsername);
+        
+        // Отправляем сообщение об успешной привязке
         Telegram::sendMessage([
             'chat_id' => $chatId,
-            'text' => "✅ Отлично! Ваш аккаунт успешно подтверждён!\n" .
-                      "Теперь вы можете использовать все функции сервиса."
+            'text' => "✅ Отлично! Ваш Telegram аккаунт успешно привязан к сайту.\n\n" .
+                      "Теперь вы будете получать уведомления о важных событиях."
         ]);
+        
+        // Удаляем токен из кэша
+        Cache::forget("telegram_link_{$token}");
     }
     
     /**
      * Отправка стандартного сообщения с инструкциями
-     * 
-     * Этот метод вызывается, когда пользователь отправляет
-     * сообщение, которое не является командой /start и не является
-     * 6-значным кодом верификации.
      * 
      * @param int $chatId - Уникальный идентификатор чата пользователя в Telegram
      * @return void
      */
     private function sendDefaultMessage($chatId)
     {
-        // Формируем текст инструкции
-        $message = "Пожалуйста, отправьте 6-значный код верификации, который вы получили при регистрации.\n\n" .
-                   "Или введите /start для получения инструкций.";
+        $message = "Пожалуйста, введите /start для получения инструкций по привязке аккаунта.";
         
-        // Отправляем сообщение пользователю
         Telegram::sendMessage([
             'chat_id' => $chatId,
             'text' => $message

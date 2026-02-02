@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Telegram\WebhookController;
 
 /*
@@ -25,6 +26,14 @@ Route::get('/test-cors', function () {
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy']);
     
+    // Профиль пользователя
+    Route::get('/profile', [ProfileController::class, 'show']);
+    
+    // Telegram привязка
+    Route::post('/profile/telegram/generate-token', [ProfileController::class, 'generateTelegramLinkToken']);
+    Route::delete('/profile/telegram/unlink', [ProfileController::class, 'unlinkTelegram']);
+    
+    // Совместимость: старый маршрут /user
     Route::get('/user', function (Request $request) {
         $user = $request->user();
         return response()->json([
@@ -32,67 +41,19 @@ Route::middleware(['auth:sanctum'])->group(function () {
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'telegram_verified' => (bool) $user->telegram_verified_at,
+                'telegram_linked' => $user->isTelegramLinked(),
+                'telegram_username' => $user->telegram_username,
             ]
         ]);
     });
 });
 
-// Защищённые маршруты (требуют авторизации и Telegram-верификации)
+// Защищённые маршруты (требуют авторизации и привязки Telegram)
 Route::middleware(['auth:sanctum', 'ensure.telegram.verified'])->group(function () {
     Route::get('/test-verification', function () {
-        return response()->json(['message' => 'Доступ разрешён: Telegram подтверждён!']);
+        return response()->json(['message' => 'Доступ разрешён: Telegram привязан!']);
     });
 });
 
 // Маршрут для бота Telegram (публичный, без авторизации)
-Route::post('/telegram/verify', function (Request $request) {
-    // Валидация входных данных
-    $request->validate([
-        'code' => ['required', 'string', 'size:6'],
-    ]);
-
-    // Поиск пользователя по коду верификации
-    $user = \App\Models\User::where('telegram_verification_code', $request->code)
-        ->whereNull('telegram_verified_at')
-        ->first();
-
-    if (!$user) {
-        return response()->json([
-            'error' => 'Неверный или устаревший код верификации'
-        ], 400);
-    }
-
-    // Помечаем пользователя как верифицированного
-    $user->telegram_verified_at = now();
-    $user->save();
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Telegram успешно подтверждён!'
-    ]);
-});
-
 Route::post('/telegram/webhook', [WebhookController::class, 'handle']);
-
-
-// use Illuminate\Support\Facades\Route;
-// use App\Http\Controllers\Auth\RegisteredUserController;
-// use App\Http\Controllers\Auth\AuthenticatedSessionController;
-
-// // Публичные маршруты
-// Route::post('/register', [RegisteredUserController::class, 'store']);
-// Route::post('/login', [AuthenticatedSessionController::class, 'store']);
-// Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
-//     ->middleware('auth:sanctum');
-
-// // Защищённые маршруты (требуют авторизации и Telegram-верификации)
-// Route::middleware(['auth:sanctum', 'ensure.telegram.verified'])->group(function () {
-//     Route::get('/test-verification', function () {
-//         return response()->json(['message' => 'Доступ разрешён: Telegram подтверждён!']);
-//     });
-// });
-
-// Route::get('/test-cors', function () {
-//     return response()->json(['message' => 'CORS работает!']);
-// });
