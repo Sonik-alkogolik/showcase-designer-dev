@@ -86,4 +86,68 @@ class User extends Authenticatable
         $this->telegram_linked_at = null;
         $this->save();
     }
+        /**
+     * Получить все подписки пользователя
+     */
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
+    /**
+     * Получить активную подписку пользователя
+     */
+    public function activeSubscription()
+    {
+        return $this->hasOne(Subscription::class)
+            ->where('status', 'active')
+            ->where('expires_at', '>', now())
+            ->latest();
+    }
+
+    /**
+     * Проверить, есть ли активная подписка
+     */
+    public function hasActiveSubscription(): bool
+    {
+        return $this->activeSubscription()->exists();
+    }
+
+    /**
+     * Получить лимит магазинов по тарифу
+     */
+    public function getShopsLimit(): int
+    {
+        $subscription = $this->activeSubscription()->first();
+        
+        if (!$subscription) {
+            return 0; // Без подписки нельзя создавать магазины
+        }
+        
+        return match($subscription->plan) {
+            'starter' => 1,
+            'business' => 5,
+            'premium' => 10,
+            default => 0
+        };
+    }
+
+    /**
+     * Получить лимит товаров по тарифу
+     */
+    public function getProductsLimit(): int
+    {
+        $subscription = $this->activeSubscription()->first();
+        
+        if (!$subscription) {
+            return 0;
+        }
+        
+        return match($subscription->plan) {
+            'starter' => 100,
+            'business' => 1000,
+            'premium' => 10000,
+            default => 0
+        };
+    }
 }

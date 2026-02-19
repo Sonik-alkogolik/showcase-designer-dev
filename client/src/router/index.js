@@ -3,6 +3,7 @@ import CreateShopView from '../views/CreateShopView.vue';
 import LoginView from '../views/LoginView.vue';
 import RegisterView from '../views/RegisterView.vue';
 import ProfileView from '../views/ProfileView.vue';
+import PlansView from '../views/PlansView.vue'; 
 import { useAuth } from '../composables/useAuth';
 
 const routes = [
@@ -28,6 +29,12 @@ const routes = [
     path: '/profile',
     name: 'Profile',
     component: ProfileView,
+    meta: { requiresAuth: true }
+  },
+  { 
+    path: '/plans',
+    name: 'Plans',
+    component: PlansView,
     meta: { requiresAuth: true }
   }
 ];

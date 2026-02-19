@@ -14,6 +14,31 @@
         <span class="value">{{ user?.email || 'Загрузка...' }}</span>
       </div>
     </div>
+
+        <!-- Информация о подписке -->
+    <div class="subscription-section" v-if="user">
+      <h2>Моя подписка</h2>
+      <div v-if="user.subscription" class="subscription-info">
+        <div class="info-row">
+          <span class="label">Тариф:</span>
+          <span class="value">{{ user.subscription.plan_name }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Статус:</span>
+          <span class="value" :class="{'status-active': user.subscription.status === 'active'}">
+            {{ user.subscription.status === 'active' ? 'Активна' : 'Неактивна' }}
+          </span>
+        </div>
+        <div class="info-row" v-if="user.subscription.expires_at">
+          <span class="label">Действует до:</span>
+          <span class="value">{{ new Date(user.subscription.expires_at).toLocaleDateString() }}</span>
+        </div>
+      </div>
+      <div v-else class="no-subscription">
+        <p>У вас пока нет активной подписки</p>
+        <router-link to="/plans" class="btn-primary">Выбрать тариф</router-link>
+      </div>
+    </div>
     
     <!-- Привязка Telegram -->
     <div class="telegram-section">
@@ -351,5 +376,40 @@ code {
   border-radius: 3px;
   font-family: monospace;
   font-size: 0.9rem;
+}
+
+
+.subscription-section {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background: #f9f9f9;
+}
+
+.subscription-section h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #333;
+  font-size: 1.5rem;
+}
+
+.subscription-info {
+  margin-top: 1rem;
+}
+
+.status-active {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.no-subscription {
+  text-align: center;
+  padding: 1rem;
+}
+
+.no-subscription p {
+  margin-bottom: 1rem;
+  color: #666;
 }
 </style>

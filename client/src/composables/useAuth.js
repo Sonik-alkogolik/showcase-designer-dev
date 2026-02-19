@@ -75,12 +75,30 @@ export const useAuth = () => {
   };
 
   // Загрузка данных профиля
-  const loadProfile = async () => {
+   const loadProfile = async () => {
     if (!token.value) return null;
     
     try {
       const response = await axios.get('/api/profile');
       user.value = response.data;
+      
+      // Загружаем информацию о подписке
+      try {
+        const subscriptionResponse = await axios.get('/api/subscription/plans');
+        if (subscriptionResponse.data.current_subscription) {
+          user.value.subscription = subscriptionResponse.data.current_subscription;
+          
+          // Добавляем название тарифа для отображения
+          const planKey = user.value.subscription.plan;
+          const plans = subscriptionResponse.data.plans;
+          if (plans && plans[planKey]) {
+            user.value.subscription.plan_name = plans[planKey].name;
+          }
+        }
+      } catch (subError) {
+        console.warn('Error loading subscription:', subError);
+      }
+      
       return response.data;
     } catch (error) {
       console.error('Error loading profile:', error);
@@ -92,7 +110,6 @@ export const useAuth = () => {
       return null;
     }
   };
-
   // Генерация токена для привязки Telegram
   const generateTelegramLinkToken = async () => {
     try {

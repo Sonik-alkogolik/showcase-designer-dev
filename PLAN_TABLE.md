@@ -29,9 +29,24 @@ API-маршруты:
 Email-верификация:
 Отключена (нет трейта MustVerifyEmail)
 
+безопасности
+Создали раздел "Личный кабинет" (профиль) с возможностью привязки и отвязки аккаунта Telegram.
 
-Ядро пользователя и безопасности | Настрой междоменные запросы (CORS) для API. Разреши запросы с фронтенда на домене https://ec-dn.ru:98. Убедись, что заголовки Authorization и Content-Type разрешены. Настрой Laravel Sanctum для работы с токенами (API-режим, не сессии).
+Бэкенд:
+- Миграция: переименовано telegram_verified_at → telegram_linked_at, удалено telegram_verification_code
+- Модель User: методы isTelegramLinked(), linkTelegram($telegramId, $username), unlinkTelegram()
+- Контроллер ProfileController: методы show(), generateTelegramLinkToken(), unlinkTelegram()
+- Обновлён RegisteredUserController: убрана генерация кода при регистрации, возвращается telegram_linked: false
+- Обновлён WebhookController: обработка /start {token} для привязки через токен из кэша
+- Маршруты API: /api/profile (GET), /api/profile/telegram/generate-token (POST), /api/profile/telegram/unlink (DELETE)
+- Middleware EnsureTelegramVerified проверяет isTelegramLinked()
 
+Фронтенд (Vue 3):
+- Компонент ProfileView.vue с маршрутом /profile
+- Показывает данные пользователя (имя, email)
+- Раздел "Привязка Telegram": кнопка "Подключить Telegram" → генерирует токен → открывает бота с командой /start {token}
+- После привязки: показывает @username и кнопку "Отвязать"
+- Использует useAuth.js для запросов с токеном авторизации
 
 
 | Ядро пользователя и безопасности | Создай страницу выбора тарифа (фронтенд: Vue 3 компонент). Добавь два чекбокса: «Согласен на автопродление…» (показывается только при выборе подписки с автопродлением), «Ознакомлен с офертой…». Ссылки: /offer и /privacy. | ⏳ В разработке |

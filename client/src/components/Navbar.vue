@@ -5,9 +5,13 @@
         <h1>Constructor</h1>
       </div>
       
-      <div class="navbar-menu">
+         <div class="navbar-menu">
         <router-link to="/" class="nav-link" v-if="isAuthenticated">
           Главная
+        </router-link>
+        
+        <router-link to="/plans" class="nav-link" v-if="isAuthenticated">
+          Тарифы
         </router-link>
         
         <router-link to="/profile" class="nav-link" v-if="isAuthenticated">

@@ -46,6 +46,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
             ]
         ]);
     });
+
+    // Маршруты для подписок
+    Route::get('/subscription/plans', [App\Http\Controllers\SubscriptionController::class, 'plans']);
+    Route::post('/subscription/subscribe', [App\Http\Controllers\SubscriptionController::class, 'subscribe']);
+    Route::get('/subscription/history', [App\Http\Controllers\SubscriptionController::class, 'history']);
+    Route::post('/subscription/cancel', [App\Http\Controllers\SubscriptionController::class, 'cancel']);
+
 });
 
 // Защищённые маршруты (требуют авторизации и привязки Telegram)
@@ -57,3 +64,4 @@ Route::middleware(['auth:sanctum', 'ensure.telegram.verified'])->group(function 
 
 // Маршрут для бота Telegram (публичный, без авторизации)
 Route::post('/telegram/webhook', [WebhookController::class, 'handle']);
+
