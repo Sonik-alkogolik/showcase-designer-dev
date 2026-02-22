@@ -1,34 +1,465 @@
 <template>
-  <div class="create-shop">
+  <div class="create-shop-container">
     <h1>Создание магазина</h1>
-    <form @submit.prevent="handleSubmit">
-      <!-- Поля формы будут здесь -->
-      <button type="submit">Создать магазин</button>
+    
+    <!-- Информация о лимитах -->
+    <div v-if="limits" class="limits-info" :class="{ 'limit-warning': limits.remaining === 0 }">
+      <p>
+        <strong>Лимит магазинов:</strong> {{ limits.remaining }} из {{ limits.total }} доступно
+      </p>
+      <p v-if="limits.remaining === 0" class="text-danger">
+        Вы достигли лимита магазинов для вашего тарифа
+      </p>
+    </div>
+
+    <form @submit.prevent="handleSubmit" class="shop-form" v-if="limits?.remaining > 0">
+      <!-- Название магазина -->
+      <div class="form-group">
+        <label for="name">Название магазина *</label>
+        <input
+          type="text"
+          id="name"
+          v-model="form.name"
+          @blur="validateField('name')"
+          :class="{ 'error': errors.name }"
+          placeholder="Введите название магазина"
+        >
+        <span v-if="errors.name" class="error-message">{{ errors.name }}</span>
+      </div>
+
+      <!-- Токен Telegram бота -->
+      <div class="form-group">
+        <label for="bot_token">Токен Telegram бота</label>
+        <input
+          type="password"
+          id="bot_token"
+          v-model="form.bot_token"
+          @blur="validateField('bot_token')"
+          :class="{ 'error': errors.bot_token }"
+          placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz"
+        >
+        <span v-if="errors.bot_token" class="error-message">{{ errors.bot_token }}</span>
+        <small class="help-text">
+          Получите токен у <a href="https://t.me/BotFather" target="_blank">@BotFather</a>
+        </small>
+      </div>
+
+      <!-- Способ доставки -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="delivery_name">Название доставки *</label>
+          <input
+            type="text"
+            id="delivery_name"
+            v-model="form.delivery_name"
+            @blur="validateField('delivery_name')"
+            :class="{ 'error': errors.delivery_name }"
+            placeholder="Например: Самовывоз, Курьером"
+          >
+          <span v-if="errors.delivery_name" class="error-message">{{ errors.delivery_name }}</span>
+        </div>
+
+        <div class="form-group">
+          <label for="delivery_price">Стоимость доставки *</label>
+          <input
+            type="number"
+            id="delivery_price"
+            v-model.number="form.delivery_price"
+            @blur="validateField('delivery_price')"
+            :class="{ 'error': errors.delivery_price }"
+            placeholder="0"
+            min="0"
+            step="0.01"
+          >
+          <span v-if="errors.delivery_price" class="error-message">{{ errors.delivery_price }}</span>
+        </div>
+      </div>
+
+      <!-- ID чата для уведомлений -->
+      <div class="form-group">
+        <label for="notification_chat_id">ID чата для уведомлений</label>
+        <input
+          type="text"
+          id="notification_chat_id"
+          v-model="form.notification_chat_id"
+          @blur="validateField('notification_chat_id')"
+          :class="{ 'error': errors.notification_chat_id }"
+          placeholder="Например: -1001234567890"
+        >
+        <span v-if="errors.notification_chat_id" class="error-message">{{ errors.notification_chat_id }}</span>
+        <small class="help-text">
+          ID группы или канала для уведомлений о заказах
+        </small>
+      </div>
+
+      <!-- Кнопки -->
+      <div class="form-actions">
+        <button type="submit" class="btn-primary" :disabled="loading || !isFormValid">
+          <span v-if="loading">Создание...</span>
+          <span v-else>Создать магазин</span>
+        </button>
+        <button type="button" class="btn-secondary" @click="$router.push('/')">
+          Отмена
+        </button>
+      </div>
     </form>
+
+    <!-- Сообщение об успехе -->
+    <div v-if="success" class="alert alert-success">
+      <p>Магазин успешно создан!</p>
+      <router-link to="/" class="btn-primary">Перейти к магазинам</router-link>
+    </div>
+
+    <!-- Сообщение об ошибке -->
+    <div v-if="error" class="alert alert-error">
+      <p>{{ error }}</p>
+    </div>
   </div>
 </template>
 
 <script>
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import axios from 'axios'
+
 export default {
   name: 'CreateShopView',
-  data() {
-    return {
-      // Сюда добавим реактивные поля позже
+  setup() {
+    const router = useRouter()
+    const loading = ref(false)
+    const success = ref(false)
+    const error = ref('')
+    const limits = ref(null)
+
+    const form = reactive({
+      name: '',
+      bot_token: '',
+      delivery_name: '',
+      delivery_price: 0,
+      notification_chat_id: ''
+    })
+
+    const errors = reactive({
+      name: '',
+      bot_token: '',
+      delivery_name: '',
+      delivery_price: '',
+      notification_chat_id: ''
+    })
+
+    // Загрузка лимитов при монтировании
+    onMounted(async () => {
+      await loadLimits()
+    })
+
+    const loadLimits = async () => {
+      try {
+        // Получаем список магазинов и информацию о лимитах
+        const response = await axios.get('/api/user')
+        const shopsResponse = await axios.get('/api/shops')
+        const subscriptionResponse = await axios.get('/api/subscription/plans')
+        
+        const totalShops = shopsResponse.data.shops?.length || 0
+        const subscription = subscriptionResponse.data.current_subscription
+        
+        if (subscription) {
+          const limitsMap = {
+            'starter': 1,
+            'business': 5,
+            'premium': 10
+          }
+          const total = limitsMap[subscription.plan] || 0
+          limits.value = {
+            total,
+            remaining: Math.max(0, total - totalShops)
+          }
+        } else {
+          limits.value = {
+            total: 0,
+            remaining: 0
+          }
+        }
+      } catch (err) {
+        console.error('Ошибка загрузки лимитов:', err)
+      }
     }
-  },
-  methods: {
-    handleSubmit() {
-      console.log('Отправка формы')
-      // Здесь будет fetch
+
+    const validateField = (field) => {
+      switch (field) {
+        case 'name':
+          errors.name = !form.name ? 'Название магазина обязательно' : ''
+          break
+        case 'bot_token':
+          if (form.bot_token && !form.bot_token.match(/^\d+:[\w-]+$/)) {
+            errors.bot_token = 'Неверный формат токена'
+          } else {
+            errors.bot_token = ''
+          }
+          break
+        case 'delivery_name':
+          errors.delivery_name = !form.delivery_name ? 'Название доставки обязательно' : ''
+          break
+        case 'delivery_price':
+          if (form.delivery_price === '' || form.delivery_price === null) {
+            errors.delivery_price = 'Стоимость доставки обязательна'
+          } else if (form.delivery_price < 0) {
+            errors.delivery_price = 'Стоимость не может быть отрицательной'
+          } else {
+            errors.delivery_price = ''
+          }
+          break
+        case 'notification_chat_id':
+          if (form.notification_chat_id && !form.notification_chat_id.match(/^-?\d+$/)) {
+            errors.notification_chat_id = 'ID чата должен быть числом'
+          } else {
+            errors.notification_chat_id = ''
+          }
+          break
+      }
+    }
+
+    const isFormValid = computed(() => {
+      return form.name && 
+             form.delivery_name && 
+             form.delivery_price !== '' && 
+             form.delivery_price >= 0 &&
+             !errors.name &&
+             !errors.bot_token &&
+             !errors.delivery_name &&
+             !errors.delivery_price &&
+             !errors.notification_chat_id
+    })
+
+    const handleSubmit = async () => {
+      // Валидация всех полей
+      Object.keys(form).forEach(field => validateField(field))
+      
+      if (!isFormValid.value) {
+        return
+      }
+
+      loading.value = true
+      error.value = ''
+
+      try {
+        const response = await axios.post('/api/shops', form)
+        
+        if (response.data.success) {
+          success.value = true
+          // Очищаем форму
+          Object.assign(form, {
+            name: '',
+            bot_token: '',
+            delivery_name: '',
+            delivery_price: 0,
+            notification_chat_id: ''
+          })
+        } else {
+          error.value = response.data.message || 'Ошибка при создании магазина'
+        }
+      } catch (err) {
+        if (err.response?.data?.message) {
+          error.value = err.response.data.message
+        } else if (err.response?.data?.errors) {
+          // Обработка ошибок валидации
+          const validationErrors = err.response.data.errors
+          Object.keys(validationErrors).forEach(key => {
+            if (errors.hasOwnProperty(key)) {
+              errors[key] = validationErrors[key][0]
+            }
+          })
+          error.value = 'Проверьте правильность заполнения полей'
+        } else {
+          error.value = 'Произошла ошибка при создании магазина'
+        }
+        console.error('Error creating shop:', err)
+      } finally {
+        loading.value = false
+      }
+    }
+
+    return {
+      form,
+      errors,
+      loading,
+      success,
+      error,
+      limits,
+      validateField,
+      isFormValid,
+      handleSubmit
     }
   }
 }
 </script>
 
 <style scoped>
-.create-shop {
-  max-width: 600px;
+.create-shop-container {
+  max-width: 800px;
   margin: 2rem auto;
-  padding: 1.5rem;
+  padding: 2rem;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+h1 {
+  margin-bottom: 2rem;
+  color: #333;
+  font-size: 2rem;
+}
+
+.limits-info {
+  background: #e3f2fd;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 2rem;
+  border-left: 4px solid #2196f3;
+}
+
+.limit-warning {
+  background: #ffebee;
+  border-left-color: #f44336;
+}
+
+.text-danger {
+  color: #f44336;
+  font-weight: 600;
+  margin-top: 0.5rem;
+}
+
+.shop-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+label {
+  font-weight: 600;
+  color: #555;
+}
+
+input {
+  padding: 0.75rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+}
+
+input:focus {
+  outline: none;
+  border-color: #2196f3;
+}
+
+input.error {
+  border-color: #f44336;
+}
+
+.error-message {
+  color: #f44336;
+  font-size: 0.9rem;
+}
+
+.help-text {
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.help-text a {
+  color: #2196f3;
+  text-decoration: none;
+}
+
+.help-text a:hover {
+  text-decoration: underline;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.btn-primary, .btn-secondary {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.btn-primary {
+  background: #4CAF50;
+  color: white;
+  flex: 2;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #45a049;
+}
+
+.btn-primary:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: #f5f5f5;
+  color: #333;
+  flex: 1;
+}
+
+.btn-secondary:hover {
+  background: #e0e0e0;
+}
+
+.alert {
+  padding: 1rem;
+  border-radius: 4px;
+  margin-top: 1rem;
+}
+
+.alert-success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.alert-error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.alert .btn-primary {
+  display: inline-block;
+  margin-top: 1rem;
+  text-decoration: none;
+}
+
+@media (max-width: 600px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .create-shop-container {
+    margin: 1rem;
+    padding: 1rem;
+  }
 }
 </style>

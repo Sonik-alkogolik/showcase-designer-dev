@@ -150,4 +150,36 @@ class User extends Authenticatable
             default => 0
         };
     }
+
+
+
+        /**
+     * Получить магазины пользователя
+     */
+    public function shops()
+    {
+        return $this->hasMany(Shop::class);
+    }
+
+    /**
+     * Проверить, может ли пользователь создать новый магазин
+     */
+    public function canCreateShop(): bool
+    {
+        $shopsCount = $this->shops()->count();
+        $limit = $this->getShopsLimit();
+        
+        return $shopsCount < $limit;
+    }
+
+    /**
+     * Получить оставшееся количество магазинов
+     */
+    public function getRemainingShops(): int
+    {
+        $shopsCount = $this->shops()->count();
+        $limit = $this->getShopsLimit();
+        
+        return max(0, $limit - $shopsCount);
+    }
 }

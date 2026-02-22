@@ -53,6 +53,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/subscription/history', [App\Http\Controllers\SubscriptionController::class, 'history']);
     Route::post('/subscription/cancel', [App\Http\Controllers\SubscriptionController::class, 'cancel']);
 
+    // Маршруты для магазинов
+    Route::apiResource('shops', App\Http\Controllers\ShopController::class);
+    Route::get('/shops/{shop}/public', [App\Http\Controllers\ShopController::class, 'publicShow']);
+
 });
 
 // Защищённые маршруты (требуют авторизации и привязки Telegram)
