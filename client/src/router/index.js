@@ -13,6 +13,12 @@ const routes = [
     component: CreateShopView,
     meta: { requiresAuth: true }
   },
+    {
+    path: '/shops',
+    name: 'Shops',
+    component: () => import('../views/ShopsView.vue'),
+    meta: { requiresAuth: true }
+  },
   {
     path: '/login',
     name: 'Login',
@@ -36,7 +42,13 @@ const routes = [
     name: 'Plans',
     component: PlansView,
     meta: { requiresAuth: true }
-  }
+  },
+    {
+    path: '/shops/:shopId/products',
+    name: 'Products',
+    component: () => import('../views/shop/ProductsView.vue'),
+    meta: { requiresAuth: true }
+  },
 ];
 
 const router = createRouter({

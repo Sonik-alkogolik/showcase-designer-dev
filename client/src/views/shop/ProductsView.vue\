@@ -1,0 +1,449 @@
+<template>
+  <div class="products-container">
+    <div class="header">
+      <h1>Товары магазина "{{ shopName }}"</h1>
+      <button @click="showCreateForm = true" class="btn-primary" v-if="canCreate">
+        Добавить товар
+      </button>
+    </div>
+
+    <!-- Информация о лимитах -->
+    <div class="limits-info" v-if="limits">
+      <p>Использовано: {{ limits.used }} из {{ limits.total }} товаров</p>
+    </div>
+
+    <!-- Фильтры -->
+    <div class="filters">
+      <input 
+        type="text" 
+        v-model="filters.search" 
+        placeholder="Поиск по названию..."
+        @input="debouncedSearch"
+      >
+      <select v-model="filters.category" @change="loadProducts">
+        <option value="">Все категории</option>
+        <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+      </select>
+    </div>
+
+    <!-- Список товаров -->
+    <div class="products-grid" v-if="products.length">
+      <div v-for="product in products" :key="product.id" class="product-card">
+        <div class="product-image" v-if="product.image">
+          <img :src="product.image" :alt="product.name">
+        </div>
+        <div class="product-info">
+          <h3>{{ product.name }}</h3>
+          <p class="price">{{ product.price }} ₽</p>
+          <p class="description">{{ product.description }}</p>
+          <p class="category">Категория: {{ product.category || 'Без категории' }}</p>
+          <p class="stock" :class="{ 'in-stock': product.in_stock }">
+            {{ product.in_stock ? 'В наличии' : 'Нет в наличии' }}
+          </p>
+          <div class="actions">
+            <button @click="editProduct(product)" class="btn-edit">✏️</button>
+            <button @click="deleteProduct(product)" class="btn-delete">🗑️</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-else class="empty-state">
+      <p>Товаров пока нет</p>
+    </div>
+
+    <!-- Модальное окно для создания/редактирования товара -->
+    <div v-if="showCreateForm || editingProduct" class="modal">
+      <div class="modal-content">
+        <h2>{{ editingProduct ? 'Редактировать' : 'Создать' }} товар</h2>
+        <form @submit.prevent="saveProduct">
+          <div class="form-group">
+            <label>Название *</label>
+            <input v-model="form.name" required>
+          </div>
+          <div class="form-group">
+            <label>Цена *</label>
+            <input type="number" v-model="form.price" step="0.01" min="0" required>
+          </div>
+          <div class="form-group">
+            <label>Описание</label>
+            <textarea v-model="form.description" rows="3"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Категория</label>
+            <input v-model="form.category">
+          </div>
+          <div class="form-group">
+            <label>Изображение (URL)</label>
+            <input v-model="form.image" placeholder="https://...">
+          </div>
+          <div class="form-group checkbox">
+            <label>
+              <input type="checkbox" v-model="form.in_stock">
+              В наличии
+            </label>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">Сохранить</button>
+            <button type="button" @click="closeModal" class="btn-secondary">Отмена</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { ref, reactive, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import axios from 'axios'
+import debounce from 'lodash/debounce'
+
+export default {
+  name: 'ProductsView',
+  setup() {
+    const route = useRoute()
+    const shopId = route.params.shopId
+    
+    const products = ref([])
+    const shopName = ref('')
+    const limits = ref(null)
+    const categories = ref([])
+    const showCreateForm = ref(false)
+    const editingProduct = ref(null)
+    
+    const filters = reactive({
+      search: '',
+      category: ''
+    })
+
+    const form = reactive({
+      name: '',
+      price: '',
+      description: '',
+      category: '',
+      image: '',
+      in_stock: true
+    })
+
+    const canCreate = computed(() => {
+      return limits.value && limits.value.used < limits.value.total
+    })
+
+    const loadProducts = async () => {
+      try {
+        const response = await axios.get(`/api/shops/${shopId}/products`, {
+          params: filters
+        })
+        products.value = response.data.products.data
+        // Собираем уникальные категории
+        const cats = new Set(products.value.map(p => p.category).filter(Boolean))
+        categories.value = Array.from(cats)
+      } catch (error) {
+        console.error('Ошибка загрузки товаров:', error)
+      }
+    }
+
+    const loadShopInfo = async () => {
+      try {
+        const response = await axios.get(`/api/shops/${shopId}`)
+        shopName.value = response.data.shop.name
+        
+        // Получаем лимиты
+        const userResponse = await axios.get('/api/user')
+        const subscriptionResponse = await axios.get('/api/subscription/plans')
+        const subscription = subscriptionResponse.data.current_subscription
+        
+        if (subscription) {
+          const limitsMap = {
+            'starter': 100,
+            'business': 1000,
+            'premium': 10000
+          }
+          limits.value = {
+            total: limitsMap[subscription.plan] || 0,
+            used: products.value.length
+          }
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки информации о магазине:', error)
+      }
+    }
+
+    const debouncedSearch = debounce(loadProducts, 300)
+
+    const saveProduct = async () => {
+      try {
+        const url = editingProduct.value 
+          ? `/api/shops/${shopId}/products/${editingProduct.value.id}`
+          : `/api/shops/${shopId}/products`
+        
+        const method = editingProduct.value ? 'put' : 'post'
+        
+        const response = await axios[method](url, form)
+        
+        if (response.data.success) {
+          await loadProducts()
+          closeModal()
+        }
+      } catch (error) {
+        console.error('Ошибка сохранения товара:', error)
+        alert(error.response?.data?.message || 'Ошибка при сохранении')
+      }
+    }
+
+    const editProduct = (product) => {
+      editingProduct.value = product
+      Object.assign(form, product)
+    }
+
+    const deleteProduct = async (product) => {
+      if (!confirm(`Удалить товар "${product.name}"?`)) return
+      
+      try {
+        await axios.delete(`/api/shops/${shopId}/products/${product.id}`)
+        await loadProducts()
+      } catch (error) {
+        console.error('Ошибка удаления:', error)
+      }
+    }
+
+    const closeModal = () => {
+      showCreateForm.value = false
+      editingProduct.value = null
+      Object.assign(form, {
+        name: '',
+        price: '',
+        description: '',
+        category: '',
+        image: '',
+        in_stock: true
+      })
+    }
+
+    onMounted(() => {
+      loadProducts()
+      loadShopInfo()
+    })
+
+    return {
+      shopId,
+      shopName,
+      products,
+      limits,
+      categories,
+      filters,
+      showCreateForm,
+      editingProduct,
+      form,
+      canCreate,
+      loadProducts,
+      debouncedSearch,
+      saveProduct,
+      editProduct,
+      deleteProduct,
+      closeModal
+    }
+  }
+}
+</script>
+
+<style scoped>
+.products-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.filters {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.filters input, .filters select {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  flex: 1;
+}
+
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.product-card {
+  border: 1px solid #eee;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.product-image {
+  height: 200px;
+  overflow: hidden;
+}
+
+.product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-info {
+  padding: 1rem;
+}
+
+.product-info h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.2rem;
+}
+
+.price {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #4CAF50;
+  margin: 0.5rem 0;
+}
+
+.description {
+  color: #666;
+  margin: 0.5rem 0;
+}
+
+.category {
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.stock {
+  font-weight: 600;
+  color: #f44336;
+}
+
+.stock.in-stock {
+  color: #4CAF50;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.btn-edit, .btn-delete {
+  padding: 0.25rem 0.5rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1.2rem;
+}
+
+.btn-edit {
+  background: #2196f3;
+  color: white;
+}
+
+.btn-delete {
+  background: #f44336;
+  color: white;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.form-group input, .form-group textarea, .form-group select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.form-group.checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: normal;
+}
+
+.form-group.checkbox input {
+  width: auto;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.btn-primary {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  background: #f5f5f5;
+  color: #333;
+  border: 1px solid #ddd;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #999;
+}
+
+.limits-info {
+  background: #e3f2fd;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+</style>

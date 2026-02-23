@@ -56,6 +56,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Маршруты для магазинов
     Route::apiResource('shops', App\Http\Controllers\ShopController::class);
     Route::get('/shops/{shop}/public', [App\Http\Controllers\ShopController::class, 'publicShow']);
+        // Маршруты для товаров
+    Route::get('/shops/{shop}/products', [App\Http\Controllers\ProductController::class, 'index']);
+    Route::post('/shops/{shop}/products', [App\Http\Controllers\ProductController::class, 'store']);
+    Route::get('/shops/{shop}/products/{product}', [App\Http\Controllers\ProductController::class, 'show']);
+    Route::put('/shops/{shop}/products/{product}', [App\Http\Controllers\ProductController::class, 'update']);
+    Route::delete('/shops/{shop}/products/{product}', [App\Http\Controllers\ProductController::class, 'destroy']);
+    Route::post('/shops/{shop}/products/import', [App\Http\Controllers\ProductController::class, 'import']);
+
 
 });
 
@@ -64,8 +72,11 @@ Route::middleware(['auth:sanctum', 'ensure.telegram.verified'])->group(function 
     Route::get('/test-verification', function () {
         return response()->json(['message' => 'Доступ разрешён: Telegram привязан!']);
     });
+    
 });
 
 // Маршрут для бота Telegram (публичный, без авторизации)
 Route::post('/telegram/webhook', [WebhookController::class, 'handle']);
+// Публичные маршруты для Telegram Web App
+Route::get('/shops/{shop}/products/public', [App\Http\Controllers\ProductController::class, 'publicIndex']);
 

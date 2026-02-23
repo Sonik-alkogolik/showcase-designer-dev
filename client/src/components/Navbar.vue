@@ -6,7 +6,7 @@
       </div>
       
          <div class="navbar-menu">
-        <router-link to="/" class="nav-link" v-if="isAuthenticated">
+               <router-link to="/shops" class="nav-link" v-if="isAuthenticated">
           Главная
         </router-link>
         
