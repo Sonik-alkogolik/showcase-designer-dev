@@ -16,6 +16,7 @@ use App\Http\Controllers\Telegram\WebhookController;
 // Публичные маршруты
 Route::post('/register', [RegisteredUserController::class, 'store']);
 Route::post('/login', [AuthenticatedSessionController::class, 'store']);
+Route::get('/shops/{shop}/products/public', [App\Http\Controllers\ProductController::class, 'publicIndex']);
 
 // Тестовый маршрут для CORS
 Route::get('/test-cors', function () {
@@ -78,5 +79,14 @@ Route::middleware(['auth:sanctum', 'ensure.telegram.verified'])->group(function 
 // Маршрут для бота Telegram (публичный, без авторизации)
 Route::post('/telegram/webhook', [WebhookController::class, 'handle']);
 // Публичные маршруты для Telegram Web App
-Route::get('/shops/{shop}/products/public', [App\Http\Controllers\ProductController::class, 'publicIndex']);
 
+// Публичные маршруты для заказов (Telegram Web App)
+Route::post('/orders', [App\Http\Controllers\OrderController::class, 'store']);
+Route::get('/orders/payment/{paymentId}', [App\Http\Controllers\OrderController::class, 'checkPayment']);
+
+// Защищённые маршруты для заказов (для владельцев магазинов)
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/shops/{shop}/orders', [App\Http\Controllers\OrderController::class, 'index']);
+    Route::get('/shops/{shop}/orders/{order}', [App\Http\Controllers\OrderController::class, 'show']);
+    Route::put('/shops/{shop}/orders/{order}', [App\Http\Controllers\OrderController::class, 'update']);
+});

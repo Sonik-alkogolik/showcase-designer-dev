@@ -43,12 +43,18 @@ const routes = [
     component: PlansView,
     meta: { requiresAuth: true }
   },
-    {
+      {
     path: '/shops/:shopId/products',
     name: 'Products',
     component: () => import('../views/shop/ProductsView.vue'),
     meta: { requiresAuth: true }
   },
+  {
+    path: '/app',
+    name: 'WebApp',
+    component: () => import('../views/telegram/WebAppView.vue'),
+    meta: { requiresAuth: false }
+  }
 ];
 
 const router = createRouter({
