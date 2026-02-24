@@ -17,7 +17,7 @@ use App\Http\Controllers\Telegram\WebhookController;
 Route::post('/register', [RegisteredUserController::class, 'store']);
 Route::post('/login', [AuthenticatedSessionController::class, 'store']);
 Route::get('/shops/{shop}/products/public', [App\Http\Controllers\ProductController::class, 'publicIndex']);
-
+Route::get('/shops/{shop}/public', [App\Http\Controllers\ShopController::class, 'publicShow']);
 // Тестовый маршрут для CORS
 Route::get('/test-cors', function () {
     return response()->json(['message' => 'CORS работает!']);
@@ -56,7 +56,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Маршруты для магазинов
     Route::apiResource('shops', App\Http\Controllers\ShopController::class);
-    Route::get('/shops/{shop}/public', [App\Http\Controllers\ShopController::class, 'publicShow']);
+
         // Маршруты для товаров
     Route::get('/shops/{shop}/products', [App\Http\Controllers\ProductController::class, 'index']);
     Route::post('/shops/{shop}/products', [App\Http\Controllers\ProductController::class, 'store']);
