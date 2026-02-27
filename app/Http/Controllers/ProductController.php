@@ -186,80 +186,80 @@ class ProductController extends Controller
         /**
      * Импорт товаров из Excel/CSV
      */
-    public function import(Request $request, $shopId)
-    {
-        $user = Auth::user();
-        $shop = $user->shops()->findOrFail($shopId);
+    // public function import(Request $request, $shopId)
+    // {
+    //     $user = Auth::user();
+    //     $shop = $user->shops()->findOrFail($shopId);
 
-        // Проверка лимита товаров по тарифу
-        $productsCount = $shop->products()->count();
-        $limit = $user->getProductsLimit();
+    //     // Проверка лимита товаров по тарифу
+    //     $productsCount = $shop->products()->count();
+    //     $limit = $user->getProductsLimit();
         
-        if ($productsCount >= $limit) {
-            return response()->json([
-                'success' => false,
-                'message' => "Вы достигли лимита товаров для вашего тарифа ({$limit} шт.)"
-            ], 403);
-        }
+    //     if ($productsCount >= $limit) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => "Вы достигли лимита товаров для вашего тарифа ({$limit} шт.)"
+    //         ], 403);
+    //     }
 
-        $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240', // 10MB max
-        ]);
+    //     $request->validate([
+    //         'file' => 'required|file|mimes:xlsx,xls,csv|max:10240', // 10MB max
+    //     ]);
 
-        try {
-            $import = new \App\Imports\ProductsImport($shopId);
-            $import->import($request->file('file'));
+    //     try {
+    //         $import = new \App\Imports\ProductsImport($shopId);
+    //         $import->import($request->file('file'));
 
-            $failures = $import->getFailures();
-            $successCount = $import->getRowCount() - count($failures);
+    //         $failures = $import->getFailures();
+    //         $successCount = $import->getRowCount() - count($failures);
 
-            if (count($failures) > 0) {
-                $errors = [];
-                foreach ($failures as $failure) {
-                    $errors[] = [
-                        'row' => $failure->row(),
-                        'attribute' => $failure->attribute(),
-                        'errors' => $failure->errors(),
-                        'values' => $failure->values(),
-                    ];
-                }
+    //         if (count($failures) > 0) {
+    //             $errors = [];
+    //             foreach ($failures as $failure) {
+    //                 $errors[] = [
+    //                     'row' => $failure->row(),
+    //                     'attribute' => $failure->attribute(),
+    //                     'errors' => $failure->errors(),
+    //                     'values' => $failure->values(),
+    //                 ];
+    //             }
 
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Импорт завершен с ошибками',
-                    'success_count' => $successCount,
-                    'errors' => $errors
-                ], 422);
-            }
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => 'Импорт завершен с ошибками',
+    //                 'success_count' => $successCount,
+    //                 'errors' => $errors
+    //             ], 422);
+    //         }
 
-            return response()->json([
-                'success' => true,
-                'message' => "Успешно импортировано {$successCount} товаров",
-                'count' => $successCount
-            ]);
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => "Успешно импортировано {$successCount} товаров",
+    //             'count' => $successCount
+    //         ]);
 
-        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
-            $failures = $e->failures();
-            $errors = [];
-            foreach ($failures as $failure) {
-                $errors[] = [
-                    'row' => $failure->row(),
-                    'attribute' => $failure->attribute(),
-                    'errors' => $failure->errors(),
-                ];
-            }
+    //     } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+    //         $failures = $e->failures();
+    //         $errors = [];
+    //         foreach ($failures as $failure) {
+    //             $errors[] = [
+    //                 'row' => $failure->row(),
+    //                 'attribute' => $failure->attribute(),
+    //                 'errors' => $failure->errors(),
+    //             ];
+    //         }
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка валидации файла',
-                'errors' => $errors
-            ], 422);
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Ошибка валидации файла',
+    //             'errors' => $errors
+    //         ], 422);
 
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка при импорте: ' . $e->getMessage()
-            ], 500);
-        }
-    }
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Ошибка при импорте: ' . $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
 }

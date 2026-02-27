@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Telegram\WebhookController;
+use App\Http\Controllers\ImportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -63,8 +64,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/shops/{shop}/products/{product}', [App\Http\Controllers\ProductController::class, 'show']);
     Route::put('/shops/{shop}/products/{product}', [App\Http\Controllers\ProductController::class, 'update']);
     Route::delete('/shops/{shop}/products/{product}', [App\Http\Controllers\ProductController::class, 'destroy']);
-    Route::post('/shops/{shop}/products/import', [App\Http\Controllers\ProductController::class, 'import']);
-
+    // Route::post('/shops/{shop}/products/import', [App\Http\Controllers\ProductController::class, 'import']);
+    Route::post('/shops/{shop}/import/preview', [ImportController::class, 'preview']);
+    Route::post('/shops/{shop}/import', [ImportController::class, 'import']);
 
 });
 

@@ -95,58 +95,14 @@
         </form>
       </div>
     </div>
-        <!-- Модальное окно для импорта -->
-    <div v-if="showImportModal" class="modal">
-      <div class="modal-content">
-        <h2>Импорт товаров из Excel/CSV</h2>
-        
-        <div class="import-info">
-          <p>Файл должен содержать колонки:</p>
-          <ul>
-            <li><strong>название</strong> или <strong>name</strong> - обязательно</li>
-            <li><strong>цена</strong> или <strong>price</strong> - обязательно</li>
-            <li><strong>описание</strong> или <strong>description</strong> - опционально</li>
-            <li><strong>категория</strong> или <strong>category</strong> - опционально</li>
-            <li><strong>наличие</strong> или <strong>in_stock</strong> - 1/0, да/нет, yes/no</li>
-          </ul>
-          <p>Поддерживаемые форматы: .xlsx, .xls, .csv (до 10MB)</p>
-        </div>
 
-        <div class="form-group">
-          <label for="import-file">Выберите файл</label>
-          <input 
-            type="file" 
-            id="import-file" 
-            ref="fileInput"
-            accept=".xlsx,.xls,.csv"
-            @change="handleFileSelect"
-          >
-        </div>
-
-        <div v-if="importProgress" class="progress-bar">
-          <div class="progress-fill" :style="{ width: importProgress + '%' }"></div>
-        </div>
-
-        <div v-if="importResult" class="import-result" :class="{ 'success': importResult.success, 'error': !importResult.success }">
-          <p>{{ importResult.message }}</p>
-          <div v-if="importResult.errors && importResult.errors.length" class="import-errors">
-            <h4>Ошибки:</h4>
-            <ul>
-              <li v-for="(error, idx) in importResult.errors" :key="idx">
-                Строка {{ error.row }}: {{ error.errors.join(', ') }}
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <div class="form-actions">
-          <button @click="importProducts" class="btn-primary" :disabled="!selectedFile || importing">
-            {{ importing ? 'Импорт...' : 'Импортировать' }}
-          </button>
-          <button @click="closeImportModal" class="btn-secondary">Отмена</button>
-        </div>
-      </div>
-    </div>
+    <!-- Модальное окно для умного импорта -->
+    <AdvancedImportModal 
+      v-if="showImportModal"
+      :shop-id="shopId"
+      @close="closeImportModal"
+      @import-complete="loadProducts"
+    />
   </div>
 </template>
 
@@ -155,9 +111,13 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 import debounce from 'lodash/debounce'
+import AdvancedImportModal from '@/components/AdvancedImportModal.vue'
 
 export default {
   name: 'ProductsView',
+  components: {
+    AdvancedImportModal
+  },
   setup() {
     const route = useRoute()
     const shopId = route.params.shopId
@@ -168,11 +128,7 @@ export default {
     const categories = ref([])
     const showCreateForm = ref(false)
     const editingProduct = ref(null)
-        const showImportModal = ref(false)
-    const selectedFile = ref(null)
-    const importing = ref(false)
-    const importProgress = ref(0)
-    const importResult = ref(null)
+    const showImportModal = ref(false)
     
     const filters = reactive({
       search: '',
@@ -201,6 +157,11 @@ export default {
         // Собираем уникальные категории
         const cats = new Set(products.value.map(p => p.category).filter(Boolean))
         categories.value = Array.from(cats)
+        
+        // Обновляем использованное количество товаров
+        if (limits.value) {
+          limits.value.used = products.value.length
+        }
       } catch (error) {
         console.error('Ошибка загрузки товаров:', error)
       }
@@ -282,71 +243,11 @@ export default {
         in_stock: true
       })
     }
-    
-    const handleFileSelect = (event) => {
-      selectedFile.value = event.target.files[0]
-      importResult.value = null
-    }
-
-    const importProducts = async () => {
-      if (!selectedFile.value) {
-        alert('Выберите файл')
-        return
-      }
-
-      importing.value = true
-      importProgress.value = 0
-      importResult.value = null
-
-      const formData = new FormData()
-      formData.append('file', selectedFile.value)
-
-      try {
-        const progressInterval = setInterval(() => {
-          if (importProgress.value < 90) {
-            importProgress.value += 10
-          }
-        }, 300)
-
-        const response = await axios.post(`/api/shops/${shopId}/products/import`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        })
-
-        clearInterval(progressInterval)
-        importProgress.value = 100
-
-        if (response.data.success) {
-          importResult.value = { success: true, message: response.data.message }
-          await loadProducts()
-          setTimeout(() => closeImportModal(), 2000)
-        } else {
-          importResult.value = { 
-            success: false, 
-            message: response.data.message, 
-            errors: response.data.errors 
-          }
-        }
-      } catch (error) {
-        importProgress.value = 0
-        importResult.value = {
-          success: false,
-          message: error.response?.data?.message || 'Ошибка при импорте',
-          errors: error.response?.data?.errors
-        }
-      } finally {
-        importing.value = false
-        setTimeout(() => { importProgress.value = 0 }, 1000)
-      }
-    }
 
     const closeImportModal = () => {
       showImportModal.value = false
-      selectedFile.value = null
-      importResult.value = null
-      importProgress.value = 0
-      const fileInput = document.getElementById('import-file')
-      if (fileInput) fileInput.value = ''
     }
+
     onMounted(() => {
       loadProducts()
       loadShopInfo()
@@ -369,13 +270,7 @@ export default {
       editProduct,
       deleteProduct,
       closeModal,
-            showImportModal,
-      selectedFile,
-      importing,
-      importProgress,
-      importResult,
-      handleFileSelect,
-      importProducts,
+      showImportModal,
       closeImportModal
     }
   }
@@ -579,61 +474,5 @@ export default {
   padding: 1rem;
   border-radius: 4px;
   margin-bottom: 1rem;
-}
-.import-info {
-  background: #f5f5f5;
-  padding: 1rem;
-  border-radius: 4px;
-  margin-bottom: 1.5rem;
-  font-size: 0.95rem;
-}
-
-.import-info ul {
-  margin: 0.5rem 0;
-  padding-left: 1.5rem;
-}
-
-.import-result {
-  margin: 1rem 0;
-  padding: 1rem;
-  border-radius: 4px;
-}
-
-.import-result.success {
-  background: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
-}
-
-.import-result.error {
-  background: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
-}
-
-.import-errors {
-  margin-top: 1rem;
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.import-errors ul {
-  margin: 0.5rem 0;
-  padding-left: 1.5rem;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 20px;
-  background: #f0f0f0;
-  border-radius: 10px;
-  overflow: hidden;
-  margin: 1rem 0;
-}
-
-.progress-fill {
-  height: 100%;
-  background: #4CAF50;
-  transition: width 0.3s ease;
 }
 </style>
