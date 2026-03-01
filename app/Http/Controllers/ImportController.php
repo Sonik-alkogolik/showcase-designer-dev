@@ -19,7 +19,7 @@ class ImportController extends Controller
         $shop = $user->shops()->findOrFail($shopId);
 
         $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+            'file' => 'required|file|mimetypes:application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain|max:10240',
         ]);
 
         try {
@@ -51,6 +51,18 @@ class ImportController extends Controller
 
             // Автоматическое определение соответствия колонок
             $columnMapping = $this->detectColumns($headers);
+
+            // Определяем дополнительные колонки (которые не попали в стандартный маппинг)
+            $extraColumns = [];
+            foreach ($headers as $index => $header) {
+                if (!in_array($index, array_values($columnMapping))) {
+                    $extraColumns[] = [
+                        'index' => $index,
+                        'name' => $header,
+                        'sample' => $sampleData[$index] ?? ''
+                    ];
+                }
+            }
             
             // Формируем пример данных для предпросмотра
             $previewData = [];
@@ -68,6 +80,7 @@ class ImportController extends Controller
                 'headers' => $headers,
                 'sample_data' => $sampleData,
                 'detected_mapping' => $columnMapping,
+                'extra_columns' => $extraColumns,
                 'preview' => $previewData
             ]);
 
@@ -99,7 +112,7 @@ class ImportController extends Controller
         }
 
         $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+            'file' => 'required|file|mimetypes:application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain|max:10240',
             'mapping' => 'required',
         ]);
 

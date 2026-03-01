@@ -104,6 +104,7 @@ class ProductController extends Controller
     /**
      * Обновить товар
      */
+    
     public function update(Request $request, $shopId, $productId)
     {
         $user = Auth::user();
@@ -117,6 +118,7 @@ class ProductController extends Controller
             'category' => 'nullable|string|max:100',
             'in_stock' => 'boolean',
             'image' => 'nullable|url',
+            'attributes' => 'nullable|array',
         ]);
 
         if ($validator->fails()) {
@@ -126,9 +128,11 @@ class ProductController extends Controller
             ], 422);
         }
 
-        $product->update($request->only([
-            'name', 'price', 'description', 'category', 'in_stock', 'image'
-        ]));
+        $data = $request->only([
+            'name', 'price', 'description', 'category', 'in_stock', 'image', 'attributes'
+        ]);
+        
+        $product->update($data);
 
         return response()->json([
             'success' => true,

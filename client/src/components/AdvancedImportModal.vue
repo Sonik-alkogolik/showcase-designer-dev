@@ -219,6 +219,9 @@ export default {
       const formData = new FormData()
       formData.append('file', selectedFile.value)
 
+    console.log('Отправляю файл:', selectedFile.value)
+  console.log('FormData entries:', [...formData.entries()])
+
       try {
         const response = await axios.post(`/api/shops/${props.shopId}/import/preview`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }

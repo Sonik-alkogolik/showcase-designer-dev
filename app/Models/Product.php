@@ -15,11 +15,13 @@ class Product extends Model
         'category',
         'in_stock',
         'image',
+        'attributes',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
         'in_stock' => 'boolean',
+        'attributes' => 'array',
     ];
 
     /**

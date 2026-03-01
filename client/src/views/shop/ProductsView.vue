@@ -45,6 +45,12 @@
           <p class="stock" :class="{ 'in-stock': product.in_stock }">
             {{ product.in_stock ? 'В наличии' : 'Нет в наличии' }}
           </p>
+          <div v-if="product.attributes && Object.keys(product.attributes).length" class="product-attributes">
+            <div v-for="(value, key) in product.attributes" :key="key" class="attribute-item">
+              <span class="attribute-name">{{ key }}:</span>
+              <span class="attribute-value">{{ value }}</span>
+            </div>
+          </div>
           <div class="actions">
             <button @click="editProduct(product)" class="btn-edit">✏️</button>
             <button @click="deleteProduct(product)" class="btn-delete">🗑️</button>
@@ -88,6 +94,38 @@
               В наличии
             </label>
           </div>
+          <!-- Атрибуты товара -->
+          <div class="attributes-section">
+            <h3>Дополнительные характеристики</h3>
+            
+            <!-- Список существующих атрибутов -->
+            <div v-for="(value, key) in editingAttributes" :key="key" class="attribute-row">
+              <input 
+                type="text" 
+                v-model="editingAttributes[key]"
+                :placeholder="key"
+                class="attribute-value"
+              >
+              <button @click="removeAttribute(key)" type="button" class="btn-remove-attr">✕</button>
+            </div>
+            
+            <!-- Добавление нового атрибута -->
+            <div class="add-attribute">
+              <input 
+                type="text" 
+                v-model="newAttributeKey" 
+                placeholder="Название (например: цвет)"
+                class="attribute-key"
+              >
+              <input 
+                type="text" 
+                v-model="newAttributeValue" 
+                placeholder="Значение"
+                class="attribute-value"
+              >
+              <button @click="addAttribute" type="button" class="btn-add-attr">+ Добавить</button>
+            </div>
+          </div>
           <div class="form-actions">
             <button type="submit" class="btn-primary">Сохранить</button>
             <button type="button" @click="closeModal" class="btn-secondary">Отмена</button>
@@ -121,7 +159,6 @@ export default {
   setup() {
     const route = useRoute()
     const shopId = route.params.shopId
-    
     const products = ref([])
     const shopName = ref('')
     const limits = ref(null)
@@ -129,6 +166,9 @@ export default {
     const showCreateForm = ref(false)
     const editingProduct = ref(null)
     const showImportModal = ref(false)
+    const editingAttributes = ref({})
+    const newAttributeKey = ref('')
+    const newAttributeValue = ref('')
     
     const filters = reactive({
       search: '',
@@ -149,11 +189,16 @@ export default {
     })
 
     const loadProducts = async () => {
+      console.log('🔄 loadProducts started')
       try {
         const response = await axios.get(`/api/shops/${shopId}/products`, {
           params: filters
         })
+        console.log('📦 API Response:', response.data)
+        
         products.value = response.data.products.data
+        console.log('✅ products updated:', products.value)
+        
         // Собираем уникальные категории
         const cats = new Set(products.value.map(p => p.category).filter(Boolean))
         categories.value = Array.from(cats)
@@ -163,7 +208,7 @@ export default {
           limits.value.used = products.value.length
         }
       } catch (error) {
-        console.error('Ошибка загрузки товаров:', error)
+        console.error('❌ Ошибка загрузки товаров:', error)
       }
     }
 
@@ -195,31 +240,66 @@ export default {
 
     const debouncedSearch = debounce(loadProducts, 300)
 
-    const saveProduct = async () => {
-      try {
-        const url = editingProduct.value 
-          ? `/api/shops/${shopId}/products/${editingProduct.value.id}`
-          : `/api/shops/${shopId}/products`
-        
-        const method = editingProduct.value ? 'put' : 'post'
-        
-        const response = await axios[method](url, form)
-        
-        if (response.data.success) {
-          await loadProducts()
-          closeModal()
-        }
-      } catch (error) {
-        console.error('Ошибка сохранения товара:', error)
-        alert(error.response?.data?.message || 'Ошибка при сохранении')
-      }
+   const saveProduct = async () => {
+  console.log('🔵 saveProduct вызван!')
+  console.log('📦 editingProduct:', editingProduct.value)
+  console.log('📋 form:', {...form})
+  console.log('🏷️ editingAttributes:', {...editingAttributes.value})
+  
+  try {
+    const url = editingProduct.value 
+      ? `/api/shops/${shopId}/products/${editingProduct.value.id}`
+      : `/api/shops/${shopId}/products`
+    
+    const method = editingProduct.value ? 'put' : 'post'
+    
+    console.log('🌐 URL:', url)
+    console.log('🔄 Method:', method)
+    
+    // Добавляем атрибуты к данным формы
+    const productData = {
+      ...form,
+      attributes: editingAttributes.value
     }
+    
+    console.log('📤 Отправляемые данные:', productData)
+    
+    const response = await axios[method](url, productData)
+    
+    console.log('✅ Ответ сервера:', response.data)
+    
+    if (response.data.success) {
+      await loadProducts()
+      closeModal()
+      console.log('📌 После закрытия модалки, products:', products.value)
+      // Принудительно обновляем компонент
+      products.value = [...products.value]
+    }
+  } catch (error) {
+    console.error('❌ Ошибка сохранения товара:', error)
+    console.error('📄 Детали ошибки:', error.response?.data)
+    alert(error.response?.data?.message || 'Ошибка при сохранении')
+  }
+}
 
     const editProduct = (product) => {
       editingProduct.value = product
       Object.assign(form, product)
+      editingAttributes.value = product.attributes ? { ...product.attributes } : {}
+    }
+      const addAttribute = () => {
+      if (newAttributeKey.value && newAttributeValue.value) {
+        editingAttributes.value[newAttributeKey.value] = newAttributeValue.value
+        newAttributeKey.value = ''
+        newAttributeValue.value = ''
+      }
     }
 
+    const removeAttribute = (key) => {
+      delete editingAttributes.value[key]
+      // Заставляем Vue обновить представление
+      editingAttributes.value = { ...editingAttributes.value }
+    }
     const deleteProduct = async (product) => {
       if (!confirm(`Удалить товар "${product.name}"?`)) return
       
@@ -234,6 +314,7 @@ export default {
     const closeModal = () => {
       showCreateForm.value = false
       editingProduct.value = null
+      editingAttributes.value = {}
       Object.assign(form, {
         name: '',
         price: '',
@@ -262,6 +343,9 @@ export default {
       filters,
       showCreateForm,
       editingProduct,
+      editingAttributes, 
+      newAttributeKey,    
+      newAttributeValue,  
       form,
       canCreate,
       loadProducts,
@@ -271,7 +355,9 @@ export default {
       deleteProduct,
       closeModal,
       showImportModal,
-      closeImportModal
+      closeImportModal,
+      addAttribute,       
+      removeAttribute     
     }
   }
 }
@@ -474,5 +560,126 @@ export default {
   padding: 1rem;
   border-radius: 4px;
   margin-bottom: 1rem;
+}
+
+
+.product-attributes {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #eee;
+  font-size: 0.9rem;
+}
+
+.attribute-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.attribute-name {
+  color: #666;
+  font-weight: 500;
+}
+
+.attribute-value {
+  color: #333;
+  max-width: 60%;
+  text-align: right;
+}
+.attributes-section {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 2px solid #eee;
+}
+
+.attributes-section h3 {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.attribute-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  align-items: center;
+}
+
+.attribute-row .attribute-value {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.btn-remove-attr {
+  background: #f44336;
+  color: white;
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-remove-attr:hover {
+  background: #d32f2f;
+}
+
+.add-attribute {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.add-attribute .attribute-key {
+  width: 200px;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.add-attribute .attribute-value {
+  flex: 1;
+  min-width: 200px;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.btn-add-attr {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-add-attr:hover {
+  background: #45a049;
+}
+
+@media (max-width: 768px) {
+  .add-attribute {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .add-attribute .attribute-key,
+  .add-attribute .attribute-value {
+    width: 100%;
+  }
+  
+  .btn-add-attr {
+    width: 100%;
+  }
 }
 </style>
