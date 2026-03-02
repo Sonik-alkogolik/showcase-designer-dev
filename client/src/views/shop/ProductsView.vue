@@ -3,6 +3,9 @@
    <div class="header">
       <h1>Товары магазина "{{ shopName }}"</h1>
       <div class="header-buttons">
+        <button @click="showCategoriesModal = true" class="btn-categories">
+          📁 Категории (ред)
+        </button>
         <button @click="showImportModal = true" class="btn-secondary">
           Импорт из Excel
         </button>
@@ -134,6 +137,51 @@
       </div>
     </div>
 
+    <!-- Модальное окно для управления категориями -->
+    <div v-if="showCategoriesModal" class="modal">
+      <div class="modal-content categories-modal">
+        <h2>Управление категориями</h2>
+        
+        <!-- Список существующих категорий -->
+        <div class="categories-list">
+          <div v-for="category in categories" :key="category" class="category-item">
+            <span class="category-name">{{ category }}</span>
+            <div class="category-actions">
+              <button @click="editCategory(category)" class="btn-icon btn-edit">✏️</button>
+              <button @click="deleteCategory(category)" class="btn-icon btn-delete">🗑️</button>
+            </div>
+          </div>
+          <div v-if="!categories.length" class="empty-categories">
+            Нет созданных категорий
+          </div>
+        </div>
+
+        <!-- Форма добавления/редактирования категории -->
+        <div class="category-form">
+          <h3>{{ editingCategory ? 'Редактировать' : 'Добавить' }} категорию</h3>
+          <div class="form-group">
+            <input 
+              v-model="categoryForm.name" 
+              placeholder="Название категории"
+              @keyup.enter="saveCategory"
+            >
+          </div>
+          <div class="form-actions">
+            <button @click="saveCategory" class="btn-primary">
+              {{ editingCategory ? 'Сохранить' : 'Добавить' }}
+            </button>
+            <button v-if="editingCategory" @click="cancelEditCategory" class="btn-secondary">
+              Отмена
+            </button>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button @click="closeCategoriesModal" class="btn-secondary">Закрыть</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Модальное окно для умного импорта -->
     <AdvancedImportModal 
       v-if="showImportModal"
@@ -166,6 +214,13 @@ export default {
     const showCreateForm = ref(false)
     const editingProduct = ref(null)
     const showImportModal = ref(false)
+    const showCategoriesModal = ref(false)
+    const editingCategory = ref(null)
+    
+    const categoryForm = reactive({
+      name: ''
+    })
+    
     const editingAttributes = ref({})
     const newAttributeKey = ref('')
     const newAttributeValue = ref('')
@@ -199,7 +254,7 @@ export default {
         products.value = response.data.products.data
         console.log('✅ products updated:', products.value)
         
-          // Используем категории с сервера
+        // Используем категории с сервера
         categories.value = response.data.categories || []
         console.log('✅ categories from server:', categories.value)
         
@@ -240,54 +295,55 @@ export default {
 
     const debouncedSearch = debounce(loadProducts, 300)
 
-   const saveProduct = async () => {
-  console.log('🔵 saveProduct вызван!')
-  console.log('📦 editingProduct:', editingProduct.value)
-  console.log('📋 form:', {...form})
-  console.log('🏷️ editingAttributes:', {...editingAttributes.value})
-  
-  try {
-    const url = editingProduct.value 
-      ? `/api/shops/${shopId}/products/${editingProduct.value.id}`
-      : `/api/shops/${shopId}/products`
-    
-    const method = editingProduct.value ? 'put' : 'post'
-    
-    console.log('🌐 URL:', url)
-    console.log('🔄 Method:', method)
-    
-    // Добавляем атрибуты к данным формы
-    const productData = {
-      ...form,
-      attributes: editingAttributes.value
+    const saveProduct = async () => {
+      console.log('🔵 saveProduct вызван!')
+      console.log('📦 editingProduct:', editingProduct.value)
+      console.log('📋 form:', {...form})
+      console.log('🏷️ editingAttributes:', {...editingAttributes.value})
+      
+      try {
+        const url = editingProduct.value 
+          ? `/api/shops/${shopId}/products/${editingProduct.value.id}`
+          : `/api/shops/${shopId}/products`
+        
+        const method = editingProduct.value ? 'put' : 'post'
+        
+        console.log('🌐 URL:', url)
+        console.log('🔄 Method:', method)
+        
+        // Добавляем атрибуты к данным формы
+        const productData = {
+          ...form,
+          attributes: editingAttributes.value
+        }
+        
+        console.log('📤 Отправляемые данные:', productData)
+        
+        const response = await axios[method](url, productData)
+        
+        console.log('✅ Ответ сервера:', response.data)
+        
+        if (response.data.success) {
+          await loadProducts()
+          closeModal()
+          console.log('📌 После закрытия модалки, products:', products.value)
+          // Принудительно обновляем компонент
+          products.value = [...products.value]
+        }
+      } catch (error) {
+        console.error('❌ Ошибка сохранения товара:', error)
+        console.error('📄 Детали ошибки:', error.response?.data)
+        alert(error.response?.data?.message || 'Ошибка при сохранении')
+      }
     }
-    
-    console.log('📤 Отправляемые данные:', productData)
-    
-    const response = await axios[method](url, productData)
-    
-    console.log('✅ Ответ сервера:', response.data)
-    
-    if (response.data.success) {
-      await loadProducts()
-      closeModal()
-      console.log('📌 После закрытия модалки, products:', products.value)
-      // Принудительно обновляем компонент
-      products.value = [...products.value]
-    }
-  } catch (error) {
-    console.error('❌ Ошибка сохранения товара:', error)
-    console.error('📄 Детали ошибки:', error.response?.data)
-    alert(error.response?.data?.message || 'Ошибка при сохранении')
-  }
-}
 
     const editProduct = (product) => {
       editingProduct.value = product
       Object.assign(form, product)
       editingAttributes.value = product.attributes ? { ...product.attributes } : {}
     }
-      const addAttribute = () => {
+    
+    const addAttribute = () => {
       if (newAttributeKey.value && newAttributeValue.value) {
         editingAttributes.value[newAttributeKey.value] = newAttributeValue.value
         newAttributeKey.value = ''
@@ -300,6 +356,7 @@ export default {
       // Заставляем Vue обновить представление
       editingAttributes.value = { ...editingAttributes.value }
     }
+    
     const deleteProduct = async (product) => {
       if (!confirm(`Удалить товар "${product.name}"?`)) return
       
@@ -327,6 +384,79 @@ export default {
 
     const closeImportModal = () => {
       showImportModal.value = false
+    }
+
+    // Методы для работы с категориями
+    const editCategory = (category) => {
+      editingCategory.value = category
+      categoryForm.name = category
+    }
+
+    const cancelEditCategory = () => {
+      editingCategory.value = null
+      categoryForm.name = ''
+    }
+
+    const saveCategory = async () => {
+      if (!categoryForm.name.trim()) {
+        alert('Введите название категории')
+        return
+      }
+
+      if (editingCategory.value) {
+        // Обновление существующей категории - нужно обновить все товары с этой категорией
+        try {
+          const updatedProducts = products.value.map(p => {
+            if (p.category === editingCategory.value) {
+              return { ...p, category: categoryForm.name }
+            }
+            return p
+          })
+          
+          // Обновляем каждый товар
+          for (const product of updatedProducts) {
+            if (product.category === categoryForm.name) {
+              await axios.put(`/api/shops/${shopId}/products/${product.id}`, {
+                category: product.category
+              })
+            }
+          }
+          
+          await loadProducts()
+          cancelEditCategory()
+        } catch (error) {
+          console.error('Ошибка обновления категории:', error)
+          alert('Ошибка при обновлении категории')
+        }
+      } else {
+        // Добавление новой категории - просто очищаем форму
+        cancelEditCategory()
+      }
+    }
+
+    const deleteCategory = async (category) => {
+      if (!confirm(`Удалить категорию "${category}"? Товары с этой категорией станут без категории.`)) return
+      
+      try {
+        // Удаляем категорию у всех товаров
+        const productsToUpdate = products.value.filter(p => p.category === category)
+        
+        for (const product of productsToUpdate) {
+          await axios.put(`/api/shops/${shopId}/products/${product.id}`, {
+            category: null
+          })
+        }
+        
+        await loadProducts()
+      } catch (error) {
+        console.error('Ошибка удаления категории:', error)
+        alert('Ошибка при удалении категории')
+      }
+    }
+
+    const closeCategoriesModal = () => {
+      showCategoriesModal.value = false
+      cancelEditCategory()
     }
 
     onMounted(() => {
@@ -357,7 +487,16 @@ export default {
       showImportModal,
       closeImportModal,
       addAttribute,       
-      removeAttribute     
+      removeAttribute,
+      // Новые свойства для категорий
+      showCategoriesModal,
+      editingCategory,
+      categoryForm,
+      editCategory,
+      cancelEditCategory,
+      saveCategory,
+      deleteCategory,
+      closeCategoriesModal
     }
   }
 }
@@ -375,6 +514,11 @@ export default {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 1rem;
 }
 
 .filters {
@@ -474,6 +618,23 @@ export default {
   color: white;
 }
 
+.btn-categories {
+  background: #9c27b0;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-categories:hover {
+  background: #7b1fa2;
+}
+
 .modal {
   position: fixed;
   top: 0;
@@ -495,6 +656,72 @@ export default {
   width: 90%;
   max-height: 90vh;
   overflow-y: auto;
+}
+
+.categories-modal {
+  max-width: 600px;
+}
+
+.categories-list {
+  margin: 1.5rem 0;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.category-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.category-item:last-child {
+  border-bottom: none;
+}
+
+.category-name {
+  font-size: 1rem;
+  color: #333;
+}
+
+.category-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-icon {
+  padding: 0.25rem 0.5rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.empty-categories {
+  padding: 2rem;
+  text-align: center;
+  color: #999;
+}
+
+.category-form {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.category-form h3 {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.modal-footer {
+  margin-top: 1.5rem;
+  text-align: right;
 }
 
 .form-group {
@@ -562,7 +789,6 @@ export default {
   margin-bottom: 1rem;
 }
 
-
 .product-attributes {
   margin-top: 0.5rem;
   padding-top: 0.5rem;
@@ -586,6 +812,7 @@ export default {
   max-width: 60%;
   text-align: right;
 }
+
 .attributes-section {
   margin-top: 1.5rem;
   padding-top: 1rem;
@@ -680,6 +907,20 @@ export default {
   
   .btn-add-attr {
     width: 100%;
+  }
+  
+  .header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .header-buttons {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .filters {
+    flex-direction: column;
   }
 }
 </style>
