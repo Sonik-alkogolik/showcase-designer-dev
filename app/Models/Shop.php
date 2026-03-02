@@ -45,7 +45,13 @@ class Shop extends Model
     {
         return $this->hasMany(Order::class);
     }
-
+    /**
+     * Связь с категориями магазина
+     */
+    public function categories(): HasMany
+    {
+        return $this->hasMany(Category::class);
+    }
     /**
      * Шифрование токена бота при сохранении
      */

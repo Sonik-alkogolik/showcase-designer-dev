@@ -142,10 +142,10 @@
       <div class="modal-content categories-modal">
         <h2>Управление категориями</h2>
         
-        <!-- Список существующих категорий -->
+       <!-- Список существующих категорий -->
         <div class="categories-list">
-          <div v-for="category in categories" :key="category" class="category-item">
-            <span class="category-name">{{ category }}</span>
+          <div v-for="category in categories" :key="category.id" class="category-item">
+            <span class="category-name">{{ category.name }}</span>
             <div class="category-actions">
               <button @click="editCategory(category)" class="btn-icon btn-edit">✏️</button>
               <button @click="deleteCategory(category)" class="btn-icon btn-delete">🗑️</button>
@@ -389,7 +389,7 @@ export default {
     // Методы для работы с категориями
     const editCategory = (category) => {
       editingCategory.value = category
-      categoryForm.name = category
+      categoryForm.name = category.name
     }
 
     const cancelEditCategory = () => {
@@ -397,62 +397,74 @@ export default {
       categoryForm.name = ''
     }
 
-    const saveCategory = async () => {
-      if (!categoryForm.name.trim()) {
-        alert('Введите название категории')
-        return
-      }
+ const saveCategory = async () => {
+  if (!categoryForm.name.trim()) {
+    alert('Введите название категории')
+    return
+  }
 
-      if (editingCategory.value) {
-        // Обновление существующей категории - нужно обновить все товары с этой категорией
-        try {
-          const updatedProducts = products.value.map(p => {
-            if (p.category === editingCategory.value) {
-              return { ...p, category: categoryForm.name }
-            }
-            return p
-          })
-          
-          // Обновляем каждый товар
-          for (const product of updatedProducts) {
-            if (product.category === categoryForm.name) {
-              await axios.put(`/api/shops/${shopId}/products/${product.id}`, {
-                category: product.category
-              })
-            }
-          }
-          
-          await loadProducts()
-          cancelEditCategory()
-        } catch (error) {
-          console.error('Ошибка обновления категории:', error)
-          alert('Ошибка при обновлении категории')
+  try {
+    if (editingCategory.value) {
+      // Обновление существующей категории
+      const response = await axios.put(
+        `/api/shops/${shopId}/categories/${editingCategory.value.id}`,
+        { name: categoryForm.name }
+      )
+      
+      if (response.data.success) {
+        // Обновляем категорию в списке
+        const index = categories.value.findIndex(c => c.id === editingCategory.value.id)
+        if (index !== -1) {
+          categories.value[index] = response.data.category
         }
-      } else {
-        // Добавление новой категории - просто очищаем форму
+        cancelEditCategory()
+      }
+    } else {
+      // Создание новой категории
+      const response = await axios.post(`/api/shops/${shopId}/categories`, {
+        name: categoryForm.name
+      })
+      
+      if (response.data.success) {
+        categories.value.push(response.data.category)
         cancelEditCategory()
       }
     }
+  } catch (error) {
+    console.error('Ошибка сохранения категории:', error)
+    alert(error.response?.data?.message || 'Ошибка при сохранении категории')
+  }
+}
 
     const deleteCategory = async (category) => {
-      if (!confirm(`Удалить категорию "${category}"? Товары с этой категорией станут без категории.`)) return
+  if (!confirm(`Удалить категорию "${category.name}"? Товары с этой категорией станут без категории.`)) return
+  
+  try {
+    const response = await axios.delete(`/api/shops/${shopId}/categories/${category.id}`)
+    
+    if (response.data.success) {
+      // Удаляем категорию из списка
+      categories.value = categories.value.filter(c => c.id !== category.id)
       
-      try {
-        // Удаляем категорию у всех товаров
-        const productsToUpdate = products.value.filter(p => p.category === category)
-        
-        for (const product of productsToUpdate) {
-          await axios.put(`/api/shops/${shopId}/products/${product.id}`, {
-            category: null
-          })
+      // Обновляем товары (убираем категорию у товаров, где она была)
+      products.value = products.value.map(p => {
+        if (p.category_id === category.id) {
+          return { ...p, category_id: null, category: null }
         }
-        
+        return p
+      })
+      
+      // Если выбранная в фильтре категория была удалена, сбрасываем фильтр
+      if (filters.category === category.id.toString()) {
+        filters.category = ''
         await loadProducts()
-      } catch (error) {
-        console.error('Ошибка удаления категории:', error)
-        alert('Ошибка при удалении категории')
       }
     }
+  } catch (error) {
+    console.error('Ошибка удаления категории:', error)
+    alert(error.response?.data?.message || 'Ошибка при удалении категории')
+  }
+}
 
     const closeCategoriesModal = () => {
       showCategoriesModal.value = false

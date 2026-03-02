@@ -9,6 +9,7 @@ class Product extends Model
 {
     protected $fillable = [
         'shop_id',
+        'category_id',
         'name',
         'price',
         'description',
@@ -30,6 +31,14 @@ class Product extends Model
     public function shop(): BelongsTo
     {
         return $this->belongsTo(Shop::class);
+    }
+
+    /**
+     * Связь с категорией
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
     }
 
     /**

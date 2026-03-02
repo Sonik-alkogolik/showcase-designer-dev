@@ -68,6 +68,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/shops/{shop}/import/preview', [ImportController::class, 'preview']);
     Route::post('/shops/{shop}/import', [ImportController::class, 'import']);
 
+        // Маршруты для категорий
+    Route::get('/shops/{shop}/categories', [App\Http\Controllers\Api\CategoryController::class, 'index']);
+    Route::post('/shops/{shop}/categories', [App\Http\Controllers\Api\CategoryController::class, 'store']);
+    Route::get('/shops/{shop}/categories/{category}', [App\Http\Controllers\Api\CategoryController::class, 'show']);
+    Route::put('/shops/{shop}/categories/{category}', [App\Http\Controllers\Api\CategoryController::class, 'update']);
+    Route::delete('/shops/{shop}/categories/{category}', [App\Http\Controllers\Api\CategoryController::class, 'destroy']);
+    Route::post('/shops/{shop}/categories/reorder', [App\Http\Controllers\Api\CategoryController::class, 'reorder']);
+
 });
 
 // Защищённые маршруты (требуют авторизации и привязки Telegram)
