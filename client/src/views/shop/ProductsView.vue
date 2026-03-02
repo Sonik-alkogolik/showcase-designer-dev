@@ -199,9 +199,9 @@ export default {
         products.value = response.data.products.data
         console.log('✅ products updated:', products.value)
         
-        // Собираем уникальные категории
-        const cats = new Set(products.value.map(p => p.category).filter(Boolean))
-        categories.value = Array.from(cats)
+          // Используем категории с сервера
+        categories.value = response.data.categories || []
+        console.log('✅ categories from server:', categories.value)
         
         // Обновляем использованное количество товаров
         if (limits.value) {

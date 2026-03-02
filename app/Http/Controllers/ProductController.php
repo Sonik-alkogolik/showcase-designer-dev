@@ -13,26 +13,47 @@ class ProductController extends Controller
     /**
      * Получить список товаров магазина
      */
-    public function index(Request $request, $shopId)
-    {
-        $user = Auth::user();
-        $shop = $user->shops()->findOrFail($shopId);
-        
-        $products = $shop->products()
-            ->when($request->category, function ($query, $category) {
-                return $query->where('category', $category);
-            })
-            ->when($request->search, function ($query, $search) {
-                return $query->where('name', 'like', "%{$search}%");
-            })
-            ->orderBy($request->sort ?? 'created_at', $request->order ?? 'desc')
-            ->paginate($request->per_page ?? 20);
-        
-        return response()->json([
-            'success' => true,
-            'products' => $products
-        ]);
-    }
+   /**
+ * Получить список товаров магазина
+ */
+public function index(Request $request, $shopId)
+{
+    $user = Auth::user();
+    $shop = $user->shops()->findOrFail($shopId);
+    
+    $products = $shop->products()
+        ->when($request->category, function ($query, $category) {
+            return $query->where('category', $category);
+        })
+        ->when($request->search, function ($query, $search) {
+            return $query->where('name', 'like', "%{$search}%");
+        })
+        ->orderBy($request->sort ?? 'created_at', $request->order ?? 'desc')
+        ->paginate($request->per_page ?? 20);
+    
+    // Получаем уникальные категории
+    $categories = $shop->products()
+        ->select('category')
+        ->whereNotNull('category')
+        ->where('category', '!=', '')
+        ->distinct()
+        ->pluck('category')
+        ->map(function($category) {
+            // Конвертируем из Windows-1251 в UTF-8 если нужно
+            if (mb_detect_encoding($category, 'UTF-8', true) === false) {
+                return mb_convert_encoding($category, 'UTF-8', 'Windows-1251');
+            }
+            return $category;
+        })
+        ->values()
+        ->toArray();
+    
+    return response()->json([
+        'success' => true,
+        'products' => $products,
+        'categories' => $categories
+    ]);
+}
 
     /**
      * Создать новый товар
