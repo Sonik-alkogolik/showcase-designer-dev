@@ -56,4 +56,37 @@ class Product extends Model
     {
         return number_format($this->price, 2, '.', ' ') . ' ₽';
     }
+
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted()
+    {
+        static::creating(function ($product) {
+            // Если категория не указана, присваиваем "Без категории"
+            if (!$product->category_id) {
+                $miscCategory = \App\Models\Category::where('shop_id', $product->shop_id)
+                    ->where('name', 'Без категории')
+                    ->first();
+                
+                if ($miscCategory) {
+                    $product->category_id = $miscCategory->id;
+                }
+            }
+        });
+
+        static::updating(function ($product) {
+            // Если категория не указана при обновлении, присваиваем "Без категории"
+            if (!$product->category_id) {
+                $miscCategory = \App\Models\Category::where('shop_id', $product->shop_id)
+                    ->where('name', 'Без категории')
+                    ->first();
+                
+                if ($miscCategory) {
+                    $product->category_id = $miscCategory->id;
+                }
+            }
+        });
+    }
 }

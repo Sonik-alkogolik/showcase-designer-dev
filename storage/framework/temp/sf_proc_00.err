@@ -1,0 +1,131 @@
+[Fri Mar 20 12:48:49 2026] PHP 8.3.6 Development Server (http://127.0.0.1:8000) started
+[Fri Mar 20 13:53:58 2026] 127.0.0.1:52362 Accepted
+[Fri Mar 20 13:53:58 2026] 127.0.0.1:52362 Closing
+[Fri Mar 20 13:54:00 2026] 127.0.0.1:52364 Accepted
+[Fri Mar 20 13:54:01 2026] 127.0.0.1:52364 Closing
+[Fri Mar 20 13:54:01 2026] 127.0.0.1:52365 Accepted
+[Fri Mar 20 13:54:01 2026] 127.0.0.1:52365 [200]: GET /assets/index-BPL2W665.js
+[Fri Mar 20 13:54:01 2026] 127.0.0.1:52367 Accepted
+[Fri Mar 20 13:54:01 2026] 127.0.0.1:52367 [200]: GET /assets/index-B_gDTORe.css
+[Fri Mar 20 13:54:01 2026] 127.0.0.1:52365 Closing
+[Fri Mar 20 13:54:01 2026] 127.0.0.1:52367 Closing
+[Fri Mar 20 13:54:01 2026] 127.0.0.1:52368 Accepted
+[Fri Mar 20 13:54:01 2026] 127.0.0.1:52368 [200]: GET /favicon.ico
+[Fri Mar 20 13:54:01 2026] 127.0.0.1:52368 Closing
+[Fri Mar 20 13:55:10 2026] 127.0.0.1:52383 Accepted
+[Fri Mar 20 13:55:10 2026] 127.0.0.1:52383 Closing
+[Fri Mar 20 13:55:11 2026] 127.0.0.1:52385 Accepted
+[Fri Mar 20 13:55:12 2026] 127.0.0.1:52385 Closing
+[Fri Mar 20 13:55:12 2026] 127.0.0.1:52386 Accepted
+[Fri Mar 20 13:55:12 2026] 127.0.0.1:52386 [200]: GET /assets/index-BPL2W665.js
+[Fri Mar 20 13:55:12 2026] 127.0.0.1:52386 Closing
+[Fri Mar 20 13:55:12 2026] 127.0.0.1:52388 Accepted
+[Fri Mar 20 13:55:12 2026] 127.0.0.1:52388 [200]: GET /assets/index-B_gDTORe.css
+[Fri Mar 20 13:55:12 2026] 127.0.0.1:52388 Closing
+[Fri Mar 20 13:55:12 2026] 127.0.0.1:52389 Accepted
+[Fri Mar 20 13:55:12 2026] 127.0.0.1:52389 [200]: GET /favicon.ico
+[Fri Mar 20 13:55:12 2026] 127.0.0.1:52389 Closing
+[Fri Mar 20 13:58:38 2026] 127.0.0.1:52408 Accepted
+[Fri Mar 20 13:58:39 2026] 127.0.0.1:52408 Closing
+[Fri Mar 20 13:58:43 2026] 127.0.0.1:52411 Accepted
+[Fri Mar 20 13:58:43 2026] 127.0.0.1:52411 [200]: GET /assets/index-B_gDTORe.css
+[Fri Mar 20 13:58:43 2026] 127.0.0.1:52411 Closing
+[Fri Mar 20 13:58:44 2026] 127.0.0.1:52412 Accepted
+[Fri Mar 20 13:58:45 2026] 127.0.0.1:52412 Closing
+[Fri Mar 20 13:58:56 2026] 127.0.0.1:52420 Accepted
+[Fri Mar 20 13:58:57 2026] 127.0.0.1:52420 Closing
+[Fri Mar 20 14:47:26 2026] 127.0.0.1:53988 Accepted
+[Fri Mar 20 14:47:27 2026] 127.0.0.1:53988 Closing
+[Fri Mar 20 14:53:44 2026] 127.0.0.1:54262 Accepted
+[Fri Mar 20 14:53:44 2026] 127.0.0.1:54263 Accepted
+[Fri Mar 20 14:53:45 2026] 127.0.0.1:54263 Closing
+[Fri Mar 20 14:53:45 2026] 127.0.0.1:54262 [200]: GET /assets/index-BPL2W665.js
+[Fri Mar 20 14:53:45 2026] 127.0.0.1:54262 Closing
+[Fri Mar 20 14:53:45 2026] 127.0.0.1:54266 Accepted
+[Fri Mar 20 14:53:45 2026] 127.0.0.1:54266 [200]: GET /assets/index-B_gDTORe.css
+[Fri Mar 20 14:53:45 2026] 127.0.0.1:54266 Closing
+[Fri Mar 20 14:53:45 2026] 127.0.0.1:54267 Accepted
+[Fri Mar 20 14:53:46 2026] 127.0.0.1:54267 Closing
+[Fri Mar 20 14:53:46 2026] 127.0.0.1:54268 Accepted
+[Fri Mar 20 14:53:46 2026] 127.0.0.1:54268 [200]: GET /favicon.ico
+[Fri Mar 20 14:53:46 2026] 127.0.0.1:54268 Closing
+[Fri Mar 20 14:53:46 2026] 127.0.0.1:54271 Accepted
+[Fri Mar 20 14:53:47 2026] 127.0.0.1:54271 Closing
+[Fri Mar 20 14:59:39 2026] 127.0.0.1:54463 Accepted
+[Fri Mar 20 14:59:40 2026] 127.0.0.1:54463 Closing
+[Fri Mar 20 15:00:58 2026] 127.0.0.1:54522 Accepted
+[Fri Mar 20 15:00:58 2026] 127.0.0.1:54522 Closing
+[Fri Mar 20 15:23:06 2026] 127.0.0.1:55216 Accepted
+[Fri Mar 20 15:23:06 2026] 127.0.0.1:55216 Closing
+[Fri Mar 20 15:26:10 2026] 127.0.0.1:55321 Accepted
+[Fri Mar 20 15:26:11 2026] 127.0.0.1:55321 Closing
+[Fri Mar 20 15:26:20 2026] 127.0.0.1:55331 Accepted
+[Fri Mar 20 15:26:21 2026] 127.0.0.1:55331 Closing
+[Fri Mar 20 15:27:29 2026] 127.0.0.1:55387 Accepted
+[Fri Mar 20 15:27:30 2026] 127.0.0.1:55387 Closing
+[Fri Mar 20 15:49:50 2026] 127.0.0.1:56058 Accepted
+[Fri Mar 20 15:49:50 2026] 127.0.0.1:56058 Closing
+[Fri Mar 20 15:50:22 2026] 127.0.0.1:56082 Accepted
+[Fri Mar 20 15:50:22 2026] 127.0.0.1:56082 Closing
+[Fri Mar 20 16:06:08 2026] 127.0.0.1:56545 Accepted
+[Fri Mar 20 16:06:08 2026] 127.0.0.1:56546 Accepted
+[Fri Mar 20 16:06:08 2026] 127.0.0.1:56545 Closing
+[Fri Mar 20 16:06:08 2026] 127.0.0.1:56546 [200]: GET /assets/index-BPL2W665.js
+[Fri Mar 20 16:06:08 2026] 127.0.0.1:56548 Accepted
+[Fri Mar 20 16:06:09 2026] 127.0.0.1:56548 Closing
+[Fri Mar 20 16:06:09 2026] 127.0.0.1:56549 Accepted
+[Fri Mar 20 16:06:09 2026] 127.0.0.1:56549 [200]: GET /assets/index-B_gDTORe.css
+[Fri Mar 20 16:06:09 2026] 127.0.0.1:56546 Closing
+[Fri Mar 20 16:06:09 2026] 127.0.0.1:56549 Closing
+[Fri Mar 20 16:06:09 2026] 127.0.0.1:56553 Accepted
+[Fri Mar 20 16:06:09 2026] 127.0.0.1:56553 [200]: GET /favicon.ico
+[Fri Mar 20 16:06:09 2026] 127.0.0.1:56553 Closing
+[Fri Mar 20 16:06:14 2026] 127.0.0.1:56556 Accepted
+[Fri Mar 20 16:06:15 2026] 127.0.0.1:56556 Closing
+[Fri Mar 20 16:07:12 2026] 127.0.0.1:56599 Accepted
+[Fri Mar 20 16:07:13 2026] 127.0.0.1:56599 Closing
+[Fri Mar 20 16:07:56 2026] 127.0.0.1:56626 Accepted
+[Fri Mar 20 16:07:56 2026] 127.0.0.1:56626 Closing
+[Fri Mar 20 16:07:56 2026] 127.0.0.1:56627 Accepted
+[Fri Mar 20 16:07:57 2026] 127.0.0.1:56627 Closing
+[Fri Mar 20 16:07:57 2026] 127.0.0.1:56629 Accepted
+[Fri Mar 20 16:07:57 2026] 127.0.0.1:56630 Accepted
+[Fri Mar 20 16:07:57 2026] 127.0.0.1:56629 [200]: GET /assets/index-BPL2W665.js
+[Fri Mar 20 16:07:57 2026] 127.0.0.1:56630 [200]: GET /assets/index-B_gDTORe.css
+[Fri Mar 20 16:07:57 2026] 127.0.0.1:56629 Closing
+[Fri Mar 20 16:07:57 2026] 127.0.0.1:56630 Closing
+[Fri Mar 20 16:07:57 2026] 127.0.0.1:56633 Accepted
+[Fri Mar 20 16:07:57 2026] 127.0.0.1:56633 [200]: GET /favicon.ico
+[Fri Mar 20 16:07:57 2026] 127.0.0.1:56633 Closing
+[Fri Mar 20 16:08:17 2026] 127.0.0.1:56642 Accepted
+[Fri Mar 20 16:08:17 2026] 127.0.0.1:56642 Closing
+[Fri Mar 20 16:08:21 2026] 127.0.0.1:56646 Accepted
+[Fri Mar 20 16:08:21 2026] 127.0.0.1:56646 Closing
+[Fri Mar 20 16:09:34 2026] 127.0.0.1:56697 Accepted
+[Fri Mar 20 16:09:35 2026] 127.0.0.1:56697 Closing
+[Fri Mar 20 16:09:59 2026] 127.0.0.1:56718 Accepted
+[Fri Mar 20 16:09:59 2026] 127.0.0.1:56719 Accepted
+[Fri Mar 20 16:09:59 2026] 127.0.0.1:56718 Closing
+[Fri Mar 20 16:09:59 2026] 127.0.0.1:56719 [200]: GET /assets/index-BPL2W665.js
+[Fri Mar 20 16:09:59 2026] 127.0.0.1:56719 Closing
+[Fri Mar 20 16:09:59 2026] 127.0.0.1:56721 Accepted
+[Fri Mar 20 16:10:00 2026] 127.0.0.1:56721 Closing
+[Fri Mar 20 16:10:00 2026] 127.0.0.1:56722 Accepted
+[Fri Mar 20 16:10:00 2026] 127.0.0.1:56722 [200]: GET /assets/index-B_gDTORe.css
+[Fri Mar 20 16:10:00 2026] 127.0.0.1:56722 Closing
+[Fri Mar 20 16:10:00 2026] 127.0.0.1:56725 Accepted
+[Fri Mar 20 16:10:00 2026] 127.0.0.1:56725 [200]: GET /favicon.ico
+[Fri Mar 20 16:10:00 2026] 127.0.0.1:56725 Closing
+[Fri Mar 20 16:10:07 2026] 127.0.0.1:56730 Accepted
+[Fri Mar 20 16:10:07 2026] 127.0.0.1:56731 Accepted
+[Fri Mar 20 16:10:08 2026] 127.0.0.1:56731 Closing
+[Fri Mar 20 16:10:08 2026] 127.0.0.1:56730 Closing
+[Fri Mar 20 16:10:08 2026] 127.0.0.1:56734 Accepted
+[Fri Mar 20 16:10:08 2026] 127.0.0.1:56735 Accepted
+[Fri Mar 20 16:10:08 2026] 127.0.0.1:56734 [200]: GET /assets/index-BPL2W665.js
+[Fri Mar 20 16:10:08 2026] 127.0.0.1:56735 [200]: GET /assets/index-B_gDTORe.css
+[Fri Mar 20 16:10:08 2026] 127.0.0.1:56734 Closing
+[Fri Mar 20 16:10:08 2026] 127.0.0.1:56735 Closing
+[Fri Mar 20 16:10:09 2026] 127.0.0.1:56738 Accepted
+[Fri Mar 20 16:10:09 2026] 127.0.0.1:56738 [200]: GET /favicon.ico
+[Fri Mar 20 16:10:09 2026] 127.0.0.1:56738 Closing

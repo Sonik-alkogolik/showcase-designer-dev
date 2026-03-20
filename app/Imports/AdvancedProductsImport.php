@@ -63,90 +63,125 @@ class AdvancedProductsImport implements ToModel, WithHeadingRow, WithValidation,
         return $converted;
     }
 
-    /**
-     * @param array $row
-     * @return \Illuminate\Database\Eloquent\Model|null
-     */
-    public function model(array $row)
-    {
-        $this->rowCount++;
-        
-        // Получаем ключи (заголовки) строки
-        $keys = array_keys($row);
-        
-        // Применяем маппинг колонок для стандартных полей
-        $data = [];
-        $attributes = []; // здесь будут дополнительные атрибуты
-        
-        foreach ($this->mapping as $field => $columnIndex) {
-            if ($columnIndex !== null && isset($keys[$columnIndex])) {
-                $key = $keys[$columnIndex];
-                $value = $row[$key] ?? null;
-                
-                // Конвертируем текстовые поля в UTF-8
-                if ($value && in_array($field, ['name', 'description', 'category'])) {
-                    $value = $this->convertToUtf8($value);
-                }
-                
-                $data[$field] = $value;
-            }
-        }
-        
-        // Собираем все колонки, которые не попали в маппинг стандартных полей
-        foreach ($keys as $index => $key) {
-            // Проверяем, используется ли эта колонка в маппинге
-            $isMapped = false;
-            foreach ($this->mapping as $field => $columnIndex) {
-                if ($columnIndex === $index) {
-                    $isMapped = true;
-                    break;
-                }
+ /**
+ * @param array $row
+ * @return \Illuminate\Database\Eloquent\Model|null
+ */
+public function model(array $row)
+{
+    $this->rowCount++;
+    
+    // Получаем ключи (заголовки) строки
+    $keys = array_keys($row);
+    
+    // Применяем маппинг колонок для стандартных полей
+    $data = [];
+    $attributes = []; // здесь будут дополнительные атрибуты
+    
+    foreach ($this->mapping as $field => $columnIndex) {
+        if ($columnIndex !== null && isset($keys[$columnIndex])) {
+            $key = $keys[$columnIndex];
+            $value = $row[$key] ?? null;
+            
+            // Конвертируем текстовые поля в UTF-8
+            if ($value && in_array($field, ['name', 'description', 'category'])) {
+                $value = $this->convertToUtf8($value);
             }
             
-            // Если колонка не используется и в ней есть данные - сохраняем как атрибут
-            if (!$isMapped && isset($row[$key]) && !empty($row[$key])) {
-                $attributeName = $this->convertToUtf8($key); // название колонки
-                $attributeValue = $this->convertToUtf8($row[$key]); // значение
-                
-                // Очищаем название атрибута (убираем спецсимволы, делаем читаемым)
-                $attributeName = trim($attributeName);
-                $attributeName = preg_replace('/[^\p{L}\p{N}\s\-_]/u', '', $attributeName);
-                
-                $attributes[$attributeName] = $attributeValue;
+            $data[$field] = $value;
+        }
+    }
+    
+    // Собираем все колонки, которые не попали в маппинг стандартных полей
+    foreach ($keys as $index => $key) {
+        // Проверяем, используется ли эта колонка в маппинге
+        $isMapped = false;
+        foreach ($this->mapping as $field => $columnIndex) {
+            if ($columnIndex === $index) {
+                $isMapped = true;
+                break;
             }
         }
-
-        // Проверяем обязательные поля
-        if (empty($data['name']) || empty($data['price'])) {
-            return null;
-        }
-
-        // Преобразование наличия
-        if (isset($data['in_stock']) && !empty($data['in_stock'])) {
-            $value = strtolower(trim($data['in_stock']));
-            $data['in_stock'] = in_array($value, ['1', 'да', 'yes', 'true', '+', 'on', '1']);
-        } else {
-            $data['in_stock'] = true;
-        }
-
-        // Преобразование цены
-        $price = preg_replace('/[^0-9,.]/', '', $data['price']);
-        $price = str_replace(',', '.', $price);
-        $price = (float) $price;
-
-        $this->successCount++;
         
-        return new Product([
-            'shop_id' => $this->shopId,
-            'name' => $data['name'],
-            'price' => $price,
-            'description' => $data['description'] ?? null,
-            'category' => $data['category'] ?? null,
-            'in_stock' => $data['in_stock'],
-            'image' => $data['image'] ?? null,
-            'attributes' => !empty($attributes) ? $attributes : null, // сохраняем атрибуты
-        ]);
+        // Если колонка не используется и в ней есть данные - сохраняем как атрибут
+        if (!$isMapped && isset($row[$key]) && !empty($row[$key])) {
+            $attributeName = $this->convertToUtf8($key); // название колонки
+            $attributeValue = $this->convertToUtf8($row[$key]); // значение
+            
+            // Очищаем название атрибута (убираем спецсимволы, делаем читаемым)
+            $attributeName = trim($attributeName);
+            $attributeName = preg_replace('/[^\p{L}\p{N}\s\-_]/u', '', $attributeName);
+            
+            $attributes[$attributeName] = $attributeValue;
+        }
     }
+
+    // Проверяем обязательные поля
+    if (empty($data['name']) || empty($data['price'])) {
+        return null;
+    }
+
+    // Преобразование наличия
+    if (isset($data['in_stock']) && !empty($data['in_stock'])) {
+        $value = strtolower(trim($data['in_stock']));
+        $data['in_stock'] = in_array($value, ['1', 'да', 'yes', 'true', '+', 'on']);
+    } else {
+        $data['in_stock'] = true;
+    }
+
+    // Преобразование цены
+    $price = preg_replace('/[^0-9,.]/', '', $data['price']);
+    $price = str_replace(',', '.', $price);
+    $price = (float) $price;
+
+    // Обработка категории
+    $categoryId = null;
+    $categoryName = $data['category'] ?? null;
+    
+    if ($categoryName) {
+        // Пытаемся найти существующую категорию
+        $category = \App\Models\Category::where('shop_id', $this->shopId)
+            ->where('name', $categoryName)
+            ->first();
+        
+        if ($category) {
+            $categoryId = $category->id;
+        } else {
+            // Создаём новую категорию
+            $category = \App\Models\Category::create([
+                'shop_id' => $this->shopId,
+                'name' => $categoryName,
+                'slug' => \Illuminate\Support\Str::slug($categoryName),
+                'sort_order' => 0,
+                'is_active' => true,
+            ]);
+            $categoryId = $category->id;
+        }
+    } else {
+        // Если категория не указана, ищем "Без категории"
+        $miscCategory = \App\Models\Category::where('shop_id', $this->shopId)
+            ->where('name', 'Без категории')
+            ->first();
+        
+        if ($miscCategory) {
+            $categoryId = $miscCategory->id;
+        }
+    }
+
+    $this->successCount++;
+    
+    return new Product([
+        'shop_id' => $this->shopId,
+        'category_id' => $categoryId,
+        'name' => $data['name'],
+        'price' => $price,
+        'description' => $data['description'] ?? null,
+        'category' => $data['category'] ?? null, // пока оставляем для обратной совместимости
+        'in_stock' => $data['in_stock'],
+        'image' => $data['image'] ?? null,
+        'attributes' => !empty($attributes) ? $attributes : null,
+    ]);
+}
 
     /**
      * Валидация строк

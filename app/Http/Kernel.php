@@ -60,6 +60,8 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'ensure.telegram.verified' => \App\Http\Middleware\EnsureTelegramVerified::class,
+        'has.active.subscription' => \App\Http\Middleware\HasActiveSubscription::class,
+        'own.shop' => \App\Http\Middleware\OwnsShop::class,
     ];
     
 }

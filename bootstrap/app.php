@@ -15,6 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // Только алиасы — для удобства
         $middleware->alias([
             'ensure.telegram.verified' => \App\Http\Middleware\EnsureTelegramVerified::class,
+            'has.active.subscription' => \App\Http\Middleware\HasActiveSubscription::class,
+            'own.shop' => \App\Http\Middleware\OwnsShop::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

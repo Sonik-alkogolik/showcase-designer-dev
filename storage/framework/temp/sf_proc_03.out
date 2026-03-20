@@ -1,0 +1,19 @@
+
+7-Zip 26.00 (x64) : Copyright (c) 1999-2026 Igor Pavlov : 2026-02-12
+
+Scanning the drive for archives:
+1 file, 2794647 bytes (2730 KiB)
+
+Extracting archive: C:\Users\admin\Desktop\myproject\showcase-designer\vendor\composer\tmp-899ed41918d4789cea7750c044ea90b0.zip
+--
+Path = C:\Users\admin\Desktop\myproject\showcase-designer\vendor\composer\tmp-899ed41918d4789cea7750c044ea90b0.zip
+Type = zip
+Physical Size = 2794647
+Comment = 6c6cd693a44a1c77ae60dbcbf56cf374fd9e9774
+
+Everything is Ok
+
+Folders: 108
+Files: 1266
+Size:       13578421
+Compressed: 2794647

@@ -31,7 +31,7 @@ class ShopController extends Controller
         $user = Auth::user();
         
         // Проверяем, может ли пользователь создать магазин
-        if (!$user->canCreateShop()) {
+        if (!$user->canCreateMoreShops()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Вы достигли лимита магазинов для вашего тарифа',
@@ -126,13 +126,17 @@ class ShopController extends Controller
         }
 
         // Если обновляется токен, проверяем его
-        if ($request->has('bot_token') && $request->bot_token !== $shop->bot_token) {
-            $tempShop = new Shop(['bot_token' => $request->bot_token]);
-            if (!$tempShop->validateBotToken()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Неверный токен Telegram бота'
-                ], 422);
+        if ($request->has('bot_token')) {
+            $newToken = $request->input('bot_token');
+
+            if (filled($newToken) && $newToken !== $shop->bot_token) {
+                $tempShop = new Shop(['bot_token' => $newToken]);
+                if (!$tempShop->validateBotToken()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Неверный токен Telegram бота'
+                    ], 422);
+                }
             }
         }
 

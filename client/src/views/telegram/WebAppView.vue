@@ -358,10 +358,16 @@ export default {
           cart.value = {}
           localStorage.removeItem('cart')
           
-          // Здесь будет интеграция с ЮKassa
-          if (response.data.payment_url) {
-            // Открываем ссылку на оплату
-            window.open(response.data.payment_url, '_blank')
+          const confirmationUrl = response.data.confirmation_url
+
+          if (confirmationUrl) {
+            if (window.Telegram?.WebApp?.openInvoice) {
+              window.Telegram.WebApp.openInvoice(confirmationUrl)
+            } else if (window.Telegram?.WebApp?.openLink) {
+              window.Telegram.WebApp.openLink(confirmationUrl)
+            } else {
+              window.open(confirmationUrl, '_blank')
+            }
           }
         }
       } catch (error) {

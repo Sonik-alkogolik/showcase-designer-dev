@@ -164,12 +164,20 @@ class User extends Authenticatable
     /**
      * Проверить, может ли пользователь создать новый магазин
      */
-    public function canCreateShop(): bool
+    public function canCreateMoreShops(): bool
     {
         $shopsCount = $this->shops()->count();
         $limit = $this->getShopsLimit();
         
         return $shopsCount < $limit;
+    }
+
+    /**
+     * Обратная совместимость со старым именем метода.
+     */
+    public function canCreateShop(): bool
+    {
+        return $this->canCreateMoreShops();
     }
 
     /**

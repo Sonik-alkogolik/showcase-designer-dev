@@ -56,25 +56,36 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/subscription/cancel', [App\Http\Controllers\SubscriptionController::class, 'cancel']);
 
     // Маршруты для магазинов
-    Route::apiResource('shops', App\Http\Controllers\ShopController::class);
+    Route::get('/shops', [App\Http\Controllers\ShopController::class, 'index']);
+    Route::post('/shops', [App\Http\Controllers\ShopController::class, 'store'])
+        ->middleware(['ensure.telegram.verified', 'has.active.subscription']);
+    Route::get('/shops/{shop}', [App\Http\Controllers\ShopController::class, 'show'])
+        ->middleware('own.shop');
+    Route::put('/shops/{shop}', [App\Http\Controllers\ShopController::class, 'update'])
+        ->middleware('own.shop');
+    Route::patch('/shops/{shop}', [App\Http\Controllers\ShopController::class, 'update'])
+        ->middleware('own.shop');
+    Route::delete('/shops/{shop}', [App\Http\Controllers\ShopController::class, 'destroy'])
+        ->middleware('own.shop');
 
         // Маршруты для товаров
-    Route::get('/shops/{shop}/products', [App\Http\Controllers\ProductController::class, 'index']);
-    Route::post('/shops/{shop}/products', [App\Http\Controllers\ProductController::class, 'store']);
-    Route::get('/shops/{shop}/products/{product}', [App\Http\Controllers\ProductController::class, 'show']);
-    Route::put('/shops/{shop}/products/{product}', [App\Http\Controllers\ProductController::class, 'update']);
-    Route::delete('/shops/{shop}/products/{product}', [App\Http\Controllers\ProductController::class, 'destroy']);
+    Route::get('/shops/{shop}/products', [App\Http\Controllers\ProductController::class, 'index'])->middleware('own.shop');
+    Route::post('/shops/{shop}/products', [App\Http\Controllers\ProductController::class, 'store'])->middleware('own.shop');
+    Route::get('/shops/{shop}/products/{product}', [App\Http\Controllers\ProductController::class, 'show'])->middleware('own.shop');
+    Route::put('/shops/{shop}/products/{product}', [App\Http\Controllers\ProductController::class, 'update'])->middleware('own.shop');
+    Route::delete('/shops/{shop}/products/{product}', [App\Http\Controllers\ProductController::class, 'destroy'])->middleware('own.shop');
     // Route::post('/shops/{shop}/products/import', [App\Http\Controllers\ProductController::class, 'import']);
-    Route::post('/shops/{shop}/import/preview', [ImportController::class, 'preview']);
-    Route::post('/shops/{shop}/import', [ImportController::class, 'import']);
+    Route::post('/shops/{shop}/import/preview', [ImportController::class, 'preview'])->middleware('own.shop');
+    Route::post('/shops/{shop}/import', [ImportController::class, 'import'])->middleware('own.shop');
+    Route::post('/shops/{shop}/import-products', [ImportController::class, 'import'])->middleware('own.shop');
 
         // Маршруты для категорий
-    Route::get('/shops/{shop}/categories', [App\Http\Controllers\Api\CategoryController::class, 'index']);
-    Route::post('/shops/{shop}/categories', [App\Http\Controllers\Api\CategoryController::class, 'store']);
-    Route::get('/shops/{shop}/categories/{category}', [App\Http\Controllers\Api\CategoryController::class, 'show']);
-    Route::put('/shops/{shop}/categories/{category}', [App\Http\Controllers\Api\CategoryController::class, 'update']);
-    Route::delete('/shops/{shop}/categories/{category}', [App\Http\Controllers\Api\CategoryController::class, 'destroy']);
-    Route::post('/shops/{shop}/categories/reorder', [App\Http\Controllers\Api\CategoryController::class, 'reorder']);
+    Route::get('/shops/{shop}/categories', [App\Http\Controllers\Api\CategoryController::class, 'index'])->middleware('own.shop');
+    Route::post('/shops/{shop}/categories', [App\Http\Controllers\Api\CategoryController::class, 'store'])->middleware('own.shop');
+    Route::get('/shops/{shop}/categories/{category}', [App\Http\Controllers\Api\CategoryController::class, 'show'])->middleware('own.shop');
+    Route::put('/shops/{shop}/categories/{category}', [App\Http\Controllers\Api\CategoryController::class, 'update'])->middleware('own.shop');
+    Route::delete('/shops/{shop}/categories/{category}', [App\Http\Controllers\Api\CategoryController::class, 'destroy'])->middleware('own.shop');
+    Route::post('/shops/{shop}/categories/reorder', [App\Http\Controllers\Api\CategoryController::class, 'reorder'])->middleware('own.shop');
 
 });
 
@@ -93,10 +104,11 @@ Route::post('/telegram/webhook', [WebhookController::class, 'handle']);
 // Публичные маршруты для заказов (Telegram Web App)
 Route::post('/orders', [App\Http\Controllers\OrderController::class, 'store']);
 Route::get('/orders/payment/{paymentId}', [App\Http\Controllers\OrderController::class, 'checkPayment']);
+Route::post('/webhooks/yookassa', [App\Http\Controllers\OrderController::class, 'yookassaWebhook']);
 
 // Защищённые маршруты для заказов (для владельцев магазинов)
 Route::middleware(['auth:sanctum'])->group(function () {
-    Route::get('/shops/{shop}/orders', [App\Http\Controllers\OrderController::class, 'index']);
-    Route::get('/shops/{shop}/orders/{order}', [App\Http\Controllers\OrderController::class, 'show']);
-    Route::put('/shops/{shop}/orders/{order}', [App\Http\Controllers\OrderController::class, 'update']);
+    Route::get('/shops/{shop}/orders', [App\Http\Controllers\OrderController::class, 'index'])->middleware('own.shop');
+    Route::get('/shops/{shop}/orders/{order}', [App\Http\Controllers\OrderController::class, 'show'])->middleware('own.shop');
+    Route::put('/shops/{shop}/orders/{order}', [App\Http\Controllers\OrderController::class, 'update'])->middleware('own.shop');
 });

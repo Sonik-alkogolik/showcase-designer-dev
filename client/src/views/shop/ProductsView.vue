@@ -28,10 +28,12 @@
         placeholder="Поиск по названию..."
         @input="debouncedSearch"
       >
-      <select v-model="filters.category" @change="loadProducts">
-        <option value="">Все категории</option>
-        <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
-      </select>
+     <select v-model="filters.category" @change="loadProducts">
+      <option value="">Все категории</option>
+      <option v-for="category in categories" :key="category.id" :value="category.id">
+        {{ category.name }}
+      </option>
+    </select>
     </div>
 
     <!-- Список товаров -->
