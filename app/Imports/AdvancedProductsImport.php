@@ -63,6 +63,42 @@ class AdvancedProductsImport implements ToModel, WithHeadingRow, WithValidation,
         return $converted;
     }
 
+    /**
+     * Нормализует значение "наличие" из CSV/XLSX в boolean.
+     * Пустое значение трактуем как true (обратная совместимость).
+     */
+    private function normalizeInStock($rawValue): bool
+    {
+        if (is_bool($rawValue)) {
+            return $rawValue;
+        }
+
+        if ($rawValue === null) {
+            return true;
+        }
+
+        $value = trim((string) $rawValue);
+        if ($value === '') {
+            return true;
+        }
+
+        if (is_numeric($value)) {
+            return ((float) $value) > 0;
+        }
+
+        $normalized = mb_strtolower($value);
+        if (in_array($normalized, ['да', 'yes', 'true', '+', 'on', 'y'], true)) {
+            return true;
+        }
+
+        if (in_array($normalized, ['нет', 'no', 'false', '-', 'off', 'n'], true)) {
+            return false;
+        }
+
+        // На неизвестных значениях сохраняем историческое поведение "в наличии".
+        return true;
+    }
+
  /**
  * @param array $row
  * @return \Illuminate\Database\Eloquent\Model|null
@@ -122,12 +158,7 @@ public function model(array $row)
     }
 
     // Преобразование наличия
-    if (isset($data['in_stock']) && !empty($data['in_stock'])) {
-        $value = strtolower(trim($data['in_stock']));
-        $data['in_stock'] = in_array($value, ['1', 'да', 'yes', 'true', '+', 'on']);
-    } else {
-        $data['in_stock'] = true;
-    }
+    $data['in_stock'] = $this->normalizeInStock($data['in_stock'] ?? null);
 
     // Преобразование цены
     $price = preg_replace('/[^0-9,.]/', '', $data['price']);
