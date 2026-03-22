@@ -31,6 +31,45 @@ Set-Location C:\Users\admin\Desktop\myproject\showcase-designer
 # Проверить подключение к БД
 .\scripts\dev-shortcuts.ps1 db-ping
 
+# Поднять MySQL-8.0 через OSPanel и сразу проверить подключение
+.\scripts\dev-shortcuts.ps1 db-up
+
+# Запустить Laravel dev server (foreground, держите окно открытым)
+.\scripts\dev-shortcuts.ps1 serve
+
+# Поднять localtunnel в фоне и вывести URL
+.\scripts\dev-shortcuts.ps1 tunnel-up
+
+# Закрепить Telegram на URL из tools/tmp-lt.out
+.\scripts\dev-shortcuts.ps1 telegram-pin-current-tunnel -ShopId "2"
+
+# Закрепить Telegram dev (обновит APP_URL/FRONTEND_URL/WEBHOOK в .env, выставит webhook и кнопку WebApp)
+.\scripts\dev-shortcuts.ps1 telegram-pin-dev
+
+# То же, но с явным URL туннеля и shop id
+.\scripts\dev-shortcuts.ps1 telegram-pin-dev -PublicUrl "https://showcase-dev-20260321.loca.lt" -ShopId "2"
+
+# Отправить в Telegram тест-кнопку "Открыть магазин" (WebApp) в конкретный chat_id
+.\scripts\dev-shortcuts.ps1 telegram-send-webapp-test -ChatId "123456789" -ShopId "2"
+
+# Быстрый тест создания магазина (Feature test)
+.\scripts\dev-shortcuts.ps1 test-shop-create
+
+# Browser E2E: логин + создание магазина + добавление товара + проверка в списках
+.\scripts\dev-shortcuts.ps1 e2e-create-shop
+
+# Browser E2E в видимом Chrome (можно наблюдать шаги)
+.\scripts\dev-shortcuts.ps1 e2e-auth-login-chrome
+.\scripts\dev-shortcuts.ps1 e2e-create-shop-chrome
+
+# Browser E2E в режиме "реальный пользователь" (медленный ввод + паузы)
+.\scripts\dev-shortcuts.ps1 e2e-auth-login-real-user
+.\scripts\dev-shortcuts.ps1 e2e-create-shop-real-user
+
+# Полный E2E прогон "как реальный пользователь" (в один запуск)
+.\scripts\dev-shortcuts.ps1 e2e-full-real-user
+# В этом режиме Chrome не закрывается автоматически после финального шага.
+
 # Открыть MySQL shell (showcase_designer)
 .\scripts\dev-shortcuts.ps1 db-shell
 
@@ -38,8 +77,31 @@ Set-Location C:\Users\admin\Desktop\myproject\showcase-designer
 .\scripts\dev-shortcuts.ps1 start-ui
 ```
 
+## Быстрый рабочий цикл для Telegram WebApp
+
+```powershell
+Set-Location C:\Users\admin\Desktop\myproject\showcase-designer
+.\scripts\dev-shortcuts.ps1 db-up
+.\scripts\dev-shortcuts.ps1 serve
+# в новом окне:
+.\scripts\dev-shortcuts.ps1 tunnel-up
+# затем:
+.\scripts\dev-shortcuts.ps1 telegram-pin-current-tunnel -ShopId "2"
+```
+
+Если в Telegram появляется экран localtunnel с паролем, используйте:
+`151.247.209.157`
+
+Если снова `503 - Tunnel Unavailable`, просто повторите:
+1. `.\scripts\dev-shortcuts.ps1 tunnel-up`
+2. `.\scripts\dev-shortcuts.ps1 telegram-pin-current-tunnel -ShopId "2"`
+
 После запуска `start-ui` откроется страница:
 `http://127.0.0.1:8787`
+
+Во вкладке **Tests** доступны плитки:
+1. `E2E Full Suite (Real User Chrome)` — единый комплексный прогон (логин + создание магазина + добавление товара) в один клик.
+2. Следующий шаг для расширения full-suite: smoke-оформление заказа.
 
 В UI есть блок **HTTP Test Lab**:
 1. `Preset: test-cors` — проверка `GET /api/test-cors`
