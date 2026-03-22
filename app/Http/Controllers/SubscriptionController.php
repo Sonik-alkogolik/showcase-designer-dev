@@ -15,51 +15,33 @@ class SubscriptionController extends Controller
     {
         $plans = [
             'starter' => [
-                'name' => 'Starter',
-                'price' => 990,
-                'price_formatted' => '990 ₽/мес',
+                'name' => 'Бесплатный',
+                'price' => 0,
+                'price_formatted' => '0 ₽/мес',
+                'auto_renew' => false,
                 'shops_limit' => 1,
                 'products_limit' => 100,
                 'features' => [
                     '1 магазин',
                     'До 100 товаров',
-                    'Telegram Web App',
-                    'Оплата через ЮKassa',
-                    'Базовая поддержка'
+                    'Telegram Web App'
                 ],
                 'popular' => false
             ],
             'business' => [
-                'name' => 'Business',
-                'price' => 2990,
-                'price_formatted' => '2 990 ₽/мес',
+                'name' => 'Платный',
+                'price' => 500,
+                'price_formatted' => '500 ₽/мес',
+                'auto_renew' => true,
                 'shops_limit' => 5,
                 'products_limit' => 1000,
                 'features' => [
                     '5 магазинов',
                     'До 1000 товаров',
                     'Импорт товаров из Excel',
-                    'Уведомления в Telegram',
-                    'Приоритетная поддержка',
-                    'Статистика заказов'
+                    'Приоритетная поддержка'
                 ],
                 'popular' => true
-            ],
-            'premium' => [
-                'name' => 'Premium',
-                'price' => 4990,
-                'price_formatted' => '4 990 ₽/мес',
-                'shops_limit' => 10,
-                'products_limit' => 10000,
-                'features' => [
-                    '10 магазинов',
-                    'До 10 000 товаров',
-                    'API доступ',
-                    'Индивидуальный вебхук',
-                    'Выделенный менеджер',
-                    'Ранний доступ к новым функциям'
-                ],
-                'popular' => false
             ],
         ];
         
@@ -82,7 +64,7 @@ class SubscriptionController extends Controller
     public function subscribe(Request $request)
     {
         $request->validate([
-            'plan' => 'required|in:starter,business,premium',
+            'plan' => 'required|in:starter,business',
             'auto_renew' => 'boolean',
             'offer_accepted' => 'required|accepted',
             'privacy_accepted' => 'required|accepted'
@@ -107,9 +89,8 @@ class SubscriptionController extends Controller
 
         // Цены в рублях
         $prices = [
-            'starter' => 990,
-            'business' => 2990,
-            'premium' => 4990
+            'starter' => 0,
+            'business' => 500
         ];
 
         // Создаём подписку

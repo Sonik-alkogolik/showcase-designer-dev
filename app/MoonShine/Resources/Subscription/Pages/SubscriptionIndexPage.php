@@ -32,14 +32,12 @@ class SubscriptionIndexPage extends IndexPage
             
             Select::make('Тариф', 'plan')
                 ->options([
-                    'starter' => 'Starter',
-                    'business' => 'Business',
-                    'premium' => 'Premium',
+                    'starter' => 'Бесплатный',
+                    'business' => 'Платный',
                 ])
                 ->badge(fn($value) => match($value) {
                     'starter' => 'info',
                     'business' => 'warning',
-                    'premium' => 'success',
                     default => 'default',
                 }),
             
@@ -74,9 +72,8 @@ class SubscriptionIndexPage extends IndexPage
         return [
             Select::make('Тариф', 'plan')
                 ->options([
-                    'starter' => 'Starter',
-                    'business' => 'Business',
-                    'premium' => 'Premium',
+                    'starter' => 'Бесплатный',
+                    'business' => 'Платный',
                 ])
                 ->nullable(),
             

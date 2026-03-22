@@ -4,6 +4,7 @@ import LoginView from '../views/LoginView.vue';
 import RegisterView from '../views/RegisterView.vue';
 import ProfileView from '../views/ProfileView.vue';
 import PlansView from '../views/PlansView.vue'; 
+import PrivacyPolicyView from '../views/PrivacyPolicyView.vue';
 import { useAuth } from '../composables/useAuth';
 
 const routes = [
@@ -42,6 +43,12 @@ const routes = [
     name: 'Plans',
     component: PlansView,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/privacy',
+    name: 'PrivacyPolicy',
+    component: PrivacyPolicyView,
+    meta: { requiresAuth: false }
   },
       {
     path: '/shops/:shopId/products',

@@ -54,9 +54,8 @@ class SubscriptionResource extends ModelResource
             
             Select::make('Тариф', 'plan')
                 ->options([
-                    'starter' => 'Starter (990 ₽/мес)',
-                    'business' => 'Business (2 990 ₽/мес)',
-                    'premium' => 'Premium (4 990 ₽/мес)',
+                    'starter' => 'Бесплатный (0 ₽/мес)',
+                    'business' => 'Платный (500 ₽/мес)',
                 ])
                 ->required(),
             
@@ -105,9 +104,8 @@ class SubscriptionResource extends ModelResource
         return [
             Select::make('Тариф', 'plan')
                 ->options([
-                    'starter' => 'Starter',
-                    'business' => 'Business',
-                    'premium' => 'Premium',
+                    'starter' => 'Бесплатный',
+                    'business' => 'Платный',
                 ])
                 ->nullable(),
             
@@ -125,7 +123,7 @@ class SubscriptionResource extends ModelResource
     {
         return [
             'user_id' => 'required|exists:users,id',
-            'plan' => 'required|in:starter,business,premium',
+            'plan' => 'required|in:starter,business',
             'status' => 'required|in:active,expired,cancelled',
             'expires_at' => 'required|date',
             'auto_renew' => 'boolean',
@@ -140,9 +138,8 @@ class SubscriptionResource extends ModelResource
                 ->badge(fn($value) => 'primary'),
             Select::make('Тариф', 'plan')
                 ->options([
-                    'starter' => 'Starter',
-                    'business' => 'Business',
-                    'premium' => 'Premium',
+                    'starter' => 'Бесплатный',
+                    'business' => 'Платный',
                 ]),
             Select::make('Статус', 'status')
                 ->options([

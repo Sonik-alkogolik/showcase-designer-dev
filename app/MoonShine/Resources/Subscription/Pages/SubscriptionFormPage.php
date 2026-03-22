@@ -34,9 +34,8 @@ class SubscriptionFormPage extends FormPage
                 
                 Select::make('Тариф', 'plan')
                     ->options([
-                        'starter' => 'Starter (990 ₽/мес)',
-                        'business' => 'Business (2 990 ₽/мес)',
-                        'premium' => 'Premium (4 990 ₽/мес)',
+                        'starter' => 'Бесплатный (0 ₽/мес)',
+                        'business' => 'Платный (500 ₽/мес)',
                     ])
                     ->required(),
                 
