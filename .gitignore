@@ -17,3 +17,12 @@ yarn-debug.log
 /bootstrap/cache/*.php
 /public/build
 /public/mix-manifest.json
+
+# E2E artifacts (screenshots/reports/temp logs)
+/tools/*_report.json
+/tools/*_result.png
+/tools/*_after_*.png
+/tools/e2e_*.png
+/tools/tmp-*.log
+/tools/tmp-*.out
+/tools/tmp-*.err
