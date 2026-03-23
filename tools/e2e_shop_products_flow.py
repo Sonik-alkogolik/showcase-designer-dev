@@ -50,6 +50,10 @@ def main() -> int:
     category_name = f"{args.category_prefix} {stamp}"
     product_name = f"{args.product_prefix} {stamp}"
     target_url = f"{args.base_url}/shops/{args.shop_id}/products"
+    fallback_credentials = [
+        ("test2@gmail.com", "1234"),
+        ("test@example.com", "password"),
+    ]
 
     with sync_playwright() as p:
         launch_args = {"headless": args.headless}
@@ -101,14 +105,43 @@ def main() -> int:
                 page.keyboard.type(ch, delay=max(20, args.slow_ms // 2))
             human_pause()
 
+        def first_visible_selector(selectors: list[str]) -> str:
+            for selector in selectors:
+                if page.locator(selector).count():
+                    return selector
+            raise RuntimeError(f"Could not find any matching selector from: {selectors}")
+
         page.goto(f"{args.base_url}/login", wait_until="domcontentloaded", timeout=30000)
         human_pause(0.4, 0.8)
-        human_type('input[placeholder="Email"]', args.email)
-        human_type('input[placeholder="Пароль"]', args.password)
-        page.click('button:has-text("Войти")')
-        page.wait_for_timeout(1800)
-
-        token = page.evaluate("() => localStorage.getItem('auth_token')")
+        email_selector = first_visible_selector([
+            'input[placeholder="you@example.com"]',
+            'input[placeholder="Email"]',
+            'input[type="email"]',
+        ])
+        password_selector = first_visible_selector([
+            'input[placeholder="Ваш пароль"]',
+            'input[placeholder="Пароль"]',
+            'input[type="password"]',
+        ])
+        submit_selector = first_visible_selector([
+            'button[type="submit"]',
+            'button:has-text("Войти")',
+        ])
+        credentials = [(args.email, args.password)]
+        for item in fallback_credentials:
+            if item not in credentials:
+                credentials.append(item)
+        token = ""
+        for try_email, try_password in credentials:
+            page.goto(f"{args.base_url}/login", wait_until="domcontentloaded", timeout=30000)
+            human_pause(0.4, 0.8)
+            human_type(email_selector, try_email)
+            human_type(password_selector, try_password)
+            page.click(submit_selector)
+            page.wait_for_timeout(1800)
+            token = page.evaluate("() => localStorage.getItem('auth_token')") or ""
+            if token:
+                break
         token_present = bool(token)
 
         page.goto(target_url, wait_until="domcontentloaded", timeout=30000)

@@ -230,7 +230,7 @@ Examples:
     "e2e-full-real-user" {
         & python tools/e2e_auth_login.py --browser chrome --human --slow-ms 140
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        & python tools/e2e_create_shop.py --browser chrome --human --slow-ms 140 --keep-open
+        & python tools/e2e_create_shop.py --browser chrome --human --slow-ms 140
         break
     }
 

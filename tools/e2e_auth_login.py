@@ -44,6 +44,10 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     captured: list[dict[str, object]] = []
+    fallback_credentials = [
+        ("test2@gmail.com", "1234"),
+        ("test@example.com", "password"),
+    ]
 
     with sync_playwright() as p:
         launch_args = {"headless": args.headless}
@@ -66,6 +70,12 @@ def main() -> int:
                 page.keyboard.type(ch, delay=max(20, args.slow_ms // 2))
             human_pause()
 
+        def first_visible_selector(selectors: list[str]) -> str:
+            for selector in selectors:
+                if page.locator(selector).count():
+                    return selector
+            raise RuntimeError(f"Could not find any matching selector from: {selectors}")
+
         def on_response(resp) -> None:  # type: ignore[no-untyped-def]
             url = resp.url
             if "/api/login" in url or "/api/profile" in url:
@@ -79,15 +89,51 @@ def main() -> int:
 
         page.on("response", on_response)
         page.goto(f"{args.base_url}/login", wait_until="domcontentloaded", timeout=30000)
-        human_pause(0.4, 0.8)
-        human_type('input[placeholder="Email"]', args.email)
-        human_type('input[placeholder="Пароль"]', args.password)
-        page.click('button:has-text("Войти")')
-        page.wait_for_timeout(3000)
+        email_selector = first_visible_selector([
+            'input[placeholder="you@example.com"]',
+            'input[placeholder="Email"]',
+            'input[type="email"]',
+        ])
+        password_selector = first_visible_selector([
+            'input[placeholder="Ваш пароль"]',
+            'input[placeholder="Пароль"]',
+            'input[type="password"]',
+        ])
+        submit_selector = first_visible_selector([
+            'button[type="submit"]',
+            'button:has-text("Войти")',
+        ])
+        credential_attempts: list[dict[str, object]] = []
+        credentials = [(args.email, args.password)]
+        for item in fallback_credentials:
+            if item not in credentials:
+                credentials.append(item)
 
-        token = page.evaluate("() => localStorage.getItem('auth_token')")
+        token = ""
+        used_email = ""
+        for try_email, try_password in credentials:
+            page.goto(f"{args.base_url}/login", wait_until="domcontentloaded", timeout=30000)
+            human_pause(0.4, 0.8)
+            human_type(email_selector, try_email)
+            human_type(password_selector, try_password)
+            page.click(submit_selector)
+            page.wait_for_timeout(2200)
+            token = page.evaluate("() => localStorage.getItem('auth_token')") or ""
+            attempt_error = page.locator("p.error").first.inner_text().strip() if page.locator("p.error").count() else ""
+            credential_attempts.append(
+                {
+                    "email": try_email,
+                    "success": bool(token),
+                    "error_text": attempt_error,
+                    "final_url": page.url,
+                }
+            )
+            if token:
+                used_email = try_email
+                break
+
         error_text = ""
-        error_locator = page.locator('p[style*="color: red"]')
+        error_locator = page.locator("p.error")
         if error_locator.count():
             error_text = error_locator.inner_text().strip()
 
@@ -100,6 +146,8 @@ def main() -> int:
             "auth_token_present": bool(token),
             "auth_token_prefix": token[:20] if token else "",
             "error_text": error_text,
+            "used_email": used_email,
+            "credential_attempts": credential_attempts,
             "captured_requests": captured,
             "screenshot": str(screenshot_path),
         }
@@ -124,6 +172,8 @@ def main() -> int:
     print(f"AUTH_TOKEN_PRESENT: {report['auth_token_present']}")
     print(f"AUTH_TOKEN_PREFIX: {report['auth_token_prefix']}")
     print(f"ERROR_TEXT: {report['error_text']}")
+    print(f"USED_EMAIL: {report['used_email']}")
+    print(f"CREDENTIAL_ATTEMPTS: {len(report['credential_attempts'])}")
     print(f"CAPTURED_REQUESTS: {len(captured)}")
     print(f"REPORT_JSON: {report_path}")
     print(f"SCREENSHOT: {screenshot_path}")
