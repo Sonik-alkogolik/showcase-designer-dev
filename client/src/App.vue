@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="app-shell">
     <Navbar v-if="!hideNavbar" />
     <div :class="['main-content', { 'webapp-layout': hideNavbar }]">
       <router-view />
@@ -38,16 +38,18 @@ const hideNavbar = computed(() =>
 </script>
 
 <style>
-#app {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: #f9f9f9;
+.app-shell {
   min-height: 100vh;
+  color: var(--color-text);
+  background:
+    radial-gradient(1200px 800px at -20% -20%, rgba(88, 102, 255, 0.2), transparent 55%),
+    radial-gradient(900px 650px at 120% 0%, rgba(10, 158, 255, 0.16), transparent 52%),
+    var(--color-background);
 }
 
 .main-content {
-  max-width: 1200px;
-  margin: 2rem auto;
-  padding: 0 1rem;
+  width: min(1200px, 100% - 2rem);
+  margin: 1.5rem auto 2.5rem;
 }
 
 .main-content.webapp-layout {

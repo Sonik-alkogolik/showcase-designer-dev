@@ -51,30 +51,32 @@
   max-width: 900px;
   margin: 0 auto;
   padding: 2rem 1rem 3rem;
-  color: #1f2937;
+  color: #ced5ea;
 }
 
 h1 {
   margin: 0 0 0.5rem;
   font-size: 2rem;
+  color: var(--color-heading);
 }
 
 .updated {
   margin: 0 0 1.5rem;
-  color: #6b7280;
+  color: #a7b0ce;
 }
 
 section {
   margin-bottom: 1.25rem;
   padding: 1rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid rgba(171, 186, 255, 0.2);
   border-radius: 10px;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 h2 {
   margin: 0 0 0.5rem;
   font-size: 1.1rem;
+  color: #edf1ff;
 }
 
 p {

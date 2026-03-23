@@ -1,13 +1,17 @@
 <template>
   <nav class="navbar">
     <div class="navbar-container">
-      <div class="navbar-brand">
-        <h1>Constructor</h1>
-      </div>
+      <router-link :to="isAuthenticated ? '/shops' : '/'" class="navbar-brand">
+        <h1>Showcase Designer</h1>
+      </router-link>
       
-         <div class="navbar-menu">
-               <router-link to="/shops" class="nav-link" v-if="isAuthenticated">
+      <div class="navbar-menu">
+        <router-link to="/shops" class="nav-link" v-if="isAuthenticated">
           Главная
+        </router-link>
+
+        <router-link to="/create-shop" class="nav-link" v-if="isAuthenticated">
+          Новый магазин
         </router-link>
         
         <router-link to="/plans" class="nav-link" v-if="isAuthenticated">
@@ -59,46 +63,69 @@ const handleLogout = async () => {
 
 <style scoped>
 .navbar {
-  background: #2c3e50;
-  color: white;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   position: sticky;
   top: 0;
   z-index: 1000;
+  background: linear-gradient(180deg, rgba(9, 12, 22, 0.9), rgba(9, 12, 22, 0.72));
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(171, 183, 255, 0.15);
+  animation: nav-enter 500ms ease both;
 }
 
-.navbar-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1rem;
-  display: flex;
-  justify-content: space-between;
+@keyframes nav-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.navbar a {
+  text-decoration: none;
+}
+
+.navbar-brand {
+  color: #f1f4ff;
+  display: inline-flex;
   align-items: center;
-  height: 60px;
 }
 
 .navbar-brand h1 {
   margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.navbar-container {
+  width: min(1200px, 100% - 2rem);
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 64px;
 }
 
 .navbar-menu {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.65rem;
 }
 
 .nav-link {
-  color: white;
-  text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  transition: background 0.3s;
+  color: #cfd6ee;
+  padding: 0.5rem 0.8rem;
+  border-radius: 999px;
+  transition: background-color 220ms ease, color 220ms ease;
 }
 
-.nav-link:hover, .nav-link.router-link-active {
-  background: rgba(255,255,255,0.1);
+.nav-link:hover,
+.nav-link.router-link-active {
+  color: #ecf1ff;
+  background: rgba(118, 148, 255, 0.16);
 }
 
 .auth-buttons {
@@ -107,44 +134,70 @@ const handleLogout = async () => {
 }
 
 .btn {
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  border-radius: 999px;
+  min-height: 38px;
+  padding: 0 1rem;
+  font-size: 0.94rem;
   text-decoration: none;
   cursor: pointer;
   font-weight: 600;
-  transition: all 0.3s;
-  border: none;
-  display: inline-block;
+  transition: transform 220ms ease, border-color 220ms ease, background-color 220ms ease;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
 }
 
 .btn-outline {
-  background: transparent;
-  border: 2px solid white;
-  color: white;
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(196, 204, 255, 0.34);
+  color: #dee3ff;
 }
 
 .btn-outline:hover {
-  background: white;
-  color: #2c3e50;
+  border-color: rgba(196, 204, 255, 0.6);
+  background: rgba(124, 149, 255, 0.12);
 }
 
 .btn-primary {
-  background: #3498db;
-  color: white;
-  border: 2px solid #3498db;
+  color: #f5f8ff;
+  background: linear-gradient(120deg, #4f63ff, #33c5ff);
+  box-shadow: 0 8px 24px rgba(72, 116, 255, 0.36);
 }
 
 .btn-primary:hover {
-  background: #2980b9;
-  border-color: #2980b9;
+  box-shadow: 0 14px 30px rgba(72, 116, 255, 0.42);
 }
 
 .user-info {
-  color: white;
-  font-weight: 500;
+  color: #aab4db;
+  font-size: 0.9rem;
+  padding-left: 0.4rem;
 }
 
-.user-info span {
-  padding: 0.5rem;
+@media (max-width: 820px) {
+  .navbar-container {
+    width: calc(100% - 1rem);
+  }
+
+  .navbar-menu {
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .nav-link {
+    font-size: 0.9rem;
+    padding: 0.44rem 0.68rem;
+  }
+}
+
+/* Legacy rules kept for easier merge tracking */
+.navbar {
+  position: sticky;
 }
 </style>

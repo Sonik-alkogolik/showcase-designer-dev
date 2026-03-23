@@ -5,11 +5,18 @@ import RegisterView from '../views/RegisterView.vue';
 import ProfileView from '../views/ProfileView.vue';
 import PlansView from '../views/PlansView.vue'; 
 import PrivacyPolicyView from '../views/PrivacyPolicyView.vue';
+import PublicLandingView from '../views/PublicLandingView.vue';
 import { useAuth } from '../composables/useAuth';
 
 const routes = [
   {
     path: '/',
+    name: 'Landing',
+    component: PublicLandingView,
+    meta: { requiresGuest: true }
+  },
+  {
+    path: '/create-shop',
     name: 'CreateShop',
     component: CreateShopView,
     meta: { requiresAuth: true }
@@ -79,7 +86,7 @@ router.beforeEach((to, from, next) => {
   }
   // Если маршрут требует гостя (не авторизованного)
   else if (to.meta.requiresGuest && token.value) {
-    next('/');
+    next('/shops');
   }
   // Все остальные случаи
   else {

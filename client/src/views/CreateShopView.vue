@@ -98,7 +98,7 @@
           <span v-if="loading">Создание...</span>
           <span v-else>Создать магазин</span>
         </button>
-        <button type="button" class="btn-secondary" @click="$router.push('/')">
+        <button type="button" class="btn-secondary" @click="$router.push('/shops')">
           Отмена
         </button>
       </div>
@@ -107,7 +107,7 @@
     <!-- Сообщение об успехе -->
     <div v-if="success" class="alert alert-success">
       <p>Магазин успешно создан!</p>
-      <router-link to="/" class="btn-primary">Перейти к магазинам</router-link>
+      <router-link to="/shops" class="btn-primary">Перейти к магазинам</router-link>
     </div>
 
     <!-- Сообщение об ошибке -->
@@ -298,32 +298,35 @@ export default {
   max-width: 800px;
   margin: 2rem auto;
   padding: 2rem;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background: linear-gradient(170deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  border-radius: 16px;
+  border: 1px solid rgba(173, 186, 255, 0.2);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.22);
+  animation: page-in 480ms cubic-bezier(.2,.8,.2,1) both;
 }
 
 h1 {
   margin-bottom: 2rem;
-  color: #333;
+  color: var(--color-heading);
   font-size: 2rem;
 }
 
 .limits-info {
-  background: #e3f2fd;
+  background: rgba(69, 123, 255, 0.16);
   padding: 1rem;
-  border-radius: 4px;
+  border-radius: 10px;
   margin-bottom: 2rem;
-  border-left: 4px solid #2196f3;
+  border-left: 4px solid #5092ff;
+  color: #cbd7ff;
 }
 
 .limit-warning {
-  background: #ffebee;
-  border-left-color: #f44336;
+  background: rgba(255, 97, 97, 0.15);
+  border-left-color: #ff6f7d;
 }
 
 .text-danger {
-  color: #f44336;
+  color: #ff98a5;
   font-weight: 600;
   margin-top: 0.5rem;
 }
@@ -348,38 +351,41 @@ h1 {
 
 label {
   font-weight: 600;
-  color: #555;
+  color: #d6def8;
 }
 
 input {
   padding: 0.75rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 4px;
+  border: 1px solid rgba(170, 184, 255, 0.25);
+  border-radius: 10px;
   font-size: 1rem;
-  transition: border-color 0.3s;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  background: rgba(5, 8, 16, 0.5);
+  color: #eef2ff;
 }
 
 input:focus {
   outline: none;
-  border-color: #2196f3;
+  border-color: rgba(102, 160, 255, 0.9);
+  box-shadow: 0 0 0 3px rgba(80, 137, 255, 0.2);
 }
 
 input.error {
-  border-color: #f44336;
+  border-color: #ff7482;
 }
 
 .error-message {
-  color: #f44336;
+  color: #ff94a3;
   font-size: 0.9rem;
 }
 
 .help-text {
-  color: #888;
+  color: #a5afcf;
   font-size: 0.9rem;
 }
 
 .help-text a {
-  color: #2196f3;
+  color: #84bbff;
   text-decoration: none;
 }
 
@@ -396,36 +402,41 @@ input.error {
 .btn-primary, .btn-secondary {
   padding: 0.75rem 1.5rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 10px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: transform 0.25s ease, background 0.3s;
+}
+
+.btn-primary:hover:not(:disabled), .btn-secondary:hover {
+  transform: translateY(-1px);
 }
 
 .btn-primary {
-  background: #4CAF50;
-  color: white;
+  background: linear-gradient(120deg, #4f63ff, #33c5ff);
+  color: #f4f7ff;
   flex: 2;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #45a049;
+  background: linear-gradient(120deg, #6376ff, #4ecfff);
 }
 
 .btn-primary:disabled {
-  background: #ccc;
+  background: #4d5572;
   cursor: not-allowed;
 }
 
 .btn-secondary {
-  background: #f5f5f5;
-  color: #333;
+  background: rgba(255, 255, 255, 0.06);
+  color: #dde4ff;
   flex: 1;
+  border: 1px solid rgba(186, 198, 255, 0.24);
 }
 
 .btn-secondary:hover {
-  background: #e0e0e0;
+  background: rgba(127, 149, 255, 0.16);
 }
 
 .alert {
@@ -435,21 +446,32 @@ input.error {
 }
 
 .alert-success {
-  background: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
+  background: rgba(78, 214, 153, 0.16);
+  color: #bbf8de;
+  border: 1px solid rgba(78, 214, 153, 0.4);
 }
 
 .alert-error {
-  background: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
+  background: rgba(255, 103, 125, 0.14);
+  color: #ffc4cf;
+  border: 1px solid rgba(255, 103, 125, 0.38);
 }
 
 .alert .btn-primary {
   display: inline-block;
   margin-top: 1rem;
   text-decoration: none;
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 600px) {

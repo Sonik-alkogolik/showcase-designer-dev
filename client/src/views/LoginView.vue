@@ -1,30 +1,152 @@
 <template>
-  <div style="max-width: 400px; margin: 50px auto; padding: 20px; border: 1px solid #ccc">
-    <h2>Вход</h2>
-    <input v-model="email" placeholder="Email" type="email" style="width: 100%; margin: 8px 0; padding: 8px" />
-    <input v-model="password" placeholder="Пароль" type="password" style="width: 100%; margin: 8px 0; padding: 8px" />
-    <button @click="handleLogin" style="width: 100%; padding: 10px; margin-top: 10px">Войти</button>
-    <p v-if="error" style="color: red">{{ error }}</p>
-  </div>
+  <section class="auth-page">
+    <div class="auth-card">
+      <p class="kicker">Вход в кабинет</p>
+      <h1>Продолжим работу</h1>
+      <p class="hint">Введите данные аккаунта, чтобы вернуться к вашим магазинам.</p>
+
+      <form class="auth-form" @submit.prevent="handleLogin">
+        <label>
+          Email
+          <input v-model="email" placeholder="you@example.com" type="email" required />
+        </label>
+
+        <label>
+          Пароль
+          <input v-model="password" placeholder="Ваш пароль" type="password" required />
+        </label>
+
+        <button type="submit">Войти</button>
+      </form>
+
+      <p v-if="error" class="error">{{ error }}</p>
+      <p class="alt-action">
+        Нет аккаунта? <router-link to="/register">Зарегистрироваться</router-link>
+      </p>
+    </div>
+  </section>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useAuth } from '@/composables/useAuth';
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
 
-const email = ref('');
-const password = ref('');
-const error = ref('');
+const router = useRouter()
+const email = ref('')
+const password = ref('')
+const error = ref('')
 
-const { login } = useAuth();
+const { login } = useAuth()
 
 const handleLogin = async () => {
-  const result = await login(email.value, password.value);
+  const result = await login(email.value, password.value)
   if (!result.success) {
-    error.value = result.error;
-  } else {
-    error.value = '';
-    // Можно перенаправить, например: router.push('/dashboard')
+    error.value = result.error
+    return
   }
-};
+
+  error.value = ''
+  router.push('/shops')
+}
 </script>
+
+<style scoped>
+.auth-page {
+  min-height: calc(100vh - 140px);
+  display: grid;
+  place-items: center;
+}
+
+.auth-card {
+  width: min(440px, 100%);
+  border-radius: 20px;
+  padding: 1.3rem 1.2rem;
+  border: 1px solid rgba(174, 189, 255, 0.2);
+  background: linear-gradient(170deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+  backdrop-filter: blur(8px);
+  animation: card-in 500ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+.kicker {
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.75rem;
+}
+
+.auth-card h1 {
+  margin-top: 0.35rem;
+  color: var(--color-heading);
+}
+
+.hint {
+  margin-top: 0.45rem;
+  color: #adb6d4;
+  font-size: 0.95rem;
+}
+
+.auth-form {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+label {
+  display: grid;
+  gap: 0.35rem;
+  color: #d7def4;
+  font-size: 0.9rem;
+}
+
+input {
+  border: 1px solid rgba(170, 184, 255, 0.28);
+  background: rgba(5, 8, 16, 0.5);
+  color: #e8ecff;
+  border-radius: 10px;
+  min-height: 42px;
+  padding: 0 0.8rem;
+}
+
+input:focus {
+  outline: none;
+  border-color: rgba(102, 160, 255, 0.9);
+  box-shadow: 0 0 0 3px rgba(80, 137, 255, 0.2);
+}
+
+button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 10px;
+  color: #f7f9ff;
+  font-weight: 700;
+  cursor: pointer;
+  background: linear-gradient(120deg, #4f63ff, #31beff);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(70, 130, 255, 0.34);
+}
+
+.error {
+  margin-top: 0.8rem;
+  color: #ff8f9d;
+}
+
+.alt-action {
+  margin-top: 0.6rem;
+  font-size: 0.9rem;
+  color: #aeb5cf;
+}
+
+.alt-action a {
+  color: #8dc7ff;
+}
+
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>

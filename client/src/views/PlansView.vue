@@ -114,13 +114,14 @@ const subscribe = async () => {
 .plans-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1.5rem 0;
+  animation: page-in 500ms cubic-bezier(.2,.8,.2,1) both;
 }
 
 h1 {
   text-align: center;
   margin-bottom: 2rem;
-  color: #333;
+  color: var(--color-heading);
 }
 
 .plans-grid {
@@ -131,28 +132,28 @@ h1 {
 }
 
 .plan-card {
-  background: white;
+  background: linear-gradient(170deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
   border-radius: 12px;
   padding: 2rem;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.2);
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
-  border: 2px solid transparent;
+  border: 1px solid rgba(173, 186, 255, 0.2);
 }
 
 .plan-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 18px 30px rgba(0,0,0,0.22);
 }
 
 .plan-card.selected {
-  border-color: #4CAF50;
-  box-shadow: 0 0 0 2px rgba(76,175,80,0.2);
+  border-color: rgba(96, 157, 255, 0.7);
+  box-shadow: 0 0 0 2px rgba(91, 153, 255, 0.22);
 }
 
 .plan-card.popular {
-  border-color: #ff9800;
+  border-color: #43ccff;
 }
 
 .popular-badge {
@@ -160,8 +161,8 @@ h1 {
   top: -12px;
   left: 50%;
   transform: translateX(-50%);
-  background: #ff9800;
-  color: white;
+  background: linear-gradient(120deg, #58aeff, #58d5ff);
+  color: #071322;
   padding: 4px 12px;
   border-radius: 20px;
   font-size: 0.9rem;
@@ -171,7 +172,7 @@ h1 {
 .plan-card h2 {
   text-align: center;
   margin-bottom: 1rem;
-  color: #333;
+  color: #edf1ff;
   font-size: 1.5rem;
 }
 
@@ -179,7 +180,7 @@ h1 {
   text-align: center;
   font-size: 2rem;
   font-weight: bold;
-  color: #4CAF50;
+  color: #9fd1ff;
   margin-bottom: 1.5rem;
 }
 
@@ -191,8 +192,8 @@ h1 {
 
 .features li {
   padding: 0.5rem 0;
-  color: #666;
-  border-bottom: 1px solid #eee;
+  color: #b5c0e3;
+  border-bottom: 1px solid rgba(186, 197, 255, 0.18);
 }
 
 .features li:last-child {
@@ -202,7 +203,8 @@ h1 {
 .subscription-options {
   max-width: 500px;
   margin: 0 auto;
-  background: #f9f9f9;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(174, 189, 255, 0.2);
   padding: 2rem;
   border-radius: 12px;
 }
@@ -216,11 +218,11 @@ h1 {
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
-  color: #333;
+  color: #d1daf8;
 }
 
 .checkbox a {
-  color: #4CAF50;
+  color: #8fc7ff;
   text-decoration: none;
 }
 
@@ -231,8 +233,8 @@ h1 {
 .subscribe-btn {
   width: 100%;
   padding: 1rem;
-  background: #4CAF50;
-  color: white;
+  background: linear-gradient(120deg, #4f63ff, #33c5ff);
+  color: #f6f8ff;
   border: none;
   border-radius: 8px;
   font-size: 1.1rem;
@@ -243,17 +245,28 @@ h1 {
 }
 
 .subscribe-btn:hover:not(:disabled) {
-  background: #45a049;
+  filter: brightness(1.05);
 }
 
 .subscribe-btn:disabled {
-  background: #ccc;
+  background: #556087;
   cursor: not-allowed;
 }
 
 .loading {
   text-align: center;
   padding: 2rem;
-  color: #666;
+  color: #b3bcda;
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

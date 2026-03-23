@@ -27,7 +27,7 @@
     
     <div v-else class="empty-state">
       <p>У вас пока нет магазинов</p>
-      <router-link to="/" class="btn-primary">Создать магазин</router-link>
+      <router-link to="/create-shop" class="btn-primary">Создать магазин</router-link>
     </div>
   </div>
 </template>
@@ -87,11 +87,13 @@ export default {
 .shops-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1.5rem 0;
+  animation: page-in 500ms cubic-bezier(.2,.8,.2,1) both;
 }
 
 h1 {
   margin-bottom: 2rem;
+  color: var(--color-heading);
 }
 
 .shops-grid {
@@ -102,18 +104,26 @@ h1 {
 
 .shop-card {
   padding: 1.5rem;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border: 1px solid rgba(171, 186, 255, 0.2);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.2);
+  transition: transform 220ms ease, border-color 220ms ease;
+}
+
+.shop-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(117, 155, 255, 0.45);
 }
 
 .shop-card h2 {
   margin: 0 0 1rem;
   font-size: 1.3rem;
+  color: #edf1ff;
 }
 
 .delivery {
-  color: #666;
+  color: #b4bdd8;
   margin-bottom: 1.5rem;
 }
 
@@ -123,30 +133,30 @@ h1 {
 }
 
 .btn-primary {
-  background: #4CAF50;
-  color: white;
+  background: linear-gradient(120deg, #4f63ff, #33c5ff);
+  color: #f5f8ff;
   text-decoration: none;
   padding: 0.5rem 1rem;
-  border-radius: 4px;
+  border-radius: 8px;
   flex: 1;
   text-align: center;
 }
 
 .btn-edit {
-  background: #2196f3;
-  color: white;
+  background: rgba(106, 172, 255, 0.2);
+  color: #dfe8ff;
   border: none;
   padding: 0.5rem 1rem;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
 }
 
 .btn-delete {
-  background: #ef4444;
-  color: white;
+  background: rgba(255, 105, 126, 0.2);
+  color: #ffd4db;
   border: none;
   padding: 0.5rem 1rem;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
 }
 
@@ -158,11 +168,22 @@ h1 {
 .empty-state {
   text-align: center;
   padding: 3rem;
-  color: #999;
+  color: #a4afcf;
 }
 
 .empty-state .btn-primary {
   display: inline-block;
   margin-top: 1rem;
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>
