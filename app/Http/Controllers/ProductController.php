@@ -7,9 +7,69 @@ use App\Models\Shop;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ProductController extends Controller
 {
+    /**
+     * Resolve category payload for product create/update.
+     *
+     * Rules:
+     * - category_id has priority over category text
+     * - category_id must belong to current shop
+     * - category text is mapped to existing shop category by name (if found)
+     * - if category text does not match existing category, keep text for backward compatibility
+     *
+     * Returns null when no category fields were provided and $allowNoChanges is true.
+     */
+    private function resolveCategoryPayload(Request $request, Shop $shop, bool $allowNoChanges = false): ?array
+    {
+        $hasCategoryId = $request->has('category_id');
+        $hasCategoryText = $request->has('category');
+
+        if (!$hasCategoryId && !$hasCategoryText) {
+            return $allowNoChanges ? null : ['category_id' => null, 'category' => null];
+        }
+
+        if ($hasCategoryId) {
+            $rawCategoryId = $request->input('category_id');
+            if ($rawCategoryId === null || $rawCategoryId === '') {
+                return ['category_id' => null, 'category' => null];
+            }
+
+            $category = $shop->categories()->find($rawCategoryId);
+            if (!$category) {
+                throw ValidationException::withMessages([
+                    'category_id' => ['Выбранная категория не принадлежит этому магазину.'],
+                ]);
+            }
+
+            return [
+                'category_id' => $category->id,
+                'category' => $category->name,
+            ];
+        }
+
+        $categoryName = trim((string) $request->input('category', ''));
+        if ($categoryName === '') {
+            return ['category_id' => null, 'category' => null];
+        }
+
+        $matchedCategory = $shop->categories()
+            ->where('name', $categoryName)
+            ->first();
+
+        if ($matchedCategory) {
+            return [
+                'category_id' => $matchedCategory->id,
+                'category' => $matchedCategory->name,
+            ];
+        }
+
+        return ['category_id' => null, 'category' => $categoryName];
+    }
+
     /**
      * Получить список товаров магазина
      */
@@ -71,7 +131,10 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
             'description' => 'nullable|string',
-            'category_id' => 'nullable|exists:categories,id',
+            'category_id' => [
+                'nullable',
+                Rule::exists('categories', 'id')->where(fn ($query) => $query->where('shop_id', $shop->id)),
+            ],
             'category' => 'nullable|string|max:100', // Для обратной совместимости
             'in_stock' => 'boolean',
             'image' => 'nullable|url',
@@ -85,26 +148,18 @@ class ProductController extends Controller
             ], 422);
         }
 
+        $categoryPayload = $this->resolveCategoryPayload($request, $shop);
+
         $data = [
             'name' => $request->name,
             'price' => $request->price,
             'description' => $request->description,
-            'category' => $request->category, // Временно сохраняем
+            'category' => $categoryPayload['category'],
+            'category_id' => $categoryPayload['category_id'],
             'in_stock' => $request->in_stock ?? true,
             'image' => $request->image,
             'attributes' => $request->attributes,
         ];
-
-        // Если передан category_id, используем его
-        if ($request->has('category_id')) {
-            $data['category_id'] = $request->category_id;
-            
-            // Также сохраняем название категории для обратной совместимости
-            if (!$request->has('category') && $request->category_id) {
-                $category = \App\Models\Category::find($request->category_id);
-                $data['category'] = $category ? $category->name : null;
-            }
-        }
 
         $product = $shop->products()->create($data);
 
@@ -144,7 +199,10 @@ class ProductController extends Controller
             'name' => 'sometimes|string|max:255',
             'price' => 'sometimes|numeric|min:0',
             'description' => 'nullable|string',
-            'category_id' => 'nullable|exists:categories,id',
+            'category_id' => [
+                'nullable',
+                Rule::exists('categories', 'id')->where(fn ($query) => $query->where('shop_id', $shop->id)),
+            ],
             'category' => 'nullable|string|max:100',
             'in_stock' => 'boolean',
             'image' => 'nullable|url',
@@ -162,31 +220,9 @@ class ProductController extends Controller
             'name', 'price', 'description', 'in_stock', 'image', 'attributes'
         ]);
 
-        // Обработка категории
-        if ($request->has('category_id')) {
-            $data['category_id'] = $request->category_id;
-            
-            // Обновляем текстовое поле category для обратной совместимости
-            if ($request->category_id) {
-                $category = \App\Models\Category::find($request->category_id);
-                $data['category'] = $category ? $category->name : null;
-            } else {
-                $data['category'] = null;
-            }
-        } elseif ($request->has('category')) {
-            $data['category'] = $request->category;
-            
-            // Пытаемся найти соответствующую категорию
-            if ($request->category) {
-                $category = $shop->categories()
-                    ->where('name', $request->category)
-                    ->first();
-                if ($category) {
-                    $data['category_id'] = $category->id;
-                }
-            } else {
-                $data['category_id'] = null;
-            }
+        $categoryPayload = $this->resolveCategoryPayload($request, $shop, true);
+        if ($categoryPayload !== null) {
+            $data = array_merge($data, $categoryPayload);
         }
         
         $product->update($data);

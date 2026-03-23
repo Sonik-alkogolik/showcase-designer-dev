@@ -1,0 +1,35 @@
+{
+  "page_url": "http://127.0.0.1:8000/plans",
+  "auth_token_present": true,
+  "auth_token_prefix": "95|XslIwrxXJJKilL0Z1",
+  "error_text": "",
+  "captured_requests": [
+    {
+      "url": "http://127.0.0.1:8000/api/login",
+      "status": 200,
+      "headers": {
+        "vary": "Origin",
+        "cache-control": "no-cache, private",
+        "date": "Sat, 21 Mar 2026 10:46:16 GMT",
+        "content-type": "application/json",
+        "host": "127.0.0.1:8000",
+        "connection": "close",
+        "x-powered-by": "PHP/8.2.18"
+      }
+    },
+    {
+      "url": "http://127.0.0.1:8000/api/profile",
+      "status": 200,
+      "headers": {
+        "vary": "Origin",
+        "cache-control": "no-cache, private",
+        "date": "Sat, 21 Mar 2026 10:46:16 GMT",
+        "content-type": "application/json",
+        "host": "127.0.0.1:8000",
+        "connection": "close",
+        "x-powered-by": "PHP/8.2.18"
+      }
+    }
+  ],
+  "screenshot": "tools\\login_after_auth.png"
+}

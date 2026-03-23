@@ -46,7 +46,7 @@
           <h3>{{ product.name }}</h3>
           <p class="price">{{ product.price }} ₽</p>
           <p class="description">{{ product.description }}</p>
-          <p class="category">Категория: {{ product.category || 'Без категории' }}</p>
+          <p class="category">Категория: {{ product.category_name || 'Без категории' }}</p>
           <p class="stock" :class="{ 'in-stock': product.in_stock }">
             {{ product.in_stock ? 'В наличии' : 'Нет в наличии' }}
           </p>
@@ -245,6 +245,13 @@ export default {
       return limits.value && limits.value.used < limits.value.total
     })
 
+    const resolveCategoryName = (category) => {
+      if (!category) return null
+      if (typeof category === 'string') return category
+      if (typeof category === 'object' && category.name) return category.name
+      return null
+    }
+
     const loadProducts = async () => {
       console.log('🔄 loadProducts started')
       try {
@@ -253,7 +260,10 @@ export default {
         })
         console.log('📦 API Response:', response.data)
         
-        products.value = response.data.products.data
+        products.value = (response.data.products.data || []).map(product => ({
+          ...product,
+          category_name: resolveCategoryName(product.category)
+        }))
         console.log('✅ products updated:', products.value)
         
         // Используем категории с сервера
@@ -341,7 +351,10 @@ export default {
 
     const editProduct = (product) => {
       editingProduct.value = product
-      Object.assign(form, product)
+      Object.assign(form, {
+        ...product,
+        category: product.category_name || resolveCategoryName(product.category) || ''
+      })
       editingAttributes.value = product.attributes ? { ...product.attributes } : {}
     }
     
@@ -451,7 +464,7 @@ export default {
       // Обновляем товары (убираем категорию у товаров, где она была)
       products.value = products.value.map(p => {
         if (p.category_id === category.id) {
-          return { ...p, category_id: null, category: null }
+          return { ...p, category_id: null, category: null, category_name: null }
         }
         return p
       })

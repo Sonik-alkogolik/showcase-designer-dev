@@ -1,0 +1,18 @@
+{
+  "email": "test2@gmail.com",
+  "base_url": "http://127.0.0.1:8000",
+  "shop_name": "UI E2E Shop 20260321-134619",
+  "token_present": true,
+  "has_form": true,
+  "limit_info": "Лимит магазинов: 3 из 5 доступно",
+  "created_success_message": true,
+  "shop_present_in_list": true,
+  "product_name": "UI E2E Product 134619",
+  "product_created": true,
+  "product_present_in_products_list": true,
+  "product_url": "http://127.0.0.1:8000/shops/6/products",
+  "product_error_text": "",
+  "error_text": "",
+  "final_url": "http://127.0.0.1:8000/shops/6/products",
+  "screenshot": "tools\\e2e_create_shop_result.png"
+}

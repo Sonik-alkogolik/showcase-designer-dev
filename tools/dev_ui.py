@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -14,6 +15,8 @@ HOST = "127.0.0.1"
 PORT = 8787
 ROOT = Path(__file__).resolve().parents[1]
 SHORTCUTS = ROOT / "scripts" / "dev-shortcuts.ps1"
+TESTS_DIR = ROOT / "tests"
+TESTS_PLACEHOLDER = "__TEST_TILES_JSON__"
 
 
 HTML = r"""<!doctype html>
@@ -41,19 +44,43 @@ HTML = r"""<!doctype html>
     .cmd-plan { display: inline-block; font-size: 11px; color: #0f766e; background: #ccfbf1; border: 1px solid #99f6e4; border-radius: 999px; padding: 2px 8px; margin-top: 6px; }
     .cmd-copy { font-size: 12px; padding: 4px 8px; background: #0ea5e9; }
     .cmd-code { margin: 0; min-height: 0; padding: 10px; font-size: 12px; line-height: 1.35; }
+    .tabs { display: flex; gap: 8px; margin: 12px 0; }
+    .tab-btn { background: #e2e8f0; color: #0f172a; }
+    .tab-btn.active { background: #1f6feb; color: #fff; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .test-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; }
+    .test-tile { border: 1px solid #dbe1ef; border-radius: 10px; padding: 12px; background: #fff; }
+    .test-name { font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; word-break: break-word; }
+    .test-meta { font-size: 12px; color: #64748b; margin-bottom: 10px; }
+    .test-run { background: #0ea5a6; }
   </style>
 </head>
 <body>
   <div class="card">
     <h1>showcase-designer-dev: quick UI</h1>
-    <div class="row">
-      <button onclick="runAction('open-project')">Open Project</button>
-      <button onclick="runAction('open-browser')">Open App</button>
-      <button onclick="runAction('open-login')">Open Login</button>
-      <button onclick="runAction('db-ping')">DB Ping</button>
-      <button class="secondary" onclick="runAction('help')">Help</button>
+    <div class="tabs">
+      <button id="tabQuickBtn" class="tab-btn active" onclick="showTab('quick')">Quick</button>
+      <button id="tabTestsBtn" class="tab-btn" onclick="showTab('tests')">Tests</button>
     </div>
-    <div class="hint">Кнопки запускают команды из scripts/dev-shortcuts.ps1.</div>
+
+    <div id="tabQuick" class="tab-content active">
+      <div class="row">
+        <button onclick="runAction('open-project')">Open Project</button>
+        <button onclick="runAction('open-browser')">Open App</button>
+        <button onclick="runAction('open-login')">Open Login</button>
+        <button onclick="runAction('db-ping')">DB Ping</button>
+        <button onclick="runAction('telegram-pin-dev')">Pin Telegram Dev</button>
+        <button class="secondary" onclick="runAction('help')">Help</button>
+      </div>
+      <div class="hint">Кнопки запускают команды из scripts/dev-shortcuts.ps1.</div>
+    </div>
+
+    <div id="tabTests" class="tab-content">
+      <h2>Tests</h2>
+      <div class="hint">Плитки ниже запускают тесты вручную по клику.</div>
+      <div id="testsGrid" class="test-grid"></div>
+    </div>
   </div>
 
   <div class="card">
@@ -99,7 +126,15 @@ HTML = r"""<!doctype html>
   </div>
 
   <script>
+    const tests = __TEST_TILES_JSON__;
+
     const taskTiles = [
+      {
+        title: 'Pin Telegram Dev',
+        sub: 'Закрепить .env + webhook + menu button',
+        plan: 'Telegram Dev',
+        cmd: '.\\scripts\\dev-shortcuts.ps1 telegram-pin-dev'
+      },
       {
         title: 'Set Project Path',
         sub: 'Перейти в папку проекта',
@@ -159,6 +194,12 @@ HTML = r"""<!doctype html>
         sub: 'Проверить тестовый CORS endpoint',
         plan: 'API Smoke',
         cmd: 'curl.exe -s -i "http://127.0.0.1:8000/api/test-cors"'
+      },
+      {
+        title: 'E2E Full (Real User)',
+        sub: 'Логин + магазин + товар в видимом Chrome',
+        plan: 'QA E2E',
+        cmd: '.\\scripts\\dev-shortcuts.ps1 e2e-full-real-user'
       }
     ];
 
@@ -296,6 +337,54 @@ HTML = r"""<!doctype html>
       }
     }
 
+    function showTab(tab) {
+      const quick = document.getElementById('tabQuick');
+      const testsTab = document.getElementById('tabTests');
+      const quickBtn = document.getElementById('tabQuickBtn');
+      const testsBtn = document.getElementById('tabTestsBtn');
+
+      const isQuick = tab === 'quick';
+      quick.classList.toggle('active', isQuick);
+      testsTab.classList.toggle('active', !isQuick);
+      quickBtn.classList.toggle('active', isQuick);
+      testsBtn.classList.toggle('active', !isQuick);
+    }
+
+    function renderTests() {
+      const grid = document.getElementById('testsGrid');
+      grid.innerHTML = '';
+
+      tests.forEach((testItem) => {
+        const tile = document.createElement('div');
+        tile.className = 'test-tile';
+
+        const name = document.createElement('div');
+        name.className = 'test-name';
+        name.textContent = testItem.title;
+
+        const meta = document.createElement('div');
+        meta.className = 'test-meta';
+        meta.textContent = testItem.sub;
+
+        const btn = document.createElement('button');
+        btn.className = 'test-run';
+        btn.textContent = 'Run Test';
+        btn.addEventListener('click', () => runTest(testItem.id));
+
+        tile.appendChild(name);
+        tile.appendChild(meta);
+        tile.appendChild(btn);
+        grid.appendChild(tile);
+      });
+    }
+
+    async function runTest(testId) {
+      const out = document.getElementById('out');
+      out.textContent = 'Running test: ' + testId + ' ...';
+      const data = await postJSON('/api/test-run', { test_id: testId });
+      out.textContent = data.output || '';
+    }
+
     async function postJSON(url, body) {
       const res = await fetch(url, {
         method: 'POST',
@@ -358,10 +447,105 @@ HTML = r"""<!doctype html>
       out.textContent = data.output || '';
     }
     renderTaskTiles();
+    renderTests();
   </script>
 </body>
 </html>
 """
+
+
+def get_test_inventory() -> list[dict[str, str]]:
+    items: list[dict[str, str]] = [
+        {
+            "id": "__e2e_full_real_user__",
+            "title": "E2E Full Suite (Real User Chrome)",
+            "sub": "login + create shop + add product (one click)",
+        }
+    ]
+    return items
+
+
+def render_html() -> bytes:
+    tests_json = json.dumps(get_test_inventory(), ensure_ascii=False)
+    page = HTML.replace(TESTS_PLACEHOLDER, tests_json)
+    return page.encode("utf-8")
+
+
+def get_php_cli() -> str:
+    os_panel_php = Path(r"C:\OSPanel\modules\PHP-8.2\PHP\php.exe")
+    if os_panel_php.exists():
+        return str(os_panel_php)
+
+    return "php"
+
+
+def run_test_command(test_id: str) -> str:
+    inventory = get_test_inventory()
+    allowed_ids = {item["id"] for item in inventory}
+    if test_id not in allowed_ids:
+        return f"Unknown test id: {test_id}"
+
+    if test_id == "__e2e_full_real_user__":
+        steps = [
+            ("Auth Login", ["python", "tools/e2e_auth_login.py", "--browser", "chrome", "--human", "--slow-ms", "140"]),
+            ("Create Shop + Add Product", ["python", "tools/e2e_create_shop.py", "--browser", "chrome", "--human", "--slow-ms", "140"]),
+        ]
+
+        combined_output: list[str] = []
+        for step_name, cmd in steps:
+            result = subprocess.run(
+                cmd,
+                cwd=str(ROOT),
+                text=True,
+                capture_output=True,
+                timeout=360,
+                check=False,
+            )
+            out = (result.stdout or "").strip()
+            err = (result.stderr or "").strip()
+            if err:
+                out = f"{out}\n{err}".strip()
+
+            combined_output.append(f"=== {step_name} ===")
+            combined_output.append(out if out else "(no output)")
+            combined_output.append("")
+
+            if result.returncode != 0:
+                combined_output.append(f"Stopped: step '{step_name}' failed with code {result.returncode}.")
+                break
+
+        return "\n".join(combined_output).strip()
+
+    tmp_dir = ROOT / "storage" / "framework" / "testing" / "tmp"
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    cmd = [get_php_cli(), "-d", f"sys_temp_dir={tmp_dir}", "artisan", "test"]
+    if test_id != "__all__":
+        cmd.append(test_id)
+
+    env = os.environ.copy()
+    env["TMP"] = str(tmp_dir)
+    env["TEMP"] = str(tmp_dir)
+    env["SYMFONY_PROCESS_TEMP_DIR"] = str(tmp_dir)
+
+    result = subprocess.run(
+        cmd,
+        cwd=str(ROOT),
+        text=True,
+        capture_output=True,
+        timeout=180,
+        check=False,
+        env=env,
+    )
+
+    output = (result.stdout or "").strip()
+    err = (result.stderr or "").strip()
+    if err:
+        output = f"{output}\n{err}".strip()
+
+    if not output:
+        output = "(no output)"
+
+    return output
 
 
 def run_shortcut(action: str, email: str | None = None, password: str | None = None) -> str:
@@ -379,12 +563,46 @@ def run_shortcut(action: str, email: str | None = None, password: str | None = N
         if password:
             cmd.extend(["-Password", password])
 
+    detached_actions = {
+        "e2e-auth-login-real-user",
+        "e2e-create-shop-real-user",
+        "e2e-full-real-user",
+    }
+    if action in detached_actions:
+        creationflags = 0
+        if hasattr(subprocess, "CREATE_NEW_PROCESS_GROUP"):
+            creationflags |= subprocess.CREATE_NEW_PROCESS_GROUP
+        if hasattr(subprocess, "DETACHED_PROCESS"):
+            creationflags |= subprocess.DETACHED_PROCESS
+        subprocess.Popen(
+            cmd,
+            cwd=str(ROOT),
+            text=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            creationflags=creationflags,
+        )
+        return (
+            f"Started in background: {action}\n"
+            "Chrome останется открытым после сценария. Можно продолжать вручную."
+        )
+
+    timeout = 45
+    if action in {
+        "test-shop-create",
+        "e2e-auth-login",
+        "e2e-auth-login-chrome",
+        "e2e-create-shop",
+        "e2e-create-shop-chrome",
+    }:
+        timeout = 300
+
     result = subprocess.run(
         cmd,
         cwd=str(ROOT),
         text=True,
         capture_output=True,
-        timeout=45,
+        timeout=timeout,
         check=False,
     )
 
@@ -456,7 +674,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error(404, "Not found")
             return
 
-        data = HTML.encode("utf-8")
+        data = render_html()
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(data)))
@@ -465,7 +683,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
-        if parsed.path not in {"/api/run", "/api/http"}:
+        if parsed.path not in {"/api/run", "/api/http", "/api/test-run"}:
             self.send_error(404, "Not found")
             return
 
@@ -483,7 +701,23 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_json({"output": "Missing action"}, 400)
                 return
 
-            allowed = {"help", "open-project", "open-browser", "open-login", "api-login", "db-ping"}
+            allowed = {
+                "help",
+                "open-project",
+                "open-browser",
+                "open-login",
+                "api-login",
+                "db-ping",
+                "telegram-pin-dev",
+                "test-shop-create",
+                "e2e-auth-login",
+                "e2e-auth-login-chrome",
+                "e2e-auth-login-real-user",
+                "e2e-create-shop",
+                "e2e-create-shop-chrome",
+                "e2e-create-shop-real-user",
+                "e2e-full-real-user",
+            }
             if action not in allowed:
                 self._send_json({"output": f"Action is not allowed: {action}"}, 400)
                 return
@@ -512,6 +746,25 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_json({"output": output})
             except subprocess.TimeoutExpired:
                 self._send_json({"output": f"Command timeout: {action}"}, 504)
+            except Exception as exc:  # noqa: BLE001
+                self._send_json({"output": f"Error: {exc}"}, 500)
+            return
+
+        if parsed.path == "/api/test-run":
+            test_id = str(body.get("test_id", "")).strip()
+            if not test_id:
+                self._send_json({"output": "Missing test_id"}, 400)
+                return
+            allowed_ids = {item["id"] for item in get_test_inventory()}
+            if test_id not in allowed_ids:
+                self._send_json({"output": f"Unknown test_id: {test_id}"}, 400)
+                return
+
+            try:
+                output = run_test_command(test_id=test_id)
+                self._send_json({"output": output})
+            except subprocess.TimeoutExpired:
+                self._send_json({"output": f"Command timeout: {test_id}"}, 504)
             except Exception as exc:  # noqa: BLE001
                 self._send_json({"output": f"Error: {exc}"}, 500)
             return

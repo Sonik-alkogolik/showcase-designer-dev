@@ -89,6 +89,11 @@
         <p class="telegram-username">
           @{{ user.telegram_username }}
         </p>
+
+        <div v-if="user.telegram_id" class="telegram-chat-id">
+          <span>chat_id: <code>{{ user.telegram_id }}</code></span>
+          <button class="btn-copy" @click="copyTelegramId">Копировать chat_id</button>
+        </div>
         
         <button 
           @click="unlinkTelegram" 
@@ -111,6 +116,22 @@ const generatingToken = ref(false)
 const unlinking = ref(false)
 const botLink = ref(null)
 const tokenExpiry = ref(0)
+
+const copyTelegramId = async () => {
+  const chatId = user.value?.telegram_id
+  if (!chatId) {
+    alert('chat_id не найден')
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(String(chatId))
+    alert('chat_id скопирован')
+  } catch (error) {
+    console.error('Ошибка копирования chat_id:', error)
+    alert(`Скопируй вручную: ${chatId}`)
+  }
+}
 
 // Вычисляем оставшееся время
 const tokenExpiryMinutes = computed(() => {
@@ -327,6 +348,33 @@ h1 {
   color: #0088cc;
   margin-bottom: 1.5rem;
   font-weight: 600;
+}
+
+.telegram-chat-id {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin: 0 0 1.5rem;
+  color: #334155;
+}
+
+.telegram-chat-id code {
+  font-size: 0.95rem;
+}
+
+.btn-copy {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  border-radius: 6px;
+  padding: 0.45rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.btn-copy:hover {
+  background: #f1f5f9;
 }
 
 .btn-danger {

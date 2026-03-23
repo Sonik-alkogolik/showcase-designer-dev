@@ -127,6 +127,7 @@ export const useAuth = () => {
       // Обновляем данные пользователя
       if (user.value) {
         user.value.telegram_linked = false;
+        user.value.telegram_id = null;
         user.value.telegram_username = null;
         user.value.telegram_linked_at = null;
       }

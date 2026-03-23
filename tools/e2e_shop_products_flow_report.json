@@ -1,0 +1,44 @@
+{
+  "base_url": "http://127.0.0.1:8000",
+  "shop_id": "2",
+  "target_url": "http://127.0.0.1:8000/shops/2/products",
+  "final_url": "http://127.0.0.1:8000/shops/2/products",
+  "token_present": true,
+  "redirected_to_login": false,
+  "has_products_header": true,
+  "limits_info": "Использовано: 3 из 1000 товаров",
+  "category_name": "UI E2E Cat 20260321-130658",
+  "category_created": true,
+  "product_name": "UI E2E Product 20260321-130658",
+  "product_created": true,
+  "product_has_category": true,
+  "product_error": "",
+  "dialogs": [],
+  "captured_requests": [
+    {
+      "url": "http://127.0.0.1:8000/api/shops/2/products?search=&category=",
+      "status": 200,
+      "method": "GET",
+      "body_preview": "{\"success\":true,\"products\":{\"current_page\":1,\"data\":[{\"id\":101,\"shop_id\":2,\"category_id\":18,\"name\":\"UI E2E Product 20260321-130323\",\"price\":\"777.00\",\"description\":\"\\u041f\\u0440\\u043e\\u0432\\u0435\\u0440\\u043a\\u0430 \\u0440\\u0443\\u0447\\u043d\\u043e\\u0433\\u043e UI \\u043f\\u043e\\u0442\\u043e\\u043a\\u0430\",\"category\":{\"id\":18,\"shop_id\":2,\"name\":\"UI E2E Cat 20"
+    },
+    {
+      "url": "http://127.0.0.1:8000/api/shops/2/categories",
+      "status": 201,
+      "method": "POST",
+      "body_preview": "{\"success\":true,\"message\":\"\\u041a\\u0430\\u0442\\u0435\\u0433\\u043e\\u0440\\u0438\\u044f \\u0443\\u0441\\u043f\\u0435\\u0448\\u043d\\u043e \\u0441\\u043e\\u0437\\u0434\\u0430\\u043d\\u0430\",\"category\":{\"name\":\"UI E2E Cat 20260321-130658\",\"slug\":\"ui-e2e-cat-20260321-130658\",\"description\":null,\"sort_order\":0,\"is_active\":true,\"shop_id\":2,\"updated_at\":\"2026-03-21T10:07:08."
+    },
+    {
+      "url": "http://127.0.0.1:8000/api/shops/2/products",
+      "status": 201,
+      "method": "POST",
+      "body_preview": "{\"success\":true,\"message\":\"\\u0422\\u043e\\u0432\\u0430\\u0440 \\u0443\\u0441\\u043f\\u0435\\u0448\\u043d\\u043e \\u0441\\u043e\\u0437\\u0434\\u0430\\u043d\",\"product\":{\"name\":\"UI E2E Product 20260321-130658\",\"price\":\"777.00\",\"description\":\"\\u041f\\u0440\\u043e\\u0432\\u0435\\u0440\\u043a\\u0430 \\u0440\\u0443\\u0447\\u043d\\u043e\\u0433\\u043e UI \\u043f\\u043e\\u0442\\u043e\\u043a\\u0"
+    },
+    {
+      "url": "http://127.0.0.1:8000/api/shops/2/products?search=&category=",
+      "status": 200,
+      "method": "GET",
+      "body_preview": "{\"success\":true,\"products\":{\"current_page\":1,\"data\":[{\"id\":102,\"shop_id\":2,\"category_id\":19,\"name\":\"UI E2E Product 20260321-130658\",\"price\":\"777.00\",\"description\":\"\\u041f\\u0440\\u043e\\u0432\\u0435\\u0440\\u043a\\u0430 \\u0440\\u0443\\u0447\\u043d\\u043e\\u0433\\u043e UI \\u043f\\u043e\\u0442\\u043e\\u043a\\u0430\",\"category\":{\"id\":19,\"shop_id\":2,\"name\":\"UI E2E Cat 20"
+    }
+  ],
+  "screenshot": "tools\\e2e_shop_products_flow.png"
+}

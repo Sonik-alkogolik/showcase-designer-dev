@@ -13,6 +13,14 @@
             Товары
           </router-link>
           <button @click="editShop(shop)" class="btn-edit">✏️</button>
+          <button
+            @click="deleteShop(shop)"
+            class="btn-delete"
+            :disabled="deletingShopId === shop.id"
+            :title="deletingShopId === shop.id ? 'Удаление...' : 'Удалить магазин'"
+          >
+            {{ deletingShopId === shop.id ? '...' : '🗑️' }}
+          </button>
         </div>
       </div>
     </div>
@@ -32,6 +40,7 @@ export default {
   name: 'ShopsView',
   setup() {
     const shops = ref([])
+    const deletingShopId = ref(null)
 
     const loadShops = async () => {
       try {
@@ -47,11 +56,28 @@ export default {
       console.log('Edit shop:', shop)
     }
 
+    const deleteShop = async (shop) => {
+      if (!confirm(`Удалить магазин "${shop.name}"?`)) return
+
+      try {
+        deletingShopId.value = shop.id
+        await axios.delete(`/api/shops/${shop.id}`)
+        shops.value = shops.value.filter(item => item.id !== shop.id)
+      } catch (error) {
+        console.error('Ошибка удаления магазина:', error)
+        alert(error?.response?.data?.message || 'Не удалось удалить магазин')
+      } finally {
+        deletingShopId.value = null
+      }
+    }
+
     onMounted(loadShops)
 
     return {
       shops,
-      editShop
+      deletingShopId,
+      editShop,
+      deleteShop
     }
   }
 }
@@ -113,6 +139,20 @@ h1 {
   padding: 0.5rem 1rem;
   border-radius: 4px;
   cursor: pointer;
+}
+
+.btn-delete {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-delete:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .empty-state {

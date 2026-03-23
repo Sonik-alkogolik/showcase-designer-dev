@@ -21,6 +21,7 @@ class ProfileController extends Controller
             'name' => $user->name,
             'email' => $user->email,
             'telegram_linked' => $user->isTelegramLinked(),
+            'telegram_id' => $user->telegram_id,
             'telegram_username' => $user->telegram_username,
             'telegram_linked_at' => $user->telegram_linked_at,
         ]);
