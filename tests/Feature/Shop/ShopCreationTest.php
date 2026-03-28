@@ -37,6 +37,8 @@ class ShopCreationTest extends TestCase
             'delivery_name' => 'Курьер',
             'delivery_price' => 199,
             'notification_chat_id' => '123456789',
+            'notification_username' => '@shopowner',
+            'webhook_url' => 'https://example.com/webhook/order',
         ];
 
         $response = $this->postJson('/api/shops', $payload);
@@ -57,6 +59,8 @@ class ShopCreationTest extends TestCase
             'name' => 'Тестовый магазин',
             'delivery_name' => 'Курьер',
             'notification_chat_id' => '123456789',
+            'notification_username' => '@shopowner',
+            'webhook_url' => 'https://example.com/webhook/order',
         ]);
     }
 }

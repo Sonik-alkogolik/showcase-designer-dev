@@ -34,11 +34,13 @@
 
 <script>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import axios from 'axios'
 
 export default {
   name: 'ShopsView',
   setup() {
+    const router = useRouter()
     const shops = ref([])
     const deletingShopId = ref(null)
 
@@ -52,8 +54,7 @@ export default {
     }
 
     const editShop = (shop) => {
-      // TODO: реализовать редактирование
-      console.log('Edit shop:', shop)
+      router.push(`/shops/${shop.id}/settings`)
     }
 
     const deleteShop = async (shop) => {

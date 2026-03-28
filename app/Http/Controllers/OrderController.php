@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\Product;
 use App\Models\Shop;
+use App\Services\OrderNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -13,6 +15,16 @@ use YooKassa\Client;
 
 class OrderController extends Controller
 {
+    public function __construct(
+        private readonly OrderNotificationService $orderNotificationService
+    ) {
+    }
+
+    private function hasYookassaCredentials(): bool
+    {
+        return filled(config('services.yookassa.shop_id')) && filled(config('services.yookassa.secret_key'));
+    }
+
     private function yookassaClient(): Client
     {
         $shopId = config('services.yookassa.shop_id');
@@ -56,10 +68,9 @@ class OrderController extends Controller
             'customer_name' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
             'items' => 'required|array|min:1',
-            'items.*.id' => 'required|integer|exists:products,id',
-            'items.*.name' => 'required|string',
-            'items.*.price' => 'required|numeric|min:0',
+            'items.*.id' => 'required|integer',
             'items.*.quantity' => 'required|integer|min:1',
+            'create_payment' => 'sometimes|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -69,26 +80,98 @@ class OrderController extends Controller
             ], 422);
         }
 
-        $shop = Shop::findOrFail($request->shop_id);
-        
-        // Рассчитываем общую сумму
-        $subtotal = 0;
-        foreach ($request->items as $item) {
-            $subtotal += $item['price'] * $item['quantity'];
+        $shop = Shop::findOrFail((int) $request->shop_id);
+        $itemsPayload = collect($request->input('items', []));
+        $productIds = $itemsPayload->pluck('id')->map(fn ($id) => (int) $id)->unique()->values();
+
+        $products = Product::query()
+            ->where('shop_id', $shop->id)
+            ->whereIn('id', $productIds)
+            ->get()
+            ->keyBy('id');
+
+        if ($products->count() !== $productIds->count()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Некоторые товары не принадлежат этому магазину или не найдены.',
+                'errors' => ['items' => ['Некорректный состав корзины.']],
+            ], 422);
         }
-        
-        $total = $subtotal + $shop->delivery_price;
+
+        $subtotal = 0.0;
+        $normalizedItems = [];
+        foreach ($itemsPayload as $item) {
+            $productId = (int) ($item['id'] ?? 0);
+            $quantity = (int) ($item['quantity'] ?? 0);
+            $product = $products->get($productId);
+
+            if (! $product || $quantity < 1) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Некорректный состав корзины.',
+                    'errors' => ['items' => ['Некорректный состав корзины.']],
+                ], 422);
+            }
+
+            if (! $product->in_stock) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Товар \"{$product->name}\" недоступен.",
+                    'errors' => ['items' => ["Товар \"{$product->name}\" отсутствует в наличии."]],
+                ], 422);
+            }
+
+            $price = (float) $product->price;
+            $lineTotal = $price * $quantity;
+            $subtotal += $lineTotal;
+
+            $normalizedItems[] = [
+                'id' => $product->id,
+                'name' => $product->name,
+                'price' => $price,
+                'quantity' => $quantity,
+                'line_total' => round($lineTotal, 2),
+            ];
+        }
+
+        $deliveryPrice = (float) $shop->delivery_price;
+        $total = round($subtotal + $deliveryPrice, 2);
+        $wantsPayment = (bool) $request->boolean('create_payment', false);
 
         $order = Order::create([
-            'shop_id' => $request->shop_id,
+            'shop_id' => $shop->id,
             'customer_name' => $request->customer_name,
             'phone' => $request->phone,
-            'total' => $subtotal,
+            'total' => round($subtotal, 2),
             'delivery_name' => $shop->delivery_name,
-            'delivery_price' => $shop->delivery_price,
+            'delivery_price' => $deliveryPrice,
             'status' => 'pending',
-            'items' => $request->items,
+            'items' => $normalizedItems,
         ]);
+        $this->orderNotificationService->notifyOrderCreated($order->fresh('shop'));
+
+        if (! $wantsPayment) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Черновик заказа создан',
+                'order' => $order->fresh(),
+                'payment_id' => null,
+                'confirmation_url' => null,
+                'amounts' => [
+                    'subtotal' => round($subtotal, 2),
+                    'delivery' => round($deliveryPrice, 2),
+                    'total' => $total,
+                ],
+            ], 201);
+        }
+
+        if (! $this->hasYookassaCredentials()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'ЮKassa не настроена для этого окружения.',
+                'errors' => ['create_payment' => ['Невозможно создать платёж без ключей ЮKassa.']],
+            ], 422);
+        }
 
         try {
             $client = $this->yookassaClient();
@@ -97,7 +180,7 @@ class OrderController extends Controller
             $payment = $client->createPayment(
                 [
                     'amount' => [
-                        'value' => number_format((float) $total, 2, '.', ''),
+                        'value' => number_format($total, 2, '.', ''),
                         'currency' => 'RUB',
                     ],
                     'payment_method_data' => [
@@ -127,6 +210,11 @@ class OrderController extends Controller
                 'order' => $order->fresh(),
                 'payment_id' => $payment?->getId(),
                 'confirmation_url' => $payment?->getConfirmation()?->getConfirmationUrl(),
+                'amounts' => [
+                    'subtotal' => round($subtotal, 2),
+                    'delivery' => round($deliveryPrice, 2),
+                    'total' => $total,
+                ],
             ], 201);
         } catch (\Throwable $e) {
             Log::error('Failed to create YooKassa payment', [
@@ -215,8 +303,9 @@ class OrderController extends Controller
     {
         $event = (string) $request->input('event');
         $paymentId = (string) $request->input('object.id');
+        $incomingStatus = (string) $request->input('object.status');
 
-        if ($event !== 'payment.succeeded' || blank($paymentId)) {
+        if (! in_array($event, ['payment.succeeded', 'payment.canceled'], true) || blank($paymentId)) {
             return response()->json(['ok' => true]);
         }
 
@@ -233,9 +322,26 @@ class OrderController extends Controller
         try {
             $client = $this->yookassaClient();
             $paymentInfo = $client->getPaymentInfo($paymentId);
+            $providerStatus = (string) ($paymentInfo?->getStatus() ?? '');
 
-            if ($paymentInfo?->getStatus() === 'succeeded') {
+            // Подтверждаем статус платежа через API провайдера, не только по payload вебхука.
+            if ($incomingStatus !== '' && $providerStatus !== '' && $incomingStatus !== $providerStatus) {
+                Log::warning('YooKassa webhook status mismatch', [
+                    'payment_id' => $paymentId,
+                    'order_id' => $order->id,
+                    'incoming_status' => $incomingStatus,
+                    'provider_status' => $providerStatus,
+                ]);
+            }
+
+            if ($providerStatus === 'succeeded') {
+                $wasPaid = $order->isPaid();
                 $order->markAsPaid($paymentId);
+                if (! $wasPaid) {
+                    $this->orderNotificationService->notifyOrderPaid($order->fresh('shop'));
+                }
+            } elseif ($providerStatus === 'canceled') {
+                $order->cancel();
             }
         } catch (\Throwable $e) {
             Log::error('YooKassa webhook processing failed', [

@@ -32,6 +32,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--human", action="store_true", help="Simulate real user behavior")
     parser.add_argument("--slow-ms", type=int, default=120, help="Slow motion delay for browser actions")
     parser.add_argument(
+        "--keep-open",
+        action="store_true",
+        help="Keep browser open after test finishes (for manual follow-up)",
+    )
+    parser.add_argument(
         "--screenshot",
         default="tools/e2e_shop_products_flow.png",
         help="Screenshot output path",
@@ -222,6 +227,15 @@ def main() -> int:
         report_path = Path(args.report_json)
         report_path.parent.mkdir(parents=True, exist_ok=True)
         report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+        if args.keep_open:
+            print("KEEP_OPEN: true")
+            print("Browser remains open for manual inspection. Press Ctrl+C in this terminal to stop script.")
+            try:
+                while True:
+                    sleep(1.0)
+            except KeyboardInterrupt:
+                pass
+
         browser.close()
 
     print(f"TARGET_URL: {target_url}")

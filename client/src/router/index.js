@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import CreateShopView from '../views/CreateShopView.vue';
+import ShopSettingsView from '../views/ShopSettingsView.vue';
 import LoginView from '../views/LoginView.vue';
 import RegisterView from '../views/RegisterView.vue';
 import ProfileView from '../views/ProfileView.vue';
@@ -21,10 +22,16 @@ const routes = [
     component: CreateShopView,
     meta: { requiresAuth: true }
   },
-    {
+  {
     path: '/shops',
     name: 'Shops',
     component: () => import('../views/ShopsView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/shops/:shopId/settings',
+    name: 'ShopSettings',
+    component: ShopSettingsView,
     meta: { requiresAuth: true }
   },
   {

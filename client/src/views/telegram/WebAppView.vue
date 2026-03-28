@@ -138,6 +138,20 @@
           >
         </div>
 
+        <div class="form-group">
+          <label>Способ доставки</label>
+          <input
+            type="text"
+            :value="`${shop?.delivery_name || 'Доставка'} (${Number(shop?.delivery_price || 0)} ₽)`"
+            readonly
+          >
+        </div>
+
+        <label class="pay-toggle">
+          <input type="checkbox" v-model="payOnline">
+          <span>Оплатить онлайн (ЮKassa)</span>
+        </label>
+
         <div class="order-summary">
           <h3>Ваш заказ</h3>
           <div v-for="item in cartItems" :key="item.id" class="summary-item">
@@ -149,20 +163,33 @@
             <span>{{ shop.delivery_price }} ₽</span>
           </div>
           <div class="summary-total grand-total">
-            <span>Итого к оплате:</span>
+            <span>Итого заказа:</span>
             <span>{{ cartTotal }} ₽</span>
           </div>
         </div>
 
         <button type="submit" class="submit-order" :disabled="orderLoading">
-          {{ orderLoading ? 'Обработка...' : 'Оплатить ' + cartTotal + ' ₽' }}
+          {{ orderLoading ? 'Сохраняем...' : 'Подтвердить заказ' }}
         </button>
       </form>
+
+      <p v-if="orderError" class="order-error">{{ orderError }}</p>
 
       <!-- Сообщение об успехе -->
       <div v-if="orderSuccess" class="success-message">
         <h3>✅ Заказ оформлен!</h3>
-        <p>Номер заказа: {{ orderNumber }}</p>
+        <p>Заказ №{{ orderNumber }} создан.</p>
+        <p v-if="paymentStatus === 'pending'">Статус оплаты: ожидается</p>
+        <p v-else-if="paymentStatus === 'paid'">Статус оплаты: оплачено</p>
+        <p v-else-if="paymentStatus === 'cancelled'">Статус оплаты: отменено</p>
+        <p v-else>Сохранён как черновик (без онлайн-оплаты).</p>
+        <button
+          v-if="paymentStatus === 'pending' && confirmationUrl"
+          class="continue-shopping"
+          @click="openPaymentLink"
+        >
+          Открыть оплату снова
+        </button>
         <button class="continue-shopping" @click="resetOrder">Вернуться в магазин</button>
       </div>
     </div>
@@ -179,7 +206,7 @@
 </template>
 
 <script>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 import debounce from 'lodash/debounce'
@@ -235,6 +262,12 @@ export default {
     const orderLoading = ref(false)
     const orderSuccess = ref(false)
     const orderNumber = ref(null)
+    const orderError = ref('')
+    const payOnline = ref(true)
+    const paymentStatus = ref('')
+    const paymentId = ref(null)
+    const confirmationUrl = ref('')
+    const paymentPollerId = ref(null)
 
     const cartItems = computed(() => {
       return Object.values(cart.value)
@@ -281,6 +314,13 @@ export default {
         await Promise.all([loadShop(), loadProducts()])
       } finally {
         loading.value = false
+      }
+    })
+
+    onUnmounted(() => {
+      if (paymentPollerId.value) {
+        clearInterval(paymentPollerId.value)
+        paymentPollerId.value = null
       }
     })
 
@@ -366,6 +406,70 @@ export default {
       currentView.value = 'checkout'
     }
 
+    const openPaymentLink = () => {
+      if (!confirmationUrl.value) {
+        return
+      }
+
+      if (window.Telegram?.WebApp?.openInvoice) {
+        window.Telegram.WebApp.openInvoice(confirmationUrl.value)
+      } else if (window.Telegram?.WebApp?.openLink) {
+        window.Telegram.WebApp.openLink(confirmationUrl.value)
+      } else {
+        window.open(confirmationUrl.value, '_blank')
+      }
+    }
+
+    const startPaymentStatusPolling = (targetPaymentId) => {
+      if (!targetPaymentId) {
+        return
+      }
+
+      if (paymentPollerId.value) {
+        clearInterval(paymentPollerId.value)
+      }
+
+      let attempts = 0
+      paymentPollerId.value = setInterval(async () => {
+        attempts += 1
+
+        try {
+          const { data } = await axios.get(`/api/orders/payment/${targetPaymentId}`)
+          if (data?.success && data?.status) {
+            paymentStatus.value = data.status
+          }
+
+          if (paymentStatus.value === 'paid' || paymentStatus.value === 'cancelled') {
+            clearInterval(paymentPollerId.value)
+            paymentPollerId.value = null
+          }
+        } catch (pollError) {
+          console.error('Ошибка проверки статуса оплаты:', pollError)
+        }
+
+        if (attempts >= 40) {
+          clearInterval(paymentPollerId.value)
+          paymentPollerId.value = null
+        }
+      }, 3000)
+    }
+
+    const handleOrderSuccess = (data) => {
+      orderNumber.value = data?.order?.id || null
+      orderSuccess.value = true
+      paymentId.value = data?.payment_id || null
+      confirmationUrl.value = data?.confirmation_url || ''
+      paymentStatus.value = paymentId.value ? 'pending' : 'draft'
+
+      cart.value = {}
+      localStorage.removeItem(cartStorageKey.value)
+
+      if (confirmationUrl.value && paymentId.value) {
+        openPaymentLink()
+        startPaymentStatusPolling(paymentId.value)
+      }
+    }
+
     const submitOrder = async () => {
       if (!orderForm.name || !orderForm.phone) {
         if (window.Telegram?.WebApp) {
@@ -375,44 +479,66 @@ export default {
       }
 
       orderLoading.value = true
+      orderError.value = ''
 
       try {
-        const response = await axios.post('/api/orders', {
+        const payload = {
           shop_id: parseInt(shopId),
           customer_name: orderForm.name,
           phone: orderForm.phone,
           items: cartItems.value.map(item => ({
             id: item.id,
-            name: item.name,
-            price: item.price,
             quantity: item.quantity
-          }))
-        })
+          })),
+          create_payment: payOnline.value
+        }
+
+        const response = await axios.post('/api/orders', payload)
 
         if (response.data.success) {
-          orderNumber.value = response.data.order.id
-          orderSuccess.value = true
-          
-          // Очищаем корзину
-          cart.value = {}
-          localStorage.removeItem(cartStorageKey.value)
-          
-          const confirmationUrl = response.data.confirmation_url
+          handleOrderSuccess(response.data)
 
-          if (confirmationUrl) {
-            if (window.Telegram?.WebApp?.openInvoice) {
-              window.Telegram.WebApp.openInvoice(confirmationUrl)
-            } else if (window.Telegram?.WebApp?.openLink) {
-              window.Telegram.WebApp.openLink(confirmationUrl)
-            } else {
-              window.open(confirmationUrl, '_blank')
-            }
+          if (window.Telegram?.WebApp) {
+            const message = payOnline.value && response.data.confirmation_url
+              ? `Заказ #${orderNumber.value} создан. Откройте оплату.`
+              : `Заказ #${orderNumber.value} сохранён`
+            window.Telegram.WebApp.showAlert(message)
           }
         }
       } catch (error) {
         console.error('Ошибка при создании заказа:', error)
+
+        const paymentUnavailable = payOnline.value && Boolean(error?.response?.data?.errors?.create_payment)
+
+        if (paymentUnavailable) {
+          try {
+            const fallbackResponse = await axios.post('/api/orders', {
+              shop_id: parseInt(shopId),
+              customer_name: orderForm.name,
+              phone: orderForm.phone,
+              items: cartItems.value.map(item => ({
+                id: item.id,
+                quantity: item.quantity
+              })),
+              create_payment: false
+            })
+
+            if (fallbackResponse.data?.success) {
+              handleOrderSuccess(fallbackResponse.data)
+              orderError.value = 'Онлайн-оплата сейчас недоступна. Заказ сохранён как черновик.'
+              if (window.Telegram?.WebApp) {
+                window.Telegram.WebApp.showAlert(orderError.value)
+              }
+              return
+            }
+          } catch (fallbackError) {
+            console.error('Ошибка fallback-создания черновика:', fallbackError)
+          }
+        }
+
+        orderError.value = error?.response?.data?.message || 'Ошибка при создании заказа'
         if (window.Telegram?.WebApp) {
-          window.Telegram.WebApp.showAlert('Ошибка при создании заказа')
+          window.Telegram.WebApp.showAlert(orderError.value)
         }
       } finally {
         orderLoading.value = false
@@ -422,6 +548,15 @@ export default {
     const resetOrder = () => {
       orderSuccess.value = false
       orderNumber.value = null
+      paymentStatus.value = ''
+      paymentId.value = null
+      confirmationUrl.value = ''
+      orderError.value = ''
+      payOnline.value = true
+      if (paymentPollerId.value) {
+        clearInterval(paymentPollerId.value)
+        paymentPollerId.value = null
+      }
       orderForm.name = ''
       orderForm.phone = ''
       currentView.value = 'catalog'
@@ -444,6 +579,10 @@ export default {
       orderLoading,
       orderSuccess,
       orderNumber,
+      orderError,
+      payOnline,
+      paymentStatus,
+      confirmationUrl,
       loadProducts,
       debouncedSearch,
       addToCart,
@@ -451,6 +590,7 @@ export default {
       removeFromCart,
       goToCart,
       goToCheckout,
+      openPaymentLink,
       submitOrder,
       resetOrder
     }
@@ -533,6 +673,28 @@ export default {
 
 .error {
   color: #ffd7dc;
+}
+
+.order-error {
+  margin-top: 0.85rem;
+  color: #ffb2bd;
+  background: rgba(255, 115, 131, 0.12);
+  border: 1px solid rgba(255, 115, 131, 0.4);
+  border-radius: 10px;
+  padding: 0.7rem 0.8rem;
+}
+
+.pay-toggle {
+  margin-bottom: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--ink-0);
+  font-size: 0.92rem;
+}
+
+.pay-toggle input {
+  accent-color: var(--accent);
 }
 
 .content {

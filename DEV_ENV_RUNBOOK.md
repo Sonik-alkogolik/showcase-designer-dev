@@ -12,6 +12,8 @@ Set-Location C:\Users\admin\Desktop\myproject\showcase-designer
 .\scripts\dev-shortcuts.ps1 tunnel-up
 # затем:
 .\scripts\dev-shortcuts.ps1 telegram-pin-current-tunnel -ShopId "2"
+# smoke checkout/payment (в новом окне):
+.\scripts\dev-shortcuts.ps1 smoke-checkout-payment -ShopId "2"
 ```
 
 ## 1) Откройте проект
@@ -83,6 +85,9 @@ Set-Location C:\Users\admin\Desktop\myproject\showcase-designer
 ```powershell
 curl.exe -s "http://127.0.0.1:8000/api/shops/2/products/public"
 curl.exe -s "http://127.0.0.1:8000/api/shops/2/public"
+.\\scripts\\dev-shortcuts.ps1 smoke-checkout-payment -ShopId "2"
+# с проверкой публичного app URL
+.\\scripts\\dev-shortcuts.ps1 smoke-checkout-payment -PublicUrl "https://xxxx.loca.lt" -ShopId "2"
 ```
 
 ## Частые проблемы

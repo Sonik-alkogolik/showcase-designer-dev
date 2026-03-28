@@ -44,8 +44,10 @@ class ShopController extends Controller
             'name' => 'required|string|max:255',
             'bot_token' => 'nullable|string',
             'notification_chat_id' => 'nullable|string|max:255',
+            'notification_username' => ['nullable', 'string', 'max:255', 'regex:/^@?[A-Za-z0-9_]{5,}$/'],
             'delivery_name' => 'required|string|max:255',
             'delivery_price' => 'required|numeric|min:0',
+            'webhook_url' => 'nullable|url|max:2048',
         ]);
 
         if ($validator->fails()) {
@@ -72,8 +74,10 @@ class ShopController extends Controller
             'name' => $request->name,
             'bot_token' => $request->bot_token,
             'notification_chat_id' => $request->notification_chat_id,
+            'notification_username' => $request->notification_username,
             'delivery_name' => $request->delivery_name,
             'delivery_price' => $request->delivery_price,
+            'webhook_url' => $request->webhook_url,
         ]);
 
         return response()->json([
@@ -114,8 +118,10 @@ class ShopController extends Controller
             'name' => 'sometimes|string|max:255',
             'bot_token' => 'nullable|string',
             'notification_chat_id' => 'nullable|string|max:255',
+            'notification_username' => ['nullable', 'string', 'max:255', 'regex:/^@?[A-Za-z0-9_]{5,}$/'],
             'delivery_name' => 'sometimes|string|max:255',
             'delivery_price' => 'sometimes|numeric|min:0',
+            'webhook_url' => 'nullable|url|max:2048',
         ]);
 
         if ($validator->fails()) {

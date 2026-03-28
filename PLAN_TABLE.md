@@ -3,7 +3,7 @@
 > Процесс фиксации: "где остановились" ведем в `CHAT_HANDOFF.md` (single source of truth).  
 > `PLAN_TABLE.md` — это стратегическая карта задач и статусов.
 
-## Сводка статуса на 2026-03-22
+## Сводка статуса на 2026-03-28
 
 ### Сделано
 
@@ -14,19 +14,29 @@
 - WebApp SPA (`/app`), базовый экран и каталог товаров.
 - Исправления категорий в backend/frontend для товаров + feature-тест `ProductCategoryResolutionTest` (3 passing).
 - UI магазинов: добавлено удаление магазина из списка с подтверждением и мгновенным обновлением.
+- Checkout/payment smoke вынесен в отдельный воспроизводимый сценарий:
+  - `tools/e2e_checkout_to_payment.py` (preflight local/public app URL, payment status polling, draft fallback),
+  - shortcut `.\scripts\dev-shortcuts.ps1 smoke-checkout-payment`.
+  - подтверждён локальный прогон (`shop_id=1`, `PAYMENT_E2E_OK: true`, draft fallback без ключей ЮKassa).
+- Уведомления по заказам и внешние webhook-и:
+  - добавлен `OrderNotificationService` (Telegram + `shop.webhook_url`),
+  - fallback по `notification_username` через `getUpdates`,
+  - новые поля магазина: `notification_username`, `webhook_url`,
+  - добавлен UI настроек магазина `/shops/:shopId/settings`.
 
 ### Не сделано
 
 - Валидация bot token через `getMe` (статус в таблице: в разработке).
-- Корзина, checkout и полный order flow.
+- Полный production-проход order flow (реальный платёж + подтверждение webhook на боевых событиях).
 - Интеграция ЮKassa и webhook-и оплаты.
-- Уведомления владельцу магазина (chat_id/username) и внешний webhook заказа.
+- Ручная валидация доставки уведомлений в Telegram и внешний webhook в реальном E2E.
 - Финальные блоки тестирования, cron, hardening API, документация и прод-старт MVP.
 
 ### Ближайший блокер
 
-- Telegram-бот открывает неактуальный домен WebApp, поэтому в реальном Telegram виден старый UI.
-- До синхронизации URL/билда проверка WebApp в Telegram невалидна.
+- На `127.0.0.1:8000` периодически поднимается чужой backend (`php` из другого проекта), из-за чего smoke и Telegram WebApp проверяют не тот сервис.
+- Публичные tunnel URL нестабильны (`503`, `no tunnel here`), поэтому нужен preflight перед каждым ручным прогоном.
+- В текущей среде MySQL доступен на `127.127.126.50`, тогда как часть dev-скриптов ожидает `127.127.126.26`.
 
 | Блок                         | Задача (промт)                                                                                                                               | Статус       |
 |------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|--------------|
@@ -61,11 +71,11 @@
 | Telegram и Web App           | Создай базовый Vue-компонент WebApp.vue. При загрузке — читает ?shop=id из URL, делает запрос к /api/shops/{id}/public и показывает название магазина. Подключи window.Telegram.WebApp.ready(). | ✅ Выполнено |
 | Telegram и Web App           | Реализуй каталог товаров: GET /api/shops/{shop}/products → возвращает список. Во Vue — отобрази карточки товаров (название, цена, кнопка «В корзину»). | ✅ Выполнено |
 | Telegram и Web App           | Создай клиентскую корзину (в localStorage): добавление, удаление, изменение количества. Не отправляй на сервер — пока только UI. <br><br>**Реализация:** `client/src/views/telegram/WebAppView.vue` — добавлены операции корзины (add/remove/update qty), хранение в `localStorage`, подсчет сумм, экран корзины и переход к checkout. Корзина изолирована по `shopId` (ключ `webapp_cart_shop_{shopId}`), чтобы товары разных магазинов не смешивались. | ✅ Выполнено |
-| Telegram и Web App           | Реализуй страницу оформления заказа во Vue: поля ФИО, телефон, выбор способа доставки (берётся из shop.delivery_name и shop.delivery_price). Кнопка «Оплатить». | ⏳ В разработке |
-| Telegram и Web App           | Создай модель Order: shop_id, customer_name, phone, total, delivery_name, delivery_price, status (pending/paid/cancelled), yookassa_payment_id. | ⏳ В разработке |
+| Telegram и Web App           | Реализуй страницу оформления заказа во Vue: поля ФИО, телефон, выбор способа доставки (берётся из shop.delivery_name и shop.delivery_price). Кнопка «Оплатить». <br><br>**Реализация:** в `client/src/views/telegram/WebAppView.vue` добавлена checkout-форма с полями ФИО/телефон, блоком доставки из `shop.delivery_*`, отправкой на `/api/orders` и экраном успеха после создания заказа. | ✅ Выполнено |
+| Telegram и Web App           | Создай модель Order: shop_id, customer_name, phone, total, delivery_name, delivery_price, status (pending/paid/cancelled), yookassa_payment_id. | ✅ Выполнено |
 | Платежи и уведомления        | Подключи SDK ЮKassa (yoomoney/yookassa-sdk-php). Создай конфиг: YOOKASSA_SHOP_ID, YOOKASSA_SECRET_KEY в .env. | ⏳ В разработке |
-| Платежи и уведомления        | Реализуй API-маршрут /api/orders (POST): создаёт черновик заказа, затем создаёт платёж в ЮKassa (метод оплаты — bank_card). Верни confirmation_url клиенту. | ⏳ В разработке |
-| Платежи и уведомления        | Во Vue: после получения confirmation_url — вызови Telegram.WebApp.openInvoice(url) (или openLink, если инвойс не поддерживается). После возврата — обнови статус заказа. | ⏳ В разработке |
+| Платежи и уведомления        | Реализуй API-маршрут /api/orders (POST): создаёт черновик заказа, затем создаёт платёж в ЮKassa (метод оплаты — bank_card). Верни confirmation_url клиенту. <br><br>**Фактическая реализация на сейчас:** черновик заказа создаётся и валидируется (состав корзины/цены считаются на сервере), платёжная часть работает в опциональном режиме (`create_payment=true`) и требует настроенные ключи ЮKassa. | ⏳ В разработке |
+| Платежи и уведомления        | Во Vue: после получения confirmation_url — вызови Telegram.WebApp.openInvoice(url) (или openLink, если инвойс не поддерживается). После возврата — обнови статус заказа. <br><br>**Фактическая реализация на сейчас:** во `WebAppView.vue` добавлен запуск `openInvoice/openLink`, polling статуса через `/api/orders/payment/{paymentId}` и fallback в черновик при недоступной ЮKassa. Для полного закрытия пункта нужен реальный прогон с валидными ключами ЮKassa. | ⏳ В разработке |
 | Платежи и уведомления        | Настрой маршрут /webhooks/yookassa (POST). Подтверди подпись, обнови статус заказа на paid, если событие payment.succeeded. | ⏳ В разработке |
 | Платежи и уведомления        | Реализуй отправку уведомления владельцу магазина: если в настройках магазина указан notification_chat_id — отправь сообщение через Telegram Bot API (sendMessage). Текст: «Новый заказ №{id} от {ФИО}, сумма: {total} ₽». | ⏳ В разработке |
 | Платежи и уведомления        | Добавь альтернативу: если указан notification_username (например, @dimaivanov) — отправь личное сообщение. Используй getUpdates → message.from.id для получения ID (или предварительно сохраняй его при первом взаимодействии). | ⏳ В разработке |

@@ -51,6 +51,7 @@ Available actions:
   e2e-full-real-user - run full browser suite: login + create shop + add product (human-like visible Chrome)
   telegram-pin-dev - pin Telegram dev bot to current APP_URL (set env + webhook + status)
   telegram-send-webapp-test - send test message with WebApp button to specific chat_id
+  smoke-checkout-payment - run API smoke for checkout/payment flow with optional public URL check
   start-ui      - start Python web UI for quick commands
 
 Examples:
@@ -75,6 +76,8 @@ Examples:
   .\scripts\dev-shortcuts.ps1 telegram-pin-dev
   .\scripts\dev-shortcuts.ps1 telegram-pin-dev -PublicUrl "https://showcase-dev-20260321.loca.lt" -ShopId "2"
   .\scripts\dev-shortcuts.ps1 telegram-send-webapp-test -ChatId "123456789" -ShopId "2"
+  .\scripts\dev-shortcuts.ps1 smoke-checkout-payment -ShopId "2"
+  .\scripts\dev-shortcuts.ps1 smoke-checkout-payment -PublicUrl "https://showcase-dev-20260321.loca.lt" -ShopId "2"
 "@
         break
     }
@@ -441,6 +444,24 @@ Examples:
         Write-Host ""
         Write-Host "WebApp URL:"
         Write-Host $webAppUrl
+        break
+    }
+
+    "smoke-checkout-payment" {
+        Set-Location $ProjectRoot
+
+        $cmd = @(
+            "tools/e2e_checkout_to_payment.py",
+            "--shop-id", $ShopId,
+            "--allow-draft-fallback",
+            "--no-open-browser"
+        )
+
+        if ($PublicUrl) {
+            $cmd += @("--public-url", $PublicUrl, "--check-public-app")
+        }
+
+        & python @cmd
         break
     }
 

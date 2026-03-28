@@ -92,6 +92,32 @@
         </small>
       </div>
 
+      <div class="form-group">
+        <label for="notification_username">Username для уведомлений (альтернатива chat_id)</label>
+        <input
+          type="text"
+          id="notification_username"
+          v-model="form.notification_username"
+          @blur="validateField('notification_username')"
+          :class="{ 'error': errors.notification_username }"
+          placeholder="@username"
+        >
+        <span v-if="errors.notification_username" class="error-message">{{ errors.notification_username }}</span>
+      </div>
+
+      <div class="form-group">
+        <label for="webhook_url">Webhook URL для внешней системы</label>
+        <input
+          type="url"
+          id="webhook_url"
+          v-model="form.webhook_url"
+          @blur="validateField('webhook_url')"
+          :class="{ 'error': errors.webhook_url }"
+          placeholder="https://example.com/webhooks/order"
+        >
+        <span v-if="errors.webhook_url" class="error-message">{{ errors.webhook_url }}</span>
+      </div>
+
       <!-- Кнопки -->
       <div class="form-actions">
         <button type="submit" class="btn-primary" :disabled="loading || !isFormValid">
@@ -136,7 +162,9 @@ export default {
       bot_token: '',
       delivery_name: '',
       delivery_price: 0,
-      notification_chat_id: ''
+      notification_chat_id: '',
+      notification_username: '',
+      webhook_url: ''
     })
 
     const errors = reactive({
@@ -144,7 +172,9 @@ export default {
       bot_token: '',
       delivery_name: '',
       delivery_price: '',
-      notification_chat_id: ''
+      notification_chat_id: '',
+      notification_username: '',
+      webhook_url: ''
     })
 
     // Загрузка лимитов при монтировании
@@ -215,6 +245,27 @@ export default {
             errors.notification_chat_id = ''
           }
           break
+        case 'notification_username':
+          if (form.notification_username && !form.notification_username.match(/^@?[A-Za-z0-9_]{5,}$/)) {
+            errors.notification_username = 'Username должен быть в формате @username'
+          } else {
+            errors.notification_username = ''
+          }
+          break
+        case 'webhook_url':
+          if (form.webhook_url) {
+            try {
+              const parsed = new URL(form.webhook_url)
+              errors.webhook_url = (parsed.protocol === 'http:' || parsed.protocol === 'https:')
+                ? ''
+                : 'Webhook URL должен начинаться с http:// или https://'
+            } catch (e) {
+              errors.webhook_url = 'Некорректный URL'
+            }
+          } else {
+            errors.webhook_url = ''
+          }
+          break
       }
     }
 
@@ -227,7 +278,9 @@ export default {
              !errors.bot_token &&
              !errors.delivery_name &&
              !errors.delivery_price &&
-             !errors.notification_chat_id
+             !errors.notification_chat_id &&
+             !errors.notification_username &&
+             !errors.webhook_url
     })
 
     const handleSubmit = async () => {
@@ -252,7 +305,9 @@ export default {
             bot_token: '',
             delivery_name: '',
             delivery_price: 0,
-            notification_chat_id: ''
+            notification_chat_id: '',
+            notification_username: '',
+            webhook_url: ''
           })
         } else {
           error.value = response.data.message || 'Ошибка при создании магазина'

@@ -52,6 +52,12 @@ Set-Location C:\Users\admin\Desktop\myproject\showcase-designer
 # Отправить в Telegram тест-кнопку "Открыть магазин" (WebApp) в конкретный chat_id
 .\scripts\dev-shortcuts.ps1 telegram-send-webapp-test -ChatId "123456789" -ShopId "2"
 
+# Smoke checkout/payment (API): создаёт заказ, пытается payment, делает fallback в draft при недоступной ЮKassa
+.\scripts\dev-shortcuts.ps1 smoke-checkout-payment -ShopId "2"
+
+# То же, но дополнительно проверяет внешний /app через tunnel URL
+.\scripts\dev-shortcuts.ps1 smoke-checkout-payment -PublicUrl "https://showcase-dev-20260321.loca.lt" -ShopId "2"
+
 # Быстрый тест создания магазина (Feature test)
 .\scripts\dev-shortcuts.ps1 test-shop-create
 
@@ -87,6 +93,8 @@ Set-Location C:\Users\admin\Desktop\myproject\showcase-designer
 .\scripts\dev-shortcuts.ps1 tunnel-up
 # затем:
 .\scripts\dev-shortcuts.ps1 telegram-pin-current-tunnel -ShopId "2"
+# smoke checkout/payment (в новом окне):
+.\scripts\dev-shortcuts.ps1 smoke-checkout-payment -ShopId "2"
 ```
 
 Если в Telegram появляется экран localtunnel с паролем, используйте:

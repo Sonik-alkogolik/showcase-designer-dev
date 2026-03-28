@@ -14,8 +14,10 @@ class Shop extends Model
         'name',
         'bot_token',
         'notification_chat_id',
+        'notification_username',
         'delivery_name',
         'delivery_price',
+        'webhook_url',
     ];
 
     protected $casts = [
