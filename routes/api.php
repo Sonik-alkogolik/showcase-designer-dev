@@ -16,7 +16,7 @@ use App\Http\Controllers\ImportController;
 
 // Публичные маршруты
 Route::post('/register', [RegisteredUserController::class, 'store']);
-Route::post('/login', [AuthenticatedSessionController::class, 'store']);
+Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:login');
 Route::get('/shops/{shop}/products/public', [App\Http\Controllers\ProductController::class, 'publicIndex']);
 Route::get('/shops/{shop}/public', [App\Http\Controllers\ShopController::class, 'publicShow']);
 // Тестовый маршрут для CORS
@@ -102,7 +102,8 @@ Route::post('/telegram/webhook', [WebhookController::class, 'handle']);
 // Публичные маршруты для Telegram Web App
 
 // Публичные маршруты для заказов (Telegram Web App)
-Route::post('/orders', [App\Http\Controllers\OrderController::class, 'store']);
+Route::post('/orders', [App\Http\Controllers\OrderController::class, 'store'])
+    ->middleware(['throttle:public-orders', 'verify.telegram.webapp']);
 Route::get('/orders/payment/{paymentId}', [App\Http\Controllers\OrderController::class, 'checkPayment']);
 Route::post('/webhooks/yookassa', [App\Http\Controllers\OrderController::class, 'yookassaWebhook']);
 

@@ -178,6 +178,9 @@ class ShopController extends Controller
     public function publicShow($id)
     {
         $shop = Shop::findOrFail($id);
+        $managerUsername = $shop->notification_username
+            ? ltrim((string) $shop->notification_username, '@')
+            : null;
         
         return response()->json([
             'success' => true,
@@ -186,6 +189,8 @@ class ShopController extends Controller
                 'name' => $shop->name,
                 'delivery_name' => $shop->delivery_name,
                 'delivery_price' => $shop->delivery_price,
+                'manager_telegram_username' => $managerUsername,
+                'manager_telegram_url' => $managerUsername ? 'https://t.me/' . $managerUsername : null,
             ]
         ]);
     }

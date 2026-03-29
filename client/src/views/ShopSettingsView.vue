@@ -69,12 +69,12 @@
       </div>
 
       <div class="form-group">
-        <label for="notification_username">Username для уведомлений</label>
+        <label for="notification_username">Telegram менеджера (контакт для клиента)</label>
         <input
           id="notification_username"
           v-model="form.notification_username"
           type="text"
-          placeholder="@username"
+          placeholder="@manager_username"
           :class="{ error: errors.notification_username }"
           @blur="validateField('notification_username')"
         >

@@ -147,10 +147,9 @@
           >
         </div>
 
-        <label class="pay-toggle">
-          <input type="checkbox" v-model="payOnline">
-          <span>Оплатить онлайн (ЮKassa)</span>
-        </label>
+        <div class="manager-hint" v-if="hasManagerContact">
+          После оформления вы сможете написать менеджеру в Telegram для подтверждения и оплаты.
+        </div>
 
         <div class="order-summary">
           <h3>Ваш заказ</h3>
@@ -179,16 +178,13 @@
       <div v-if="orderSuccess" class="success-message">
         <h3>✅ Заказ оформлен!</h3>
         <p>Заказ №{{ orderNumber }} создан.</p>
-        <p v-if="paymentStatus === 'pending'">Статус оплаты: ожидается</p>
-        <p v-else-if="paymentStatus === 'paid'">Статус оплаты: оплачено</p>
-        <p v-else-if="paymentStatus === 'cancelled'">Статус оплаты: отменено</p>
-        <p v-else>Сохранён как черновик (без онлайн-оплаты).</p>
+        <p>Менеджер свяжется с вами для подтверждения и оплаты заказа.</p>
         <button
-          v-if="paymentStatus === 'pending' && confirmationUrl"
+          v-if="hasManagerContact"
           class="continue-shopping"
-          @click="openPaymentLink"
+          @click="openManagerContact"
         >
-          Открыть оплату снова
+          Написать менеджеру
         </button>
         <button class="continue-shopping" @click="resetOrder">Вернуться в магазин</button>
       </div>
@@ -206,7 +202,7 @@
 </template>
 
 <script>
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 import debounce from 'lodash/debounce'
@@ -263,11 +259,7 @@ export default {
     const orderSuccess = ref(false)
     const orderNumber = ref(null)
     const orderError = ref('')
-    const payOnline = ref(true)
-    const paymentStatus = ref('')
-    const paymentId = ref(null)
-    const confirmationUrl = ref('')
-    const paymentPollerId = ref(null)
+    const orderTotalForManager = ref(0)
 
     const cartItems = computed(() => {
       return Object.values(cart.value)
@@ -314,13 +306,6 @@ export default {
         await Promise.all([loadShop(), loadProducts()])
       } finally {
         loading.value = false
-      }
-    })
-
-    onUnmounted(() => {
-      if (paymentPollerId.value) {
-        clearInterval(paymentPollerId.value)
-        paymentPollerId.value = null
       }
     })
 
@@ -406,68 +391,57 @@ export default {
       currentView.value = 'checkout'
     }
 
-    const openPaymentLink = () => {
-      if (!confirmationUrl.value) {
+    const managerUsername = computed(() => {
+      const raw = shop.value?.manager_telegram_username || ''
+      const normalized = String(raw).trim().replace(/^@+/, '')
+      return normalized
+    })
+
+    const hasManagerContact = computed(() => Boolean(managerUsername.value))
+
+    const managerBaseUrl = computed(() => {
+      return hasManagerContact.value ? `https://t.me/${managerUsername.value}` : ''
+    })
+
+    const managerMessageText = computed(() => {
+      const shopName = shop.value?.name || 'Магазин'
+      const amount = Number(orderTotalForManager.value || 0)
+      const amountLabel = Number.isFinite(amount) ? `${amount} ₽` : 'уточняется'
+      return [
+        `Здравствуйте! Заказ #${orderNumber.value || ''}`.trim(),
+        `Магазин: ${shopName}`,
+        `Имя: ${orderForm.name || '-'}`,
+        `Телефон: ${orderForm.phone || '-'}`,
+        `Сумма заказа: ${amountLabel}`,
+      ].join('\n')
+    })
+
+    const managerContactUrl = computed(() => {
+      if (!managerBaseUrl.value) {
+        return ''
+      }
+      return `${managerBaseUrl.value}?text=${encodeURIComponent(managerMessageText.value)}`
+    })
+
+    const openManagerContact = () => {
+      if (!managerContactUrl.value) {
         return
       }
 
-      if (window.Telegram?.WebApp?.openInvoice) {
-        window.Telegram.WebApp.openInvoice(confirmationUrl.value)
-      } else if (window.Telegram?.WebApp?.openLink) {
-        window.Telegram.WebApp.openLink(confirmationUrl.value)
+      if (window.Telegram?.WebApp?.openLink) {
+        window.Telegram.WebApp.openLink(managerContactUrl.value)
       } else {
-        window.open(confirmationUrl.value, '_blank')
+        window.open(managerContactUrl.value, '_blank')
       }
-    }
-
-    const startPaymentStatusPolling = (targetPaymentId) => {
-      if (!targetPaymentId) {
-        return
-      }
-
-      if (paymentPollerId.value) {
-        clearInterval(paymentPollerId.value)
-      }
-
-      let attempts = 0
-      paymentPollerId.value = setInterval(async () => {
-        attempts += 1
-
-        try {
-          const { data } = await axios.get(`/api/orders/payment/${targetPaymentId}`)
-          if (data?.success && data?.status) {
-            paymentStatus.value = data.status
-          }
-
-          if (paymentStatus.value === 'paid' || paymentStatus.value === 'cancelled') {
-            clearInterval(paymentPollerId.value)
-            paymentPollerId.value = null
-          }
-        } catch (pollError) {
-          console.error('Ошибка проверки статуса оплаты:', pollError)
-        }
-
-        if (attempts >= 40) {
-          clearInterval(paymentPollerId.value)
-          paymentPollerId.value = null
-        }
-      }, 3000)
     }
 
     const handleOrderSuccess = (data) => {
       orderNumber.value = data?.order?.id || null
       orderSuccess.value = true
-      paymentId.value = data?.payment_id || null
-      confirmationUrl.value = data?.confirmation_url || ''
-      paymentStatus.value = paymentId.value ? 'pending' : 'draft'
+      orderTotalForManager.value = Number(data?.amounts?.total || 0)
 
       cart.value = {}
       localStorage.removeItem(cartStorageKey.value)
-
-      if (confirmationUrl.value && paymentId.value) {
-        openPaymentLink()
-        startPaymentStatusPolling(paymentId.value)
-      }
     }
 
     const submitOrder = async () => {
@@ -480,6 +454,10 @@ export default {
 
       orderLoading.value = true
       orderError.value = ''
+      const telegramInitData = window.Telegram?.WebApp?.initData || ''
+      const requestConfig = telegramInitData
+        ? { headers: { 'X-Telegram-Init-Data': telegramInitData } }
+        : {}
 
       try {
         const payload = {
@@ -490,51 +468,23 @@ export default {
             id: item.id,
             quantity: item.quantity
           })),
-          create_payment: payOnline.value
+          create_payment: false
         }
 
-        const response = await axios.post('/api/orders', payload)
+        const response = await axios.post('/api/orders', payload, requestConfig)
 
         if (response.data.success) {
           handleOrderSuccess(response.data)
 
           if (window.Telegram?.WebApp) {
-            const message = payOnline.value && response.data.confirmation_url
-              ? `Заказ #${orderNumber.value} создан. Откройте оплату.`
-              : `Заказ #${orderNumber.value} сохранён`
+            const message = hasManagerContact.value
+              ? `Заказ #${orderNumber.value} создан. Напишите менеджеру для подтверждения.`
+              : `Заказ #${orderNumber.value} создан.`
             window.Telegram.WebApp.showAlert(message)
           }
         }
       } catch (error) {
         console.error('Ошибка при создании заказа:', error)
-
-        const paymentUnavailable = payOnline.value && Boolean(error?.response?.data?.errors?.create_payment)
-
-        if (paymentUnavailable) {
-          try {
-            const fallbackResponse = await axios.post('/api/orders', {
-              shop_id: parseInt(shopId),
-              customer_name: orderForm.name,
-              phone: orderForm.phone,
-              items: cartItems.value.map(item => ({
-                id: item.id,
-                quantity: item.quantity
-              })),
-              create_payment: false
-            })
-
-            if (fallbackResponse.data?.success) {
-              handleOrderSuccess(fallbackResponse.data)
-              orderError.value = 'Онлайн-оплата сейчас недоступна. Заказ сохранён как черновик.'
-              if (window.Telegram?.WebApp) {
-                window.Telegram.WebApp.showAlert(orderError.value)
-              }
-              return
-            }
-          } catch (fallbackError) {
-            console.error('Ошибка fallback-создания черновика:', fallbackError)
-          }
-        }
 
         orderError.value = error?.response?.data?.message || 'Ошибка при создании заказа'
         if (window.Telegram?.WebApp) {
@@ -548,15 +498,8 @@ export default {
     const resetOrder = () => {
       orderSuccess.value = false
       orderNumber.value = null
-      paymentStatus.value = ''
-      paymentId.value = null
-      confirmationUrl.value = ''
+      orderTotalForManager.value = 0
       orderError.value = ''
-      payOnline.value = true
-      if (paymentPollerId.value) {
-        clearInterval(paymentPollerId.value)
-        paymentPollerId.value = null
-      }
       orderForm.name = ''
       orderForm.phone = ''
       currentView.value = 'catalog'
@@ -580,9 +523,7 @@ export default {
       orderSuccess,
       orderNumber,
       orderError,
-      payOnline,
-      paymentStatus,
-      confirmationUrl,
+      hasManagerContact,
       loadProducts,
       debouncedSearch,
       addToCart,
@@ -590,7 +531,7 @@ export default {
       removeFromCart,
       goToCart,
       goToCheckout,
-      openPaymentLink,
+      openManagerContact,
       submitOrder,
       resetOrder
     }
@@ -684,17 +625,15 @@ export default {
   padding: 0.7rem 0.8rem;
 }
 
-.pay-toggle {
+.manager-hint {
   margin-bottom: 0.85rem;
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  color: var(--ink-0);
-  font-size: 0.92rem;
-}
-
-.pay-toggle input {
-  accent-color: var(--accent);
+  border-radius: 10px;
+  border: 1px solid rgba(65, 255, 191, 0.35);
+  background: rgba(13, 34, 33, 0.42);
+  color: #b9ffe9;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  padding: 0.62rem 0.7rem;
 }
 
 .content {

@@ -62,6 +62,7 @@ class Kernel extends HttpKernel
         'ensure.telegram.verified' => \App\Http\Middleware\EnsureTelegramVerified::class,
         'has.active.subscription' => \App\Http\Middleware\HasActiveSubscription::class,
         'own.shop' => \App\Http\Middleware\OwnsShop::class,
+        'verify.telegram.webapp' => \App\Http\Middleware\VerifyTelegramWebAppInitData::class,
     ];
     
 }

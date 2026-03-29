@@ -2,7 +2,7 @@
   <nav class="navbar">
     <div class="navbar-container">
       <router-link :to="isAuthenticated ? '/shops' : '/'" class="navbar-brand">
-        <h1>Showcase Designer</h1>
+        <h1>t-go</h1>
       </router-link>
       
       <div class="navbar-menu">
