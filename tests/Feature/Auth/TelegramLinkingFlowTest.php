@@ -2,9 +2,11 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Jobs\SendTelegramMessageJob;
 use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
@@ -16,6 +18,7 @@ class TelegramLinkingFlowTest extends TestCase
 
     public function test_user_can_generate_token_and_link_telegram_via_webhook(): void
     {
+        Bus::fake();
         Http::fake([
             'https://api.telegram.org/*' => Http::response(['ok' => true], 200),
         ]);
@@ -53,6 +56,7 @@ class TelegramLinkingFlowTest extends TestCase
 
     public function test_same_user_can_relink_same_telegram_without_false_conflict(): void
     {
+        Bus::fake();
         Http::fake([
             'https://api.telegram.org/*' => Http::response(['ok' => true], 200),
         ]);
@@ -78,6 +82,7 @@ class TelegramLinkingFlowTest extends TestCase
 
     public function test_cannot_link_telegram_if_chat_id_belongs_to_another_user(): void
     {
+        Bus::fake();
         Http::fake([
             'https://api.telegram.org/*' => Http::response(['ok' => true], 200),
         ]);
@@ -107,16 +112,15 @@ class TelegramLinkingFlowTest extends TestCase
         $this->assertNull($targetUser->telegram_id);
         $this->assertNull($targetUser->telegram_linked_at);
 
-        Http::assertSent(function ($request): bool {
-            $data = $request->data();
-            return str_ends_with($request->url(), '/sendMessage')
-                && isset($data['text'])
-                && str_contains($data['text'], 'уже привязан');
+        Bus::assertDispatchedAfterResponse(SendTelegramMessageJob::class, function (SendTelegramMessageJob $job): bool {
+            return $job->chatId === 777003
+                && str_contains($job->text, 'уже привязан');
         });
     }
 
     public function test_deleted_user_releases_telegram_for_new_user(): void
     {
+        Bus::fake();
         Http::fake([
             'https://api.telegram.org/*' => Http::response(['ok' => true], 200),
         ]);
@@ -260,11 +264,9 @@ class TelegramLinkingFlowTest extends TestCase
             ],
         ])->assertOk();
 
-        Http::assertSent(function ($request): bool {
-            $data = $request->data();
-            return str_ends_with($request->url(), '/sendMessage')
-                && isset($data['text'])
-                && str_contains($data['text'], 'успешно привязан');
+        Bus::assertDispatchedAfterResponse(SendTelegramMessageJob::class, function (SendTelegramMessageJob $job) use ($chatId): bool {
+            return $job->chatId === $chatId
+                && str_contains($job->text, 'успешно привязан');
         });
     }
 }

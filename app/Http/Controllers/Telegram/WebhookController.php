@@ -3,11 +3,10 @@
 namespace App\Http\Controllers\Telegram;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendTelegramMessageJob;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Контроллер для обработки вебхуков от бота Telegram
@@ -145,22 +144,6 @@ class WebhookController extends Controller
 
     private function sendMessage(int $chatId, string $text): void
     {
-        $token = trim((string) config('telegram.bots.mybot.token'));
-        if ($token === '') {
-            Log::warning('Telegram bot token is not configured, skip sendMessage');
-            return;
-        }
-
-        try {
-            Http::timeout(10)->post("https://api.telegram.org/bot{$token}/sendMessage", [
-                'chat_id' => $chatId,
-                'text' => $text,
-            ]);
-        } catch (\Throwable $e) {
-            Log::warning('Telegram sendMessage failed', [
-                'chat_id' => $chatId,
-                'error' => $e->getMessage(),
-            ]);
-        }
+        SendTelegramMessageJob::dispatch($chatId, $text)->afterResponse();
     }
 }
