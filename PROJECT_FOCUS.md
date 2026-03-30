@@ -1,23 +1,23 @@
 # Project Focus
 
 ## Active Goal
-`Стабилизировать core-flow сервиса (auth -> shop -> products -> webapp)`
+`Стабилизировать Telegram linking UX и гарантировать локальный воспроизводимый user-flow`
 
 ## Current Step
-`Стабилизация infra для Telegram smoke: выровнять DB_HOST (127.127.126.50 vs .26) + дожать public smoke через tunnel`
+`Локально пройти сценарий: register -> link Telegram -> create shop -> add category/product -> delete account -> повтор`
 
 ## Next Action
-`Запустить smoke-checkout-payment для shop=1 локально и через стабильный public tunnel, затем пройти ручной Telegram checkout`
+`Поднять backend+frontend на локальной машине и сделать ручной прогон как пользователь с фиксацией результата в CHAT_HANDOFF.md`
 
 ## Source Of Truth
 - Статус "где остановились" ведем только в `CHAT_HANDOFF.md`.
 - Этот файл хранит только текущий фокус сессии.
 
 ## Next Tile (tools/dev_ui.py -> taskTiles)
-title: `Core-flow smoke`
-sub: `auth -> create shop -> products -> webapp`
+title: `Telegram linking local pass`
+sub: `register -> link -> shop -> product -> delete -> repeat`
 plan: `Service Core`
-cmd: `ручной проход + e2e smoke`
+cmd: `ручной user-flow + API/feature checks`
 
 ## Done When
 - Базовый путь работает без блокирующих ошибок
@@ -27,4 +27,5 @@ cmd: `ручной проход + e2e smoke`
 ## Session Notes
 - Фокус на сервисе, не на маркетинговых лендингах
 - Лендинг/конверсия вынесены в следующий этап
-- Для dev-smoke использовать `.\scripts\dev-shortcuts.ps1 smoke-checkout-payment ...` как обязательный preflight перед ручным Telegram-проходом
+- Кнопка Telegram `Открыть магазин` удалена вручную через Telegram API
+- UX Telegram linking обновлен: `Подключить Telegram` + `Проверить привязку` + авто-проверка + `Скопировать ссылку`

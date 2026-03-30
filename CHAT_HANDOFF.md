@@ -1,6 +1,6 @@
 # Chat Handoff: showcase-designer
 
-Обновлено: 2026-03-29
+Обновлено: 2026-03-30
 
 ## Единый протокол фокуса
 
@@ -193,27 +193,48 @@
      - в `.env.example` добавлен `FRONTEND_URL`.
    - Решение команды: этап ЮKassa временно отложен, продолжаем MVP-flow без онлайн-оплаты (draft order + уведомления + webhook магазина).
 
+15. Telegram linking + deploy sync (2026-03-30):
+   - Код и деплой:
+     - изменения отправлены в `origin/main` и `prod/main`;
+     - на сервере `e-tgo.ru` выполнен `git pull --ff-only` и обновлён frontend build.
+   - Подтверждена работоспособность webhook endpoint:
+     - `POST https://e-tgo.ru/api/telegram/webhook` -> `200 {"ok":true}`.
+   - Webhook Telegram выставлен вручную через браузер:
+     - `setWebhook` -> `ok: true`,
+     - `getWebhookInfo.url` -> `https://e-tgo.ru/api/telegram/webhook`.
+   - Локальная проверка сценариев:
+     - browser e2e (`e2e-full-real-user`) -> PASS;
+     - `TelegramLinkingFlowTest::test_simulated_user_cycles_with_register_link_shop_category_product_and_delete` -> PASS (47 assertions);
+     - прямой локальный API-прогон `register -> generate-token -> webhook /start {token} -> profile` -> `telegram_linked=true`.
+   - UX привязки Telegram:
+     - добавлены `Проверить привязку` + авто-проверка + `Скопировать ссылку`;
+     - изменения закоммичены и задеплоены (commit `1777759`).
+   - Кнопка `Открыть магазин` в боте:
+     - удалена у текущего бота вручную через `setChatMenuButton(type=default)`;
+     - в `scripts/dev-shortcuts.ps1` убрано автопроставление menu button в `telegram-pin-dev` и `telegram-pin-current-tunnel` (локально, не зафиксировано в git на момент handoff).
+   - Важное наблюдение по infra:
+     - с production-сервера нет стабильного исходящего доступа к `api.telegram.org` (`cURL error 28`),
+       из-за этого `sendMessage` из backend может таймаутиться;
+     - это не блокирует сам `webhook` endpoint, но может скрывать пользователю диагностические сообщения бота.
+
 ### Что не сделано
 
-1. В dev-тестировании Telegram WebApp туннели периодически падают (`503 Tunnel Unavailable` / `no tunnel here`), поэтому URL приходится переподнимать и перепинить.
-2. Этап ЮKassa (интеграция + реальный E2E + боевые webhook-события) сознательно поставлен на паузу до следующей итерации.
-3. Финальный deployment-flow на новый домен `e-tgo.ru` ещё не завершён.
+1. У production-сервера нестабильный/ограниченный исходящий доступ к `api.telegram.org` (таймауты на `sendMessage`, `setWebhook` с сервера).
+2. В dev-тестировании Telegram WebApp туннели периодически падают (`503 Tunnel Unavailable` / `no tunnel here`), поэтому URL приходится переподнимать и перепинить.
+3. Этап ЮKassa (интеграция + реальный E2E + боевые webhook-события) сознательно поставлен на паузу до следующей итерации.
 
 ## Ключевой блокер (актуализировано)
 
-1. Блокер проверки UI в текущей среде: Playwright E2E (`tools/e2e_*.py`) падают с `PermissionError [WinError 5]` при запуске браузерного subprocess.
-2. Основной текущий риск для локальных Telegram-проходов: нестабильность публичных туннелей в dev (`localtunnel` / `localhost.run`).
-3. Финальный боевой путь пока не закрыт, так как домен `e-tgo.ru` только вводится в эксплуатацию (DNS/SSL/конфиг хостинга).
+1. Основной актуальный риск: исходящие вызовы с сервера в Telegram API (`api.telegram.org`) периодически/постоянно таймаутятся (`cURL error 28`).
+2. Дополнительный риск для локальных Telegram-проходов: нестабильность публичных туннелей в dev (`localtunnel` / `localhost.run`).
+3. Функционально endpoint webhook жив, но при недоступности исходящего Telegram API пользователю не приходят ответные сервисные сообщения бота.
 
 ## Следующий шаг
 
-1. Подготовить удалённый хостинг под `e-tgo.ru`:
-   - выставить `APP_URL/FRONTEND_URL/TELEGRAM_WEBHOOK_URL` на новый домен;
-   - проверить SSL и доступность `/app` + публичных API маршрутов магазина.
-2. Пройти end-to-end без ЮKassa:
-   - `register -> login -> create-shop -> products -> webapp checkout (draft)`;
-   - проверить уведомления владельцу и внешний `shop.webhook_url`.
-3. Отдельным этапом вернуться к ЮKassa после стабилизации домена и базового боевого потока.
+1. Закрыть сетевой блокер исходящих запросов с production в `api.telegram.org` (firewall/egress/ISP), чтобы стабильно работали `sendMessage` и серверные команды Telegram.
+2. После фикса egress повторно пройти ручной сценарий Telegram linking на проде:
+   - `Подключить Telegram` -> deep-link -> `/start {token}` -> `Проверить привязку`.
+3. Зафиксировать и при необходимости отправить в git локальное изменение `scripts/dev-shortcuts.ps1` (убрано автопроставление кнопки `Открыть магазин`).
 
 ## Быстрые опорные файлы
 

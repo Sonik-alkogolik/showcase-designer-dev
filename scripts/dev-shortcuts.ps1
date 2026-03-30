@@ -49,7 +49,7 @@ Available actions:
   e2e-create-shop-chrome - run browser E2E: login + create shop + add product + verify (visible Chrome)
   e2e-create-shop-real-user - run browser E2E: create shop + add product (human-like visible Chrome)
   e2e-full-real-user - run full browser suite: login + create shop + add product (human-like visible Chrome)
-  telegram-pin-dev - pin Telegram dev bot to current APP_URL (set env + webhook + status)
+  telegram-pin-dev - pin Telegram dev bot to URL (without editing .env) + show webhook status
   telegram-send-webapp-test - send test message with WebApp button to specific chat_id
   smoke-checkout-payment - run API smoke for checkout/payment flow with optional public URL check
   start-ui      - start Python web UI for quick commands
@@ -262,7 +262,6 @@ Examples:
         $PublicUrl = $PublicUrl.Trim().TrimEnd('/')
         $frontendUrl = $PublicUrl
         $webhookUrl = "$PublicUrl/api/telegram/webhook"
-        $menuWebAppUrl = "$PublicUrl/app?shop=$ShopId"
 
         $botToken = ""
         if ($envText -match "(?m)^TELEGRAM_BOT_TOKEN=(.+)$") {
@@ -273,25 +272,13 @@ Examples:
             exit 1
         }
 
-        $envText = [regex]::Replace($envText, "(?m)^APP_URL=.*$", "APP_URL=$PublicUrl")
-        $envText = [regex]::Replace($envText, "(?m)^FRONTEND_URL=.*$", "FRONTEND_URL=$frontendUrl")
-        $envText = [regex]::Replace($envText, "(?m)^TELEGRAM_WEBHOOK_URL=.*$", "TELEGRAM_WEBHOOK_URL=$webhookUrl")
-        Set-Content -Path $envPath -Value $envText -Encoding UTF8
+        Write-Host "Note: this command does NOT modify .env."
+        Write-Host "If needed, update APP_URL/FRONTEND_URL/TELEGRAM_WEBHOOK_URL manually."
 
         & $PhpCli artisan config:clear | Out-Host
 
         $setWebhook = Invoke-RestMethod -Method Get -Uri "https://api.telegram.org/bot$botToken/setWebhook?url=$webhookUrl"
         $webhookInfo = Invoke-RestMethod -Method Get -Uri "https://api.telegram.org/bot$botToken/getWebhookInfo"
-        $menuBody = @{
-            menu_button = @{
-                type = "web_app"
-                text = "Open Shop"
-                web_app = @{
-                    url = $menuWebAppUrl
-                }
-            }
-        } | ConvertTo-Json -Depth 6
-        $setMenu = Invoke-RestMethod -Method Post -Uri "https://api.telegram.org/bot$botToken/setChatMenuButton" -ContentType "application/json" -Body $menuBody
 
         Write-Host "Pinned Telegram DEV:"
         Write-Host "APP_URL=$PublicUrl"
@@ -300,9 +287,6 @@ Examples:
         Write-Host ""
         Write-Host "setWebhook:"
         $setWebhook | ConvertTo-Json -Depth 10
-        Write-Host ""
-        Write-Host "setChatMenuButton:"
-        $setMenu | ConvertTo-Json -Depth 10
         Write-Host ""
         Write-Host "getWebhookInfo:"
         $webhookInfo | ConvertTo-Json -Depth 10
@@ -341,7 +325,6 @@ Examples:
         $envText = Get-Content $envPath -Raw
         $frontendUrl = $PublicUrl.TrimEnd('/')
         $webhookUrl = "$frontendUrl/api/telegram/webhook"
-        $menuWebAppUrl = "$frontendUrl/app?shop=$ShopId"
 
         $botToken = ""
         if ($envText -match "(?m)^TELEGRAM_BOT_TOKEN=(.+)$") {
@@ -352,24 +335,12 @@ Examples:
             exit 1
         }
 
-        $envText = [regex]::Replace($envText, "(?m)^APP_URL=.*$", "APP_URL=$frontendUrl")
-        $envText = [regex]::Replace($envText, "(?m)^FRONTEND_URL=.*$", "FRONTEND_URL=$frontendUrl")
-        $envText = [regex]::Replace($envText, "(?m)^TELEGRAM_WEBHOOK_URL=.*$", "TELEGRAM_WEBHOOK_URL=$webhookUrl")
-        Set-Content -Path $envPath -Value $envText -Encoding UTF8
+        Write-Host "Note: this command does NOT modify .env."
+        Write-Host "If needed, update APP_URL/FRONTEND_URL/TELEGRAM_WEBHOOK_URL manually."
 
         & $PhpCli artisan config:clear | Out-Host
 
         $setWebhook = Invoke-RestMethod -Method Get -Uri "https://api.telegram.org/bot$botToken/setWebhook?url=$webhookUrl"
-        $menuBody = @{
-            menu_button = @{
-                type = "web_app"
-                text = "Open Shop"
-                web_app = @{
-                    url = $menuWebAppUrl
-                }
-            }
-        } | ConvertTo-Json -Depth 6
-        $setMenu = Invoke-RestMethod -Method Post -Uri "https://api.telegram.org/bot$botToken/setChatMenuButton" -ContentType "application/json" -Body $menuBody
 
         Write-Host "Pinned Telegram DEV to current tunnel:"
         Write-Host "APP_URL=$frontendUrl"
@@ -377,9 +348,6 @@ Examples:
         Write-Host ""
         Write-Host "setWebhook:"
         $setWebhook | ConvertTo-Json -Depth 10
-        Write-Host ""
-        Write-Host "setChatMenuButton:"
-        $setMenu | ConvertTo-Json -Depth 10
         break
     }
 

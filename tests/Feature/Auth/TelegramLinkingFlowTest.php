@@ -36,6 +36,21 @@ class TelegramLinkingFlowTest extends TestCase
         ]);
     }
 
+    public function test_generate_token_uses_configured_bot_username_in_link(): void
+    {
+        config()->set('telegram.bots.mybot.username', '@constructor_app_bot');
+
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson('/api/profile/telegram/generate-token')
+            ->assertOk()
+            ->json();
+
+        $this->assertSame('@constructor_app_bot', $response['bot_username'] ?? null);
+        $this->assertStringContainsString('https://t.me/constructor_app_bot?start=', $response['bot_link'] ?? '');
+    }
+
     public function test_same_user_can_relink_same_telegram_without_false_conflict(): void
     {
         Http::fake([

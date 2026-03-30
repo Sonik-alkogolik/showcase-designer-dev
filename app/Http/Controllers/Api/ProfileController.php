@@ -33,17 +33,21 @@ class ProfileController extends Controller
     public function generateTelegramLinkToken(Request $request)
     {
         $user = $request->user();
-        
+
         // Генерируем уникальный токен
         $token = Str::random(32);
-        
+
         // Сохраняем в кэше на 15 минут
         Cache::put("telegram_link_{$token}", $user->id, now()->addMinutes(15));
+
+        $configuredBotUsername = trim((string) config('telegram.bots.mybot.username', 'constructor_app_bot'));
+        $botUsername = ltrim($configuredBotUsername !== '' ? $configuredBotUsername : 'constructor_app_bot', '@');
+        $botLink = "https://t.me/{$botUsername}?start={$token}";
         
         return response()->json([
             'token' => $token,
-            'bot_username' => '@constructor_app_bot',
-            'bot_link' => "https://t.me/constructor_app_bot?start={$token}",
+            'bot_username' => '@' . $botUsername,
+            'bot_link' => $botLink,
             'expires_in' => 900, // 15 минут в секундах
         ]);
     }
