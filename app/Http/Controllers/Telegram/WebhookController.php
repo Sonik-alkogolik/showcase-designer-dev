@@ -6,7 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Telegram\Bot\Laravel\Facades\Telegram;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Контроллер для обработки вебхуков от бота Telegram
@@ -28,8 +29,7 @@ class WebhookController extends Controller
      */
     public function handle(Request $request)
     {
-        // Получаем обновления от бота через Telegram Bot API
-        $updates = Telegram::getWebhookUpdates();
+        $updates = $request->all();
         
         // Проверяем, есть ли в обновлениях сообщение от пользователя
         if (!isset($updates['message'])) {
@@ -38,18 +38,18 @@ class WebhookController extends Controller
         
         // Извлекаем данные из сообщения
         $message = $updates['message'];
-        $chatId = $message['chat']['id'];
+        $chatId = (int) ($message['chat']['id'] ?? 0);
         $text = $message['text'] ?? '';
-        
-        // Обработка команды /start {token} - привязка аккаунта
-        if (preg_match('/^\/start\s+(\w+)$/', $text, $matches)) {
-            $token = $matches[1];
-            $this->handleLinkAccount($chatId, $token, $message['from']);
-            return response()->json(['ok' => true]);
-        }
-        
-        // Обработка команды /start без токена
-        if ($text === '/start') {
+
+        if (preg_match('/^\/start(?:@\w+)?(?:\s+([A-Za-z0-9_-]+))?\s*$/', $text, $matches)) {
+            $token = $matches[1] ?? null;
+            if ($token) {
+                // Обработка команды /start {token} - привязка аккаунта
+                $this->handleLinkAccount($chatId, $token, $message['from'] ?? []);
+                return response()->json(['ok' => true]);
+            }
+
+            // Обработка команды /start без токена
             $this->handleStartCommand($chatId);
             return response()->json(['ok' => true]);
         }
@@ -73,11 +73,8 @@ class WebhookController extends Controller
                    "1. Зайдите в личный кабинет на сайте\n" .
                    "2. Нажмите 'Подключить Telegram'\n" .
                    "3. Перейдите по ссылке и отправьте команду /start с токеном";
-        
-        Telegram::sendMessage([
-            'chat_id' => $chatId,
-            'text' => $message
-        ]);
+
+        $this->sendMessage($chatId, $message);
     }
     
     /**
@@ -92,24 +89,14 @@ class WebhookController extends Controller
     {
         // Получаем ID пользователя из кэша по токену
         $userId = Cache::get("telegram_link_{$token}");
-        
-        // Проверяем, не привязан ли уже этот Telegram аккаунт
-        $existingUser = User::where('telegram_id', $chatId)->first();
-        if ($existingUser) {
-            Telegram::sendMessage([
-                'chat_id' => $chatId,
-                'text' => "⚠️ Этот Telegram аккаунт уже привязан к другому пользователю."
-            ]);
-            return;
-        }
-        
+
         // Если токен не найден или устарел
         if (!$userId) {
-            Telegram::sendMessage([
-                'chat_id' => $chatId,
-                'text' => "❌ Ссылка устарела или недействительна.\n\n" .
-                          "Пожалуйста, сгенерируйте новую ссылку в личном кабинете на сайте."
-            ]);
+            $this->sendMessage(
+                $chatId,
+                "❌ Ссылка устарела или недействительна.\n\n" .
+                "Пожалуйста, сгенерируйте новую ссылку в личном кабинете на сайте."
+            );
             return;
         }
         
@@ -117,10 +104,15 @@ class WebhookController extends Controller
         $user = User::find($userId);
         
         if (!$user) {
-            Telegram::sendMessage([
-                'chat_id' => $chatId,
-                'text' => "❌ Пользователь не найден. Пожалуйста, попробуйте снова."
-            ]);
+            $this->sendMessage($chatId, "❌ Пользователь не найден. Пожалуйста, попробуйте снова.");
+            return;
+        }
+
+        // Проверяем, не привязан ли уже этот Telegram аккаунт к другому пользователю.
+        // Повторная привязка тем же пользователем разрешена (id совпадает).
+        $existingUser = User::where('telegram_id', $chatId)->first();
+        if ($existingUser && (int) $existingUser->id !== (int) $user->id) {
+            $this->sendMessage($chatId, "⚠️ Этот Telegram аккаунт уже привязан к другому пользователю.");
             return;
         }
         
@@ -129,11 +121,11 @@ class WebhookController extends Controller
         $user->linkTelegram($chatId, $telegramUsername);
         
         // Отправляем сообщение об успешной привязке
-        Telegram::sendMessage([
-            'chat_id' => $chatId,
-            'text' => "✅ Отлично! Ваш Telegram аккаунт успешно привязан к сайту.\n\n" .
-                      "Теперь вы будете получать уведомления о важных событиях."
-        ]);
+        $this->sendMessage(
+            $chatId,
+            "✅ Отлично! Ваш Telegram аккаунт успешно привязан к сайту.\n\n" .
+            "Теперь вы будете получать уведомления о важных событиях."
+        );
         
         // Удаляем токен из кэша
         Cache::forget("telegram_link_{$token}");
@@ -148,10 +140,27 @@ class WebhookController extends Controller
     private function sendDefaultMessage($chatId)
     {
         $message = "Пожалуйста, введите /start для получения инструкций по привязке аккаунта.";
-        
-        Telegram::sendMessage([
-            'chat_id' => $chatId,
-            'text' => $message
-        ]);
+        $this->sendMessage($chatId, $message);
+    }
+
+    private function sendMessage(int $chatId, string $text): void
+    {
+        $token = trim((string) config('telegram.bots.mybot.token'));
+        if ($token === '') {
+            Log::warning('Telegram bot token is not configured, skip sendMessage');
+            return;
+        }
+
+        try {
+            Http::timeout(10)->post("https://api.telegram.org/bot{$token}/sendMessage", [
+                'chat_id' => $chatId,
+                'text' => $text,
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('Telegram sendMessage failed', [
+                'chat_id' => $chatId,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

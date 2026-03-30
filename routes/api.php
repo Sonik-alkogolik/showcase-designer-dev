@@ -30,6 +30,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     // Профиль пользователя
     Route::get('/profile', [ProfileController::class, 'show']);
+    Route::delete('/profile', [ProfileController::class, 'destroy']);
     
     // Telegram привязка
     Route::post('/profile/telegram/generate-token', [ProfileController::class, 'generateTelegramLinkToken']);

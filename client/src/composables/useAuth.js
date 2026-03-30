@@ -138,6 +138,17 @@ export const useAuth = () => {
     }
   };
 
+  const deleteAccount = async () => {
+    try {
+      await axios.delete('/api/profile');
+      removeToken();
+      user.value = null;
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.message || 'Ошибка удаления аккаунта' };
+    }
+  };
+
   // Проверка авторизации
   const isAuthenticated = computed(() => !!token.value);
 
@@ -150,6 +161,7 @@ export const useAuth = () => {
     logout,
     loadProfile,
     generateTelegramLinkToken,
-    unlinkTelegram
+    unlinkTelegram,
+    deleteAccount
   };
 };

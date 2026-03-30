@@ -67,4 +67,20 @@ class ProfileController extends Controller
             'message' => 'Telegram аккаунт успешно отвязан'
         ]);
     }
+
+    /**
+     * Удаление текущего аккаунта пользователя.
+     */
+    public function destroy(Request $request)
+    {
+        $user = $request->user();
+
+        // Удаляем все токены пользователя перед удалением аккаунта.
+        $user->tokens()->delete();
+        $user->delete();
+
+        return response()->json([
+            'message' => 'Аккаунт успешно удален',
+        ]);
+    }
 }

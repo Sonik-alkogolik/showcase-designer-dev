@@ -13,6 +13,15 @@
         <span class="label">Email:</span>
         <span class="value">{{ user?.email || 'Загрузка...' }}</span>
       </div>
+      <div class="danger-zone">
+        <button
+          class="btn-danger-outline"
+          :disabled="deletingAccount"
+          @click="deleteMyAccount"
+        >
+          {{ deletingAccount ? 'Удаляю аккаунт...' : 'Удалить аккаунт' }}
+        </button>
+      </div>
     </div>
 
         <!-- Информация о подписке -->
@@ -109,11 +118,14 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 
-const { user, loadProfile, generateTelegramLinkToken, unlinkTelegram: unlinkApi } = useAuth()
+const router = useRouter()
+const { user, loadProfile, generateTelegramLinkToken, unlinkTelegram: unlinkApi, deleteAccount } = useAuth()
 const generatingToken = ref(false)
 const unlinking = ref(false)
+const deletingAccount = ref(false)
 const botLink = ref(null)
 const tokenExpiry = ref(0)
 
@@ -194,6 +206,28 @@ const unlinkTelegram = async () => {
     alert('Не удалось отвязать Telegram аккаунт')
   } finally {
     unlinking.value = false
+  }
+}
+
+const deleteMyAccount = async () => {
+  if (!confirm('Удалить аккаунт? Это действие нельзя отменить.')) {
+    return
+  }
+
+  deletingAccount.value = true
+  try {
+    const result = await deleteAccount()
+    if (result.success) {
+      alert('Аккаунт удален')
+      router.push('/register')
+      return
+    }
+    alert(result.error || 'Не удалось удалить аккаунт')
+  } catch (error) {
+    console.error('Ошибка удаления аккаунта:', error)
+    alert('Не удалось удалить аккаунт')
+  } finally {
+    deletingAccount.value = false
   }
 }
 
@@ -399,6 +433,31 @@ h1 {
 .btn-danger:hover:not(:disabled) {
   background: #c82333;
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.danger-zone {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-danger-outline {
+  border: 1px solid #ef4444;
+  color: #ef4444;
+  background: #fff;
+  border-radius: 6px;
+  padding: 0.55rem 0.9rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.btn-danger-outline:hover:enabled {
+  background: #fef2f2;
+}
+
+.btn-danger-outline:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .alert {
