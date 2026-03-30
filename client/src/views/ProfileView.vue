@@ -56,21 +56,41 @@
       <div v-if="!user?.telegram_linked" class="telegram-not-linked">
         <p>Подключите ваш аккаунт Telegram для получения уведомлений</p>
         
-        <button 
-          @click="generateLinkToken" 
-          :disabled="generatingToken"
-          class="btn-primary"
-        >
-          {{ generatingToken ? 'Генерация...' : 'Подключить Telegram' }}
-        </button>
+        <div class="telegram-actions">
+          <button 
+            @click="generateLinkToken" 
+            :disabled="generatingToken"
+            class="btn-primary"
+          >
+            {{ generatingToken ? 'Генерация...' : 'Подключить Telegram' }}
+          </button>
+          <button
+            @click="checkTelegramLink()"
+            :disabled="checkingLink"
+            class="btn-secondary-inline"
+          >
+            {{ checkingLink ? 'Проверяю...' : 'Проверить привязку' }}
+          </button>
+          <button
+            v-if="botLink"
+            @click="copyBotLink"
+            class="btn-ghost-inline"
+            type="button"
+          >
+            Скопировать ссылку
+          </button>
+        </div>
+        <p v-if="autoCheckActive" class="auto-check-note">
+          Проверяем привязку автоматически каждые 2-3 секунды...
+        </p>
         
         <div v-if="botLink" class="bot-link-section">
           <div class="alert alert-info">
             <p><strong>Инструкция:</strong></p>
             <ol>
               <li>Перейдите в Telegram по ссылке ниже</li>
-              <li>Нажмите "Запустить" или отправьте команду <code>/start</code></li>
-              <li>Ваш аккаунт будет автоматически привязан</li>
+              <li>Нажмите "Запустить" в боте</li>
+              <li>Вернитесь сюда и нажмите "Проверить привязку" (или подождите авто-проверку)</li>
             </ol>
           </div>
           
@@ -78,7 +98,7 @@
             <svg class="telegram-icon" viewBox="0 0 24 24">
               <path fill="currentColor" d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
             </svg>
-            Перейти в бота @constructor_app_bot
+            Открыть @constructor_app_bot
           </a>
           
           <p class="token-expiry">
@@ -117,17 +137,20 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 
 const router = useRouter()
 const { user, loadProfile, generateTelegramLinkToken, unlinkTelegram: unlinkApi, deleteAccount } = useAuth()
 const generatingToken = ref(false)
+const checkingLink = ref(false)
 const unlinking = ref(false)
 const deletingAccount = ref(false)
 const botLink = ref(null)
 const tokenExpiry = ref(0)
+const autoCheckActive = ref(false)
+let autoCheckTimer = null
 
 const copyTelegramId = async () => {
   const chatId = user.value?.telegram_id
@@ -157,6 +180,64 @@ const loadUserData = async () => {
   await loadProfile()
 }
 
+const stopAutoCheck = () => {
+  if (autoCheckTimer) {
+    clearInterval(autoCheckTimer)
+    autoCheckTimer = null
+  }
+  autoCheckActive.value = false
+}
+
+const checkTelegramLink = async (options = {}) => {
+  const { silent = false } = options
+  checkingLink.value = true
+
+  try {
+    await loadProfile()
+    if (user.value?.telegram_linked) {
+      stopAutoCheck()
+      if (!silent) {
+        alert('Telegram успешно привязан')
+      }
+      return true
+    }
+    if (!silent) {
+      alert('Telegram пока не привязан. Нажмите "Запустить" в боте и попробуйте снова.')
+    }
+    return false
+  } catch (error) {
+    console.error('Ошибка проверки привязки Telegram:', error)
+    if (!silent) {
+      alert('Не удалось проверить привязку. Попробуйте снова.')
+    }
+    return false
+  } finally {
+    checkingLink.value = false
+  }
+}
+
+const startAutoCheck = () => {
+  stopAutoCheck()
+  autoCheckActive.value = true
+  autoCheckTimer = setInterval(async () => {
+    const linked = await checkTelegramLink({ silent: true })
+    if (linked || tokenExpiryMinutes.value <= 0) {
+      stopAutoCheck()
+    }
+  }, 2500)
+}
+
+const copyBotLink = async () => {
+  if (!botLink.value) return
+  try {
+    await navigator.clipboard.writeText(botLink.value)
+    alert('Ссылка скопирована')
+  } catch (error) {
+    console.error('Ошибка копирования ссылки:', error)
+    alert(`Скопируйте ссылку вручную:\n${botLink.value}`)
+  }
+}
+
 // Генерация токена для привязки
 const generateLinkToken = async () => {
   generatingToken.value = true
@@ -170,6 +251,7 @@ const generateLinkToken = async () => {
       
       // Автоматически открываем ссылку в новом окне
       window.open(result.data.bot_link, '_blank')
+      startAutoCheck()
     } else {
       alert('Не удалось сгенерировать ссылку. Попробуйте позже.')
     }
@@ -196,6 +278,7 @@ const unlinkTelegram = async () => {
       // Очищаем ссылку
       botLink.value = null
       tokenExpiry.value = 0
+      stopAutoCheck()
       
       alert('Telegram аккаунт успешно отвязан')
     } else {
@@ -233,6 +316,10 @@ const deleteMyAccount = async () => {
 
 onMounted(() => {
   loadUserData()
+})
+
+onBeforeUnmount(() => {
+  stopAutoCheck()
 })
 </script>
 
@@ -298,6 +385,19 @@ h1 {
   font-size: 1.1rem;
 }
 
+.telegram-actions {
+  display: flex;
+  gap: 0.7rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.auto-check-note {
+  margin-top: 0.75rem;
+  color: #475569;
+  font-size: 0.92rem;
+}
+
 .btn-primary {
   background: #0088cc;
   color: white;
@@ -320,6 +420,41 @@ h1 {
 .btn-primary:hover:not(:disabled) {
   background: #006699;
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.btn-secondary-inline {
+  background: #fff;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  padding: 0.85rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.btn-secondary-inline:hover:not(:disabled) {
+  background: #f8fafc;
+}
+
+.btn-secondary-inline:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-ghost-inline {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  padding: 0.85rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.btn-ghost-inline:hover {
+  background: #dbeafe;
 }
 
 .bot-link {
