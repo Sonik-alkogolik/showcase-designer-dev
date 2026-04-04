@@ -2,11 +2,11 @@
 
 namespace App\Jobs;
 
+use App\Support\TelegramHttp;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class SendTelegramMessageJob implements ShouldQueue
@@ -30,9 +30,10 @@ class SendTelegramMessageJob implements ShouldQueue
         }
 
         try {
-            Http::connectTimeout(1)
+            TelegramHttp::client()
+                ->connectTimeout(1)
                 ->timeout(2)
-                ->post("https://api.telegram.org/bot{$token}/sendMessage", [
+                ->post(TelegramHttp::botMethodUrl($token, 'sendMessage'), [
                     'chat_id' => $this->chatId,
                     'text' => $this->text,
                 ]);
@@ -44,4 +45,3 @@ class SendTelegramMessageJob implements ShouldQueue
         }
     }
 }
-

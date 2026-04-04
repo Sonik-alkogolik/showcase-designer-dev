@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Order;
 use App\Models\Shop;
+use App\Support\TelegramHttp;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -57,9 +58,10 @@ class OrderNotificationService
         }
 
         try {
-            $response = Http::timeout(10)
+            $response = TelegramHttp::client()
+                ->timeout(10)
                 ->asForm()
-                ->post("https://api.telegram.org/bot{$shop->bot_token}/sendMessage", [
+                ->post(TelegramHttp::botMethodUrl((string) $shop->bot_token, 'sendMessage'), [
                     'chat_id' => $chatId,
                     'text' => $text,
                 ]);
@@ -89,7 +91,9 @@ class OrderNotificationService
         }
 
         try {
-            $response = Http::timeout(10)->get("https://api.telegram.org/bot{$shop->bot_token}/getUpdates");
+            $response = TelegramHttp::client()
+                ->timeout(10)
+                ->get(TelegramHttp::botMethodUrl((string) $shop->bot_token, 'getUpdates'));
             if (! $response->ok()) {
                 return null;
             }

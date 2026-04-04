@@ -98,7 +98,19 @@ return [
     | Default: https://api.telegram.org/bot
     |
     */
-    'base_bot_url' => null,
+    'base_bot_url' => env('TELEGRAM_BASE_BOT_URL', null),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Telegram HTTP Proxy [Optional]
+    |--------------------------------------------------------------------------
+    |
+    | If specified, only Telegram Bot API requests that go through our
+    | application-level Telegram client will use this proxy.
+    | Example: http://user:pass@127.0.0.1:8080 or socks5://127.0.0.1:1080
+    |
+    */
+    'http_proxy' => env('TELEGRAM_HTTP_PROXY', null),
 
     /*
     |--------------------------------------------------------------------------

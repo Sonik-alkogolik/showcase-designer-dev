@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\TelegramHttp;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -75,15 +76,17 @@ class Shop extends Model
      */
     public function validateBotToken(): bool
     {
-        if (!$this->bot_token) {
+        if (! $this->bot_token) {
             return false;
         }
 
         try {
-            $client = new \GuzzleHttp\Client();
-            $response = $client->get("https://api.telegram.org/bot{$this->bot_token}/getMe");
-            return $response->getStatusCode() === 200;
-        } catch (\Exception $e) {
+            $response = TelegramHttp::client()
+                ->timeout(10)
+                ->get(TelegramHttp::botMethodUrl((string) $this->bot_token, 'getMe'));
+
+            return $response->ok();
+        } catch (\Throwable $e) {
             return false;
         }
     }
