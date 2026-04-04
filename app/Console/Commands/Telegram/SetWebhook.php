@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands\Telegram;
 
+use App\Support\TelegramHttp;
 use Illuminate\Console\Command;
-use Telegram\Bot\Laravel\Facades\Telegram;
 
 class SetWebhook extends Command
 {
@@ -39,14 +39,33 @@ class SetWebhook extends Command
         }
         
         try {
-            Telegram::setWebhook(['url' => $webhookUrl]);
+            $token = trim((string) config('telegram.bots.mybot.token'));
+            if ($token === '') {
+                $this->error('❌ TELEGRAM_BOT_TOKEN не задан в .env');
+                return;
+            }
+
+            $setWebhookResponse = TelegramHttp::client()
+                ->timeout(15)
+                ->post(TelegramHttp::botMethodUrl($token, 'setWebhook'), [
+                    'url' => $webhookUrl,
+                ]);
+
+            if (! $setWebhookResponse->ok()) {
+                $this->error('❌ Ошибка setWebhook: ' . $setWebhookResponse->body());
+                return;
+            }
             
             // Выводим сообщение об успехе в консоль
             $this->info("✅ Вебхук успешно установлен!");
             $this->info("URL: {$webhookUrl}");
             
             // Проверяем текущий статус вебхука
-            $info = Telegram::getWebhookInfo();
+            $infoResponse = TelegramHttp::client()
+                ->timeout(15)
+                ->get(TelegramHttp::botMethodUrl($token, 'getWebhookInfo'));
+
+            $info = $infoResponse->json('result', []);
             
             // Выводим информацию о текущем вебхуке
             $currentUrl = $info['url'] ?? 'не установлен';
