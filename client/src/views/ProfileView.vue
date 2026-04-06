@@ -89,9 +89,17 @@
             <p><strong>Инструкция:</strong></p>
             <ol>
               <li>Перейдите в Telegram по ссылке ниже</li>
-              <li>Нажмите "Запустить" в боте</li>
+              <li>Нажмите "Запустить" в боте или отправьте команду ниже вручную</li>
               <li>Вернитесь сюда и нажмите "Проверить привязку" (или подождите авто-проверку)</li>
             </ol>
+          </div>
+
+          <div v-if="startCommand" class="start-command-section">
+            <p class="start-command-title">Если бот не подставил токен автоматически, отправьте:</p>
+            <code class="start-command-code">{{ startCommand }}</code>
+            <button class="btn-ghost-inline" type="button" @click="copyStartCommand">
+              Скопировать команду
+            </button>
           </div>
           
           <a :href="botLink" target="_blank" class="bot-link">
@@ -175,6 +183,18 @@ const tokenExpiryMinutes = computed(() => {
   return Math.max(0, remaining)
 })
 
+const startCommand = computed(() => {
+  if (!botLink.value) return ''
+  try {
+    const link = new URL(botLink.value)
+    const token = link.searchParams.get('start')
+    if (!token) return ''
+    return `/start ${token}`
+  } catch (error) {
+    return ''
+  }
+})
+
 // Загрузка данных профиля
 const loadUserData = async () => {
   await loadProfile()
@@ -235,6 +255,17 @@ const copyBotLink = async () => {
   } catch (error) {
     console.error('Ошибка копирования ссылки:', error)
     alert(`Скопируйте ссылку вручную:\n${botLink.value}`)
+  }
+}
+
+const copyStartCommand = async () => {
+  if (!startCommand.value) return
+  try {
+    await navigator.clipboard.writeText(startCommand.value)
+    alert('Команда скопирована')
+  } catch (error) {
+    console.error('Ошибка копирования команды:', error)
+    alert(`Скопируйте вручную:\n${startCommand.value}`)
   }
 }
 
@@ -489,6 +520,32 @@ h1 {
   margin-top: 1rem;
   color: #666;
   font-size: 0.95rem;
+}
+
+.start-command-section {
+  margin: 1rem 0 1.25rem;
+  padding: 0.9rem;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  border-radius: 8px;
+}
+
+.start-command-title {
+  margin: 0 0 0.5rem;
+  color: #1e3a8a;
+  font-size: 0.95rem;
+}
+
+.start-command-code {
+  display: block;
+  margin-bottom: 0.65rem;
+  padding: 0.55rem 0.65rem;
+  background: #fff;
+  border: 1px solid #dbeafe;
+  border-radius: 6px;
+  color: #0f172a;
+  font-size: 0.92rem;
+  word-break: break-all;
 }
 
 .telegram-linked {
