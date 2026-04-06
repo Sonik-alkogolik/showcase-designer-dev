@@ -104,6 +104,25 @@ Set-Location C:\Users\admin\Desktop\myproject\showcase-designer
 1. `.\scripts\dev-shortcuts.ps1 tunnel-up`
 2. `.\scripts\dev-shortcuts.ps1 telegram-pin-current-tunnel -ShopId "2"`
 
+## Telegram webhook (prod/admin)
+
+```powershell
+# Установить webhook (если URL уже в TELEGRAM_WEBHOOK_URL)
+php artisan telegram:set-webhook
+
+# Установить webhook на явный URL
+php artisan telegram:set-webhook "https://e-tgo.ru/api/telegram/webhook"
+
+# Посмотреть текущее состояние webhook
+php artisan telegram:webhook-info
+
+# Удалить webhook
+php artisan telegram:delete-webhook
+
+# Удалить webhook и сбросить pending updates
+php artisan telegram:delete-webhook --drop-pending
+```
+
 После запуска `start-ui` откроется страница:
 `http://127.0.0.1:8787`
 
