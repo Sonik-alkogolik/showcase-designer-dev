@@ -123,6 +123,19 @@ php artisan telegram:delete-webhook
 php artisan telegram:delete-webhook --drop-pending
 ```
 
+## Production frontend publish (Linux server)
+
+```bash
+cd /var/www/showcase-designer/client
+npm run build
+
+cd /var/www/showcase-designer
+rm -f public/index.html
+rm -rf public/assets
+cp client/dist/index.html public/
+cp -r client/dist/assets public/
+```
+
 После запуска `start-ui` откроется страница:
 `http://127.0.0.1:8787`
 

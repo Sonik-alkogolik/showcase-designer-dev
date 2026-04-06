@@ -23,6 +23,23 @@
 cd /var/www/showcase-designer
 git pull --ff-only
 composer dump-autoload -o
+```
+
+2. Пересобрать и опубликовать frontend (обязательно, иначе UI может остаться старым):
+```bash
+cd /var/www/showcase-designer/client
+npm run build
+
+cd /var/www/showcase-designer
+rm -f public/index.html
+rm -rf public/assets
+cp client/dist/index.html public/
+cp -r client/dist/assets public/
+```
+
+3. Очистить/пересобрать кеши Laravel:
+```bash
+cd /var/www/showcase-designer
 php artisan optimize:clear
 php artisan config:cache
 ```
