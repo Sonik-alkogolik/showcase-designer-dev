@@ -1,20 +1,20 @@
 # Project Focus
 
 ## Active Goal
-`Стабилизировать Telegram linking UX и гарантировать локальный воспроизводимый user-flow`
+`Стабилизировать core-flow сервиса после успешного восстановления Telegram webhook/linking на проде`
 
 ## Current Step
-`Локально пройти сценарий: register -> link Telegram -> create shop -> add category/product -> delete account -> повтор`
+`Зафиксировать рабочее состояние Telegram linking на проде и перейти к полному ручному core-flow прогону`
 
 ## Next Action
-`Поднять backend+frontend на локальной машине и сделать ручной прогон как пользователь с фиксацией результата в CHAT_HANDOFF.md`
+`Пройти ручной сценарий: register -> link Telegram -> create shop -> add category/product -> delete account -> repeat, и записать блокеры в CHAT_HANDOFF.md`
 
 ## Source Of Truth
 - Статус "где остановились" ведем только в `CHAT_HANDOFF.md`.
 - Этот файл хранит только текущий фокус сессии.
 
 ## Next Tile (tools/dev_ui.py -> taskTiles)
-title: `Telegram linking local pass`
+title: `Core flow full pass`
 sub: `register -> link -> shop -> product -> delete -> repeat`
 plan: `Service Core`
 cmd: `ручной user-flow + API/feature checks`
@@ -27,5 +27,5 @@ cmd: `ручной user-flow + API/feature checks`
 ## Session Notes
 - Фокус на сервисе, не на маркетинговых лендингах
 - Лендинг/конверсия вынесены в следующий этап
-- Кнопка Telegram `Открыть магазин` удалена вручную через Telegram API
-- UX Telegram linking обновлен: `Подключить Telegram` + `Проверить привязку` + авто-проверка + `Скопировать ссылку`
+- Telegram webhook восстановлен и стабилизирован на `https://e-tgo.ru/api/telegram/webhook`
+- Telegram linking подтвержден в проде: `/start {token}` -> успешная привязка

@@ -1,6 +1,6 @@
 # Chat Handoff: showcase-designer
 
-Обновлено: 2026-03-30
+Обновлено: 2026-04-08
 
 ## Единый протокол фокуса
 
@@ -217,24 +217,41 @@
        из-за этого `sendMessage` из backend может таймаутиться;
      - это не блокирует сам `webhook` endpoint, но может скрывать пользователю диагностические сообщения бота.
 
+16. Telegram webhook recovery + prod stabilization (2026-04-08):
+   - DNS/Cloudflare:
+     - домен `e-tgo.ru` переведён на NS Cloudflare (`ace.ns.cloudflare.com`, `selah.ns.cloudflare.com`);
+     - записи DNS выровнены, `A e-tgo.ru` переведён в `Proxied` для стабильной доставки webhook.
+   - Webhook:
+     - рабочий URL: `https://e-tgo.ru/api/telegram/webhook`;
+     - принудительно задан рабочий маршрут Telegram через `ip_address=104.21.56.199`;
+     - итоговый статус: `pending_update_count=0`, `last_error_message` пустой.
+   - Привязка Telegram:
+     - ручной сценарий `generate token -> /start {token} -> check link` подтверждён;
+     - старые токены корректно дают "Ссылка устарела", новые успешно привязывают аккаунт.
+   - Infra:
+     - проверена доступность webhook endpoint: `POST /api/telegram/webhook -> 200 {"ok":true}`;
+     - `cloudflared` приведён в рабочее состояние (`active (running)`), конфиг обновлён.
+   - Git/релиз:
+     - добавлен и запушен `infra/PROD_NOTES_2026-04-08.md` в `origin/main` и `prod/main`;
+     - на production выполнен `git pull --ff-only`, рабочее состояние подтверждено.
+
 ### Что не сделано
 
-1. У production-сервера нестабильный/ограниченный исходящий доступ к `api.telegram.org` (таймауты на `sendMessage`, `setWebhook` с сервера).
+1. У production-сервера остаётся нестабильный/ограниченный исходящий доступ к `api.telegram.org` без прокси (для серверных `setWebhook/sendMessage` нужен proxy/локальный обход).
 2. В dev-тестировании Telegram WebApp туннели периодически падают (`503 Tunnel Unavailable` / `no tunnel here`), поэтому URL приходится переподнимать и перепинить.
 3. Этап ЮKassa (интеграция + реальный E2E + боевые webhook-события) сознательно поставлен на паузу до следующей итерации.
 
 ## Ключевой блокер (актуализировано)
 
-1. Основной актуальный риск: исходящие вызовы с сервера в Telegram API (`api.telegram.org`) периодически/постоянно таймаутятся (`cURL error 28`).
+1. Основной актуальный риск: исходящие вызовы с сервера в Telegram API (`api.telegram.org`) без proxy могут таймаутиться.
 2. Дополнительный риск для локальных Telegram-проходов: нестабильность публичных туннелей в dev (`localtunnel` / `localhost.run`).
-3. Функционально endpoint webhook жив, но при недоступности исходящего Telegram API пользователю не приходят ответные сервисные сообщения бота.
+3. Требуется ротация bot token после стабилизации (токен засвечивался в диагностике).
 
 ## Следующий шаг
 
-1. Закрыть сетевой блокер исходящих запросов с production в `api.telegram.org` (firewall/egress/ISP), чтобы стабильно работали `sendMessage` и серверные команды Telegram.
-2. После фикса egress повторно пройти ручной сценарий Telegram linking на проде:
-   - `Подключить Telegram` -> deep-link -> `/start {token}` -> `Проверить привязку`.
-3. Зафиксировать и при необходимости отправить в git локальное изменение `scripts/dev-shortcuts.ps1` (убрано автопроставление кнопки `Открыть магазин`).
+1. Провести ротацию bot token в `@BotFather`, обновить `.env` и проверить webhook status после ротации.
+2. Перейти к следующему сервисному блоку: полный ручной core-flow (`register -> link -> create shop -> product -> delete account`) и фиксация найденных узких мест.
+3. Отдельно спланировать безопасный и стабильный путь server egress в Telegram API (proxy/firewall), чтобы `sendMessage` был воспроизводим без ручных обходов.
 
 ## Быстрые опорные файлы
 

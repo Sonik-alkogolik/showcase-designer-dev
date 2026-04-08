@@ -1,5 +1,57 @@
 # Telegram Webhook Runbook (Simplified)
 
+## Текущий фокус (Cloudflare Tunnel, 2026-04-06)
+- Цель: принимать входящий webhook Telegram через `tg-hook.e-tgo.ru`, чтобы обойти прямые timeout на `176.113.82.151:443`.
+- Статус сейчас: Tunnel создан и запущен, но зона Cloudflare еще не `Active` (NS в процессе делегирования).
+
+### Уже сделано
+1. Установлен `cloudflared` на сервере.
+2. Выполнен `cloudflared tunnel login`.
+3. Создан tunnel:
+   - `tg-webhook`
+   - `tunnel id: 6388aa0f-c49d-43f9-bb20-be4c04f6483b`
+4. Создан DNS route:
+   - `tg-hook.e-tgo.ru -> tunnel tg-webhook`
+5. Настроен `/etc/cloudflared/config.yml`:
+   - ingress `tg-hook.e-tgo.ru -> http://127.0.0.1:80`
+   - `protocol: http2` (вместо quic, чтобы не упираться в UDP timeout)
+6. Сервис запущен и активен:
+   - `systemctl status cloudflared` -> `active (running)`
+
+### Следующие шаги (сразу после статуса зоны Active)
+1. Проверить DNS у Cloudflare:
+```bash
+dig +short tg-hook.e-tgo.ru @1.1.1.1
+```
+Ожидаем непустой ответ.
+
+2. Проверить webhook URL через tunnel:
+```bash
+curl -i --max-time 15 https://tg-hook.e-tgo.ru/api/telegram/webhook
+```
+Ожидаем ответ Laravel (`HTTP 200`, тело `{"ok":true}` на POST).
+
+3. Переназначить Telegram webhook на tunnel-host:
+```bash
+cd /var/www/showcase-designer
+php artisan telegram:set-webhook "https://tg-hook.e-tgo.ru/api/telegram/webhook"
+php artisan telegram:webhook-info
+```
+
+4. Проверка боевого сценария:
+   - в UI сгенерировать новый токен привязки;
+   - отправить в бота `/start <token>`;
+   - нажать "Проверить привязку" в UI;
+   - убедиться, что `telegram_linked = true`.
+
+5. Контрольный чек:
+```bash
+php artisan telegram:webhook-info
+```
+Ожидаем:
+   - `last_error_message` пустой;
+   - `pending_update_count` не накапливается.
+
 ## Статус
 - Этот файл — единый план по Telegram webhook.
 - Схема упрощена: без отдельного внутреннего `127.0.0.1:8080` и без `proxy_pass`.
