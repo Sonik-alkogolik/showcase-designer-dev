@@ -364,7 +364,11 @@ export default {
             formData.append(key, String(value))
           })
           formData.append('image_file', selectedImageFile.value)
-          response = await axios[method](url, formData, {
+          const uploadMethod = editingProduct.value ? 'post' : method
+          if (editingProduct.value) {
+            formData.append('_method', 'PUT')
+          }
+          response = await axios[uploadMethod](url, formData, {
             headers: {
               'Content-Type': 'multipart/form-data'
             }

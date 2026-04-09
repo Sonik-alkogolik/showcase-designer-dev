@@ -7,6 +7,8 @@ use App\Models\Shop;
 use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -77,6 +79,39 @@ class ProductSliderFlagTest extends TestCase
         $this->assertFalse((bool) $normal['show_in_slider']);
     }
 
+    public function test_owner_can_upload_product_image_on_update(): void
+    {
+        Storage::fake('public');
+        [$user, $shop] = $this->makeUserWithShop();
+        Sanctum::actingAs($user);
+
+        $product = Product::create([
+            'shop_id' => $shop->id,
+            'name' => 'Товар с фото',
+            'price' => 300,
+            'in_stock' => true,
+        ]);
+
+        $file = UploadedFile::fake()->image('product.jpg', 600, 600);
+
+        $response = $this->postJson("/api/shops/{$shop->id}/products/{$product->id}", [
+            '_method' => 'PUT',
+            'name' => 'Товар с фото',
+            'price' => 300,
+            'image_file' => $file,
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('success', true);
+
+        $product->refresh();
+        $this->assertNotNull($product->image);
+        $this->assertStringStartsWith('/storage/products/', (string) $product->image);
+
+        $relativePath = ltrim(str_replace('/storage/', '', (string) $product->image), '/');
+        Storage::disk('public')->assertExists($relativePath);
+    }
+
     private function makeUserWithShop(): array
     {
         $user = User::factory()->create([
@@ -105,4 +140,3 @@ class ProductSliderFlagTest extends TestCase
         return [$user, $shop];
     }
 }
-

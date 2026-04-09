@@ -1114,7 +1114,7 @@ h2 {
 }
 
 .hero-dot.active {
-  background: var(--accent);
+  background: #224eff;
 }
 
 .products-grid {
