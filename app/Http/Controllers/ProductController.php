@@ -137,6 +137,7 @@ class ProductController extends Controller
             ],
             'category' => 'nullable|string|max:100', // Для обратной совместимости
             'in_stock' => 'boolean',
+            'show_in_slider' => 'boolean',
             'image' => 'nullable|url',
             'attributes' => 'nullable|array',
         ]);
@@ -157,6 +158,7 @@ class ProductController extends Controller
             'category' => $categoryPayload['category'],
             'category_id' => $categoryPayload['category_id'],
             'in_stock' => $request->in_stock ?? true,
+            'show_in_slider' => $request->boolean('show_in_slider', false),
             'image' => $request->image,
             'attributes' => $request->attributes,
         ];
@@ -205,6 +207,7 @@ class ProductController extends Controller
             ],
             'category' => 'nullable|string|max:100',
             'in_stock' => 'boolean',
+            'show_in_slider' => 'boolean',
             'image' => 'nullable|url',
             'attributes' => 'nullable|array',
         ]);
@@ -217,7 +220,7 @@ class ProductController extends Controller
         }
 
         $data = $request->only([
-            'name', 'price', 'description', 'in_stock', 'image', 'attributes'
+            'name', 'price', 'description', 'in_stock', 'show_in_slider', 'image', 'attributes'
         ]);
 
         $categoryPayload = $this->resolveCategoryPayload($request, $shop, true);

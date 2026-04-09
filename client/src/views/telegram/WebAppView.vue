@@ -12,7 +12,7 @@
           <p class="kicker">WEB APP STORE</p>
           <h1>{{ shop?.name || 'Магазин' }}</h1>
         </div>
-        <div class="cart-icon" @click="goToCart">
+        <div class="cart-icon" @click="setView('cart')">
           🛒 <span class="cart-count" v-if="cartTotalItems">{{ cartTotalItems }}</span>
         </div>
       </div>
@@ -35,9 +35,54 @@
         </select>
       </div>
 
+      <div class="category-chips">
+        <button
+          class="chip"
+          :class="{ active: selectedCategory === '' }"
+          @click="selectCategory('')"
+        >
+          Весь магазин
+        </button>
+        <button
+          v-for="cat in categories"
+          :key="cat.id"
+          class="chip"
+          :class="{ active: selectedCategory === String(cat.id) }"
+          @click="selectCategory(String(cat.id))"
+        >
+          {{ cat.name }}
+        </button>
+      </div>
+
+      <div v-if="sliderProducts.length" class="hero-slider">
+        <div class="hero-slide" @click="addToCart(sliderProducts[currentSlideIndex])">
+          <img
+            v-if="sliderProducts[currentSlideIndex]?.image"
+            :src="sliderProducts[currentSlideIndex]?.image"
+            :alt="sliderProducts[currentSlideIndex]?.name"
+          >
+          <div class="hero-slide-overlay">
+            <h2>{{ sliderProducts[currentSlideIndex]?.name }}</h2>
+            <p>{{ sliderProducts[currentSlideIndex]?.price }} ₽</p>
+          </div>
+        </div>
+        <div class="hero-dots">
+          <button
+            v-for="(slide, idx) in sliderProducts"
+            :key="slide.id"
+            class="hero-dot"
+            :class="{ active: currentSlideIndex === idx }"
+            @click="goToSlide(idx)"
+          />
+        </div>
+      </div>
+
       <!-- Каталог товаров -->
       <div class="products-grid" v-if="products.length">
         <div v-for="(product, index) in products" :key="product.id" class="product-card" :style="{ '--delay': `${index * 60}ms` }">
+          <button class="fav-btn" :class="{ active: isFavorite(product.id) }" @click="toggleFavorite(product)">
+            {{ isFavorite(product.id) ? '♥' : '♡' }}
+          </button>
           <div class="product-image" v-if="product.image">
             <img :src="product.image" :alt="product.name">
           </div>
@@ -59,6 +104,30 @@
 
       <div v-else-if="!loading" class="empty-state">
         <p>Товаров не найдено</p>
+      </div>
+    </div>
+
+    <!-- Страница избранного -->
+    <div v-else-if="currentView === 'favorites'" class="content panel-shell">
+      <div class="cart-header">
+        <h2>Избранное</h2>
+      </div>
+      <div v-if="favoriteItems.length" class="products-grid">
+        <div v-for="(product, index) in favoriteItems" :key="`fav-${product.id}`" class="product-card" :style="{ '--delay': `${index * 60}ms` }">
+          <button class="fav-btn active" @click="toggleFavorite(product)">♥</button>
+          <div class="product-image" v-if="product.image">
+            <img :src="product.image" :alt="product.name">
+          </div>
+          <div class="product-info">
+            <h3>{{ product.name }}</h3>
+            <p class="price">{{ product.price }} ₽</p>
+            <p class="description">{{ product.description }}</p>
+            <button class="add-to-cart" @click="addToCart(product)">В корзину</button>
+          </div>
+        </div>
+      </div>
+      <div v-else class="empty-state">
+        <p>В избранном пока пусто</p>
       </div>
     </div>
 
@@ -107,6 +176,24 @@
       <div v-else class="empty-state">
         <p>Корзина пуста</p>
         <button class="continue-shopping" @click="currentView = 'catalog'">Продолжить покупки</button>
+      </div>
+    </div>
+
+    <!-- Профиль -->
+    <div v-else-if="currentView === 'profile'" class="content panel-shell">
+      <div class="cart-header">
+        <h2>Профиль</h2>
+      </div>
+      <div class="profile-card">
+        <img v-if="telegramUser.photo_url" :src="telegramUser.photo_url" alt="avatar" class="profile-avatar">
+        <div v-else class="profile-avatar profile-avatar-placeholder">👤</div>
+        <h3>{{ telegramDisplayName }}</h3>
+        <p class="profile-username" v-if="telegramUser.username">@{{ telegramUser.username }}</p>
+      </div>
+      <div class="profile-list">
+        <button class="profile-item" @click="setView('catalog')">Вернуться к покупкам</button>
+        <button class="profile-item" @click="setView('favorites')">Открыть избранное</button>
+        <button class="profile-item" @click="setView('cart')">Открыть корзину</button>
       </div>
     </div>
 
@@ -198,11 +285,21 @@
     <div v-else-if="error" class="error">
       {{ error }}
     </div>
+
+    <div v-if="showBottomNav" class="bottom-nav">
+      <button class="tab-btn" :class="{ active: currentView === 'catalog' }" @click="setView('catalog')">Главная</button>
+      <button class="tab-btn" :class="{ active: currentView === 'favorites' }" @click="setView('favorites')">Избранное</button>
+      <button class="tab-btn" :class="{ active: currentView === 'cart' }" @click="setView('cart')">
+        Корзина
+        <span v-if="cartTotalItems" class="tab-badge">{{ cartTotalItems }}</span>
+      </button>
+      <button class="tab-btn" :class="{ active: currentView === 'profile' }" @click="setView('profile')">Профиль</button>
+    </div>
   </div>
 </template>
 
 <script>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 import debounce from 'lodash/debounce'
@@ -220,11 +317,12 @@ export default {
     const categories = ref([])
     const searchQuery = ref('')
     const selectedCategory = ref('')
-    const currentView = ref('catalog') // 'catalog', 'cart', 'checkout'
+    const currentView = ref('catalog') // 'catalog', 'favorites', 'cart', 'profile', 'checkout'
     
     const normalizeShopId = (id) => String(id ?? '').trim()
     const normalizedShopId = normalizeShopId(shopId)
     const cartStorageKey = computed(() => `webapp_cart_shop_${normalizedShopId}`)
+    const favoritesStorageKey = computed(() => `webapp_favorites_shop_${normalizedShopId}`)
 
     const readCartFromStorage = () => {
       const key = cartStorageKey.value
@@ -247,8 +345,32 @@ export default {
       localStorage.setItem(key, JSON.stringify(cart.value))
     }
 
+    const readFavoritesFromStorage = () => {
+      const key = favoritesStorageKey.value
+      const raw = localStorage.getItem(key)
+
+      if (!raw) {
+        return {}
+      }
+
+      try {
+        const parsed = JSON.parse(raw)
+        return parsed && typeof parsed === 'object' ? parsed : {}
+      } catch {
+        return {}
+      }
+    }
+
+    const persistFavorites = () => {
+      const key = favoritesStorageKey.value
+      localStorage.setItem(key, JSON.stringify(favorites.value))
+    }
+
     // Корзина в localStorage (изолирована по магазину)
     const cart = ref({})
+    const favorites = ref({})
+    const currentSlideIndex = ref(0)
+    let sliderTimer = null
 
     // Форма заказа
     const orderForm = reactive({
@@ -263,6 +385,27 @@ export default {
 
     const cartItems = computed(() => {
       return Object.values(cart.value)
+    })
+
+    const favoriteItems = computed(() => {
+      return Object.values(favorites.value)
+    })
+
+    const sliderProducts = computed(() => {
+      return products.value.filter((item) => item.show_in_slider && item.image)
+    })
+
+    const showBottomNav = computed(() => !loading.value && !error.value)
+
+    const telegramUser = computed(() => {
+      return window.Telegram?.WebApp?.initDataUnsafe?.user || {}
+    })
+
+    const telegramDisplayName = computed(() => {
+      const firstName = telegramUser.value?.first_name || ''
+      const lastName = telegramUser.value?.last_name || ''
+      const fullName = `${firstName} ${lastName}`.trim()
+      return fullName || 'Пользователь'
     })
 
     const cartTotalItems = computed(() => {
@@ -301,11 +444,19 @@ export default {
       }
 
       cart.value = readCartFromStorage()
+      favorites.value = readFavoritesFromStorage()
 
       try {
         await Promise.all([loadShop(), loadProducts()])
       } finally {
         loading.value = false
+      }
+    })
+
+    onUnmounted(() => {
+      if (sliderTimer) {
+        clearInterval(sliderTimer)
+        sliderTimer = null
       }
     })
 
@@ -332,6 +483,17 @@ export default {
           category_name: resolveCategoryName(product.category)
         }))
         categories.value = response.data.categories || []
+        currentSlideIndex.value = 0
+
+        if (sliderTimer) {
+          clearInterval(sliderTimer)
+          sliderTimer = null
+        }
+        if (sliderProducts.value.length > 1) {
+          sliderTimer = setInterval(() => {
+            currentSlideIndex.value = (currentSlideIndex.value + 1) % sliderProducts.value.length
+          }, 4000)
+        }
       } catch (err) {
         console.error('Ошибка загрузки товаров:', err)
       }
@@ -379,6 +541,37 @@ export default {
 
     const goToCart = () => {
       currentView.value = 'cart'
+    }
+
+    const setView = (view) => {
+      currentView.value = view
+    }
+
+    const selectCategory = (categoryId) => {
+      selectedCategory.value = categoryId
+      loadProducts()
+    }
+
+    const goToSlide = (idx) => {
+      currentSlideIndex.value = idx
+    }
+
+    const isFavorite = (productId) => Boolean(favorites.value[productId])
+
+    const toggleFavorite = (product) => {
+      if (isFavorite(product.id)) {
+        delete favorites.value[product.id]
+      } else {
+        favorites.value[product.id] = {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          description: product.description,
+          image: product.image,
+          in_stock: product.in_stock,
+        }
+      }
+      persistFavorites()
     }
 
     const goToCheckout = () => {
@@ -514,6 +707,12 @@ export default {
       searchQuery,
       selectedCategory,
       currentView,
+      sliderProducts,
+      currentSlideIndex,
+      favoriteItems,
+      showBottomNav,
+      telegramUser,
+      telegramDisplayName,
       cartItems,
       cartTotalItems,
       cartSubtotal,
@@ -530,6 +729,11 @@ export default {
       updateQuantity,
       removeFromCart,
       goToCart,
+      setView,
+      selectCategory,
+      goToSlide,
+      toggleFavorite,
+      isFavorite,
       goToCheckout,
       openManagerContact,
       submitOrder,
@@ -785,6 +989,93 @@ h2 {
   max-width: 136px;
 }
 
+.category-chips {
+  display: flex;
+  gap: 0.55rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  margin-bottom: 0.95rem;
+}
+
+.category-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  border: 1px solid rgba(138, 178, 255, 0.32);
+  background: rgba(10, 20, 38, 0.7);
+  color: var(--ink-0);
+  border-radius: 999px;
+  padding: 0.45rem 0.85rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.chip.active {
+  border-color: rgba(56, 232, 255, 0.5);
+  background: rgba(56, 232, 255, 0.16);
+}
+
+.hero-slider {
+  margin-bottom: 1rem;
+}
+
+.hero-slide {
+  position: relative;
+  height: 170px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(138, 178, 255, 0.3);
+  background: rgba(10, 20, 38, 0.5);
+  cursor: pointer;
+}
+
+.hero-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hero-slide-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0.8rem;
+  background: linear-gradient(180deg, transparent, rgba(7, 11, 24, 0.82));
+}
+
+.hero-slide-overlay h2 {
+  margin: 0 0 0.2rem;
+  font-size: 1.15rem;
+}
+
+.hero-slide-overlay p {
+  margin: 0;
+  color: #aefbe7;
+  font-weight: 700;
+}
+
+.hero-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+
+.hero-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(138, 178, 255, 0.35);
+  cursor: pointer;
+}
+
+.hero-dot.active {
+  background: var(--accent);
+}
+
 .products-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -793,6 +1084,7 @@ h2 {
 
 .product-card {
   --delay: 0ms;
+  position: relative;
   display: flex;
   gap: 0.9rem;
   border-radius: 16px;
@@ -804,6 +1096,24 @@ h2 {
   transform: translateY(12px);
   animation: revealItem 440ms ease forwards;
   animation-delay: var(--delay);
+}
+
+.fav-btn {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  z-index: 2;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(7, 11, 24, 0.55);
+  color: #d2deff;
+  cursor: pointer;
+}
+
+.fav-btn.active {
+  color: #ff627c;
 }
 
 .product-image {
@@ -1048,6 +1358,96 @@ h2 {
   margin-top: 0.7rem;
   background: linear-gradient(120deg, #51c4ff 0%, #65ffe6 100%);
   color: #07242b;
+}
+
+.profile-card {
+  text-align: center;
+  padding: 1rem 0.5rem;
+}
+
+.profile-avatar {
+  width: 88px;
+  height: 88px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 2px solid rgba(56, 232, 255, 0.4);
+}
+
+.profile-avatar-placeholder {
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  background: rgba(10, 20, 38, 0.85);
+}
+
+.profile-card h3 {
+  margin: 0.65rem 0 0.2rem;
+}
+
+.profile-username {
+  margin: 0;
+  color: var(--ink-1);
+}
+
+.profile-list {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.profile-item {
+  border: 1px solid rgba(138, 178, 255, 0.3);
+  background: rgba(10, 19, 37, 0.7);
+  color: var(--ink-0);
+  border-radius: 10px;
+  text-align: left;
+  padding: 0.7rem 0.8rem;
+  cursor: pointer;
+}
+
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4rem;
+  padding: 0.55rem 0.55rem calc(0.55rem + env(safe-area-inset-bottom));
+  background: rgba(8, 14, 29, 0.95);
+  border-top: 1px solid rgba(138, 178, 255, 0.24);
+  backdrop-filter: blur(12px);
+}
+
+.tab-btn {
+  position: relative;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #9db0d9;
+  font-size: 0.82rem;
+  padding: 0.55rem 0.35rem;
+  cursor: pointer;
+}
+
+.tab-btn.active {
+  color: var(--accent);
+  background: rgba(56, 232, 255, 0.1);
+}
+
+.tab-badge {
+  margin-left: 0.3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  font-size: 0.68rem;
+  border-radius: 999px;
+  background: #33f0cf;
+  color: #032025;
+  padding: 0 4px;
 }
 
 @keyframes driftA {

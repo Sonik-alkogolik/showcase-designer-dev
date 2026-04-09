@@ -15,6 +15,7 @@ class Product extends Model
         'description',
         'category',
         'in_stock',
+        'show_in_slider',
         'image',
         'attributes',
     ];
@@ -22,6 +23,7 @@ class Product extends Model
     protected $casts = [
         'price' => 'decimal:2',
         'in_stock' => 'boolean',
+        'show_in_slider' => 'boolean',
         'attributes' => 'array',
     ];
 

@@ -50,6 +50,7 @@
           <p class="stock" :class="{ 'in-stock': product.in_stock }">
             {{ product.in_stock ? 'В наличии' : 'Нет в наличии' }}
           </p>
+          <p v-if="product.show_in_slider" class="slider-badge">В слайдере</p>
           <div v-if="product.attributes && Object.keys(product.attributes).length" class="product-attributes">
             <div v-for="(value, key) in product.attributes" :key="key" class="attribute-item">
               <span class="attribute-name">{{ key }}:</span>
@@ -97,6 +98,12 @@
             <label>
               <input type="checkbox" v-model="form.in_stock">
               В наличии
+            </label>
+          </div>
+          <div class="form-group checkbox">
+            <label>
+              <input type="checkbox" v-model="form.show_in_slider">
+              Добавить в слайдер
             </label>
           </div>
           <!-- Атрибуты товара -->
@@ -238,7 +245,8 @@ export default {
       description: '',
       category: '',
       image: '',
-      in_stock: true
+      in_stock: true,
+      show_in_slider: false
     })
 
     const canCreate = computed(() => {
@@ -353,7 +361,8 @@ export default {
       editingProduct.value = product
       Object.assign(form, {
         ...product,
-        category: product.category_name || resolveCategoryName(product.category) || ''
+        category: product.category_name || resolveCategoryName(product.category) || '',
+        show_in_slider: Boolean(product.show_in_slider)
       })
       editingAttributes.value = product.attributes ? { ...product.attributes } : {}
     }
@@ -393,7 +402,8 @@ export default {
         description: '',
         category: '',
         image: '',
-        in_stock: true
+        in_stock: true,
+        show_in_slider: false
       })
     }
 
@@ -618,6 +628,17 @@ export default {
 
 .stock.in-stock {
   color: #4CAF50;
+}
+
+.slider-badge {
+  display: inline-block;
+  margin-top: 0.35rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #07242b;
+  background: linear-gradient(120deg, #4ad8ff, #5effc3);
 }
 
 .actions {
