@@ -62,6 +62,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ->middleware(['ensure.telegram.verified', 'has.active.subscription']);
     Route::get('/shops/{shop}', [App\Http\Controllers\ShopController::class, 'show'])
         ->middleware('own.shop');
+    Route::get('/shops/{shop}/bot-token', [App\Http\Controllers\ShopController::class, 'showBotToken'])
+        ->middleware('own.shop');
     Route::put('/shops/{shop}', [App\Http\Controllers\ShopController::class, 'update'])
         ->middleware('own.shop');
     Route::patch('/shops/{shop}', [App\Http\Controllers\ShopController::class, 'update'])

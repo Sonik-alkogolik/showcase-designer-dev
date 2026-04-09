@@ -95,14 +95,29 @@ class ShopController extends Controller
     {
         $user = Auth::user();
         $shop = $user->shops()->findOrFail($id);
-        
+
         // Не показываем токен в ответе
         $shopData = $shop->toArray();
+        $shopData['has_bot_token'] = ! empty($shop->getRawOriginal('bot_token'));
         unset($shopData['bot_token']);
-        
+
         return response()->json([
             'success' => true,
             'shop' => $shopData
+        ]);
+    }
+
+    /**
+     * Получить bot token магазина (только для владельца, по явному запросу UI)
+     */
+    public function showBotToken($id)
+    {
+        $user = Auth::user();
+        $shop = $user->shops()->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'bot_token' => $shop->bot_token,
         ]);
     }
 
@@ -154,10 +169,14 @@ class ShopController extends Controller
 
         $shop->update($payload);
 
+        $shopData = $shop->toArray();
+        $shopData['has_bot_token'] = ! empty($shop->getRawOriginal('bot_token'));
+        unset($shopData['bot_token']);
+
         return response()->json([
             'success' => true,
             'message' => 'Магазин успешно обновлен',
-            'shop' => $shop
+            'shop' => $shopData,
         ]);
     }
 

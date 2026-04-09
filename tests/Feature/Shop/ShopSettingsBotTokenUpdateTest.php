@@ -55,11 +55,62 @@ class ShopSettingsBotTokenUpdateTest extends TestCase
 
         $this->patchJson("/api/shops/{$shop->id}", [
             'bot_token' => '222222:new_valid_token',
-        ])->assertOk()->assertJson(['success' => true]);
+        ])->assertOk()
+            ->assertJson([
+                'success' => true,
+                'shop' => [
+                    'has_bot_token' => true,
+                ],
+            ])
+            ->assertJsonMissingPath('shop.bot_token');
 
         $shop->refresh();
 
         $this->assertSame('222222:new_valid_token', $shop->bot_token);
     }
-}
 
+    public function test_shop_show_returns_has_bot_token_flag_without_token_value(): void
+    {
+        $user = User::factory()->create();
+        $shop = Shop::create([
+            'user_id' => $user->id,
+            'name' => 'Token Shop',
+            'bot_token' => '333333:hidden_token',
+            'delivery_name' => 'Курьер',
+            'delivery_price' => 100,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $this->getJson("/api/shops/{$shop->id}")
+            ->assertOk()
+            ->assertJson([
+                'success' => true,
+                'shop' => [
+                    'has_bot_token' => true,
+                ],
+            ])
+            ->assertJsonMissingPath('shop.bot_token');
+    }
+
+    public function test_owner_can_fetch_real_bot_token_via_dedicated_endpoint(): void
+    {
+        $user = User::factory()->create();
+        $shop = Shop::create([
+            'user_id' => $user->id,
+            'name' => 'Token Shop',
+            'bot_token' => '444444:real_token_value',
+            'delivery_name' => 'Курьер',
+            'delivery_price' => 100,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $this->getJson("/api/shops/{$shop->id}/bot-token")
+            ->assertOk()
+            ->assertJson([
+                'success' => true,
+                'bot_token' => '444444:real_token_value',
+            ]);
+    }
+}

@@ -17,15 +17,27 @@
 
       <div class="form-group">
         <label for="bot_token">Токен Telegram бота</label>
-        <input
-          id="bot_token"
-          v-model="form.bot_token"
-          type="password"
-          :class="{ error: errors.bot_token }"
-          @blur="validateField('bot_token')"
-          placeholder="Оставьте пустым, чтобы не менять"
-        >
+        <div class="token-input-wrap">
+          <input
+            id="bot_token"
+            v-model="form.bot_token"
+            :type="showBotToken ? 'text' : 'password'"
+            :class="{ error: errors.bot_token }"
+            @blur="validateField('bot_token')"
+            placeholder="Оставьте пустым, чтобы не менять"
+            autocomplete="new-password"
+          >
+          <button
+            type="button"
+            class="btn-toggle-token"
+            @click="toggleBotTokenVisibility"
+          >
+            {{ showBotToken ? 'Скрыть' : 'Показать' }}
+          </button>
+        </div>
         <span v-if="errors.bot_token" class="error-message">{{ errors.bot_token }}</span>
+        <span v-else-if="hasBotToken" class="token-state token-state-ok">Токен сохранен в магазине</span>
+        <span v-else class="token-state">Токен пока не задан</span>
       </div>
 
       <div class="form-row">
@@ -116,6 +128,8 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 
+const BOT_TOKEN_MASK = '********'
+
 export default {
   name: 'ShopSettingsView',
   setup() {
@@ -124,6 +138,9 @@ export default {
     const loading = ref(false)
     const success = ref(false)
     const error = ref('')
+    const hasBotToken = ref(false)
+    const showBotToken = ref(false)
+    const savedBotToken = ref('')
 
     const form = reactive({
       name: '',
@@ -151,7 +168,7 @@ export default {
           errors.name = !form.name ? 'Название магазина обязательно' : ''
           break
         case 'bot_token':
-          if (form.bot_token && !form.bot_token.match(/^\d+:[\w-]+$/)) {
+          if (form.bot_token && form.bot_token !== BOT_TOKEN_MASK && !form.bot_token.match(/^\d+:[\w-]+$/)) {
             errors.bot_token = 'Неверный формат токена'
           } else {
             errors.bot_token = ''
@@ -226,10 +243,37 @@ export default {
         form.notification_chat_id = shop.notification_chat_id || ''
         form.notification_username = shop.notification_username || ''
         form.webhook_url = shop.webhook_url || ''
+        hasBotToken.value = Boolean(shop.has_bot_token)
+        savedBotToken.value = ''
+        form.bot_token = hasBotToken.value ? BOT_TOKEN_MASK : ''
       } catch (err) {
         error.value = err?.response?.data?.message || 'Не удалось загрузить настройки магазина'
       } finally {
         loading.value = false
+      }
+    }
+
+    const toggleBotTokenVisibility = async () => {
+      if (showBotToken.value) {
+        showBotToken.value = false
+        form.bot_token = hasBotToken.value ? BOT_TOKEN_MASK : ''
+        return
+      }
+
+      if (!hasBotToken.value) {
+        showBotToken.value = true
+        return
+      }
+
+      try {
+        if (!savedBotToken.value) {
+          const { data } = await axios.get(`/api/shops/${shopId}/bot-token`)
+          savedBotToken.value = data?.bot_token || ''
+        }
+        showBotToken.value = true
+        form.bot_token = savedBotToken.value
+      } catch (err) {
+        error.value = err?.response?.data?.message || 'Не удалось получить токен бота'
       }
     }
 
@@ -245,13 +289,16 @@ export default {
 
       try {
         const payload = { ...form }
-        if (!form.bot_token) {
+        if (!form.bot_token || form.bot_token === BOT_TOKEN_MASK) {
           delete payload.bot_token
         }
         const { data } = await axios.patch(`/api/shops/${shopId}`, payload)
         if (data?.success) {
           success.value = true
-          form.bot_token = ''
+          hasBotToken.value = Boolean(data?.shop?.has_bot_token)
+          savedBotToken.value = form.bot_token && form.bot_token !== BOT_TOKEN_MASK ? form.bot_token : savedBotToken.value
+          showBotToken.value = false
+          form.bot_token = hasBotToken.value ? BOT_TOKEN_MASK : ''
         }
       } catch (err) {
         if (err?.response?.data?.errors) {
@@ -278,6 +325,9 @@ export default {
       loading,
       success,
       error,
+      hasBotToken,
+      showBotToken,
+      toggleBotTokenVisibility,
       isFormValid,
       validateField,
       handleSubmit
@@ -327,6 +377,13 @@ input {
   color: #fff;
 }
 
+.token-input-wrap {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.6rem;
+  align-items: center;
+}
+
 input.error {
   border-color: rgba(255, 105, 126, 0.7);
 }
@@ -334,6 +391,15 @@ input.error {
 .error-message {
   color: #ff9aa7;
   font-size: 0.86rem;
+}
+
+.token-state {
+  color: #c3d2ff;
+  font-size: 0.86rem;
+}
+
+.token-state-ok {
+  color: #98f5c7;
 }
 
 .form-actions {
@@ -347,6 +413,16 @@ input.error {
   border-radius: 8px;
   padding: 0.65rem 1rem;
   cursor: pointer;
+}
+
+.btn-toggle-token {
+  border: 1px solid rgba(173, 186, 255, 0.35);
+  border-radius: 8px;
+  background: rgba(147, 169, 222, 0.15);
+  color: #deebff;
+  padding: 0.55rem 0.8rem;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
 .btn-primary {
