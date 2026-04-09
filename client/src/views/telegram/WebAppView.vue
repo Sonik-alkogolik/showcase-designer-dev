@@ -185,7 +185,7 @@
         <img v-if="resolvedProfileAvatar" :src="resolvedProfileAvatar" alt="avatar" class="profile-avatar">
         <div v-else class="profile-avatar profile-avatar-placeholder">👤</div>
         <h3>{{ telegramDisplayName }}</h3>
-        <p class="profile-username" v-if="ownerTelegramUsername">{{ ownerTelegramUsername }}</p>
+        <p class="profile-username" v-if="ownerAccountName">{{ ownerAccountName }}</p>
         <p class="profile-username" v-else-if="shop?.owner_profile?.email">{{ shop.owner_profile.email }}</p>
       </div>
       <div class="profile-list">
@@ -409,6 +409,12 @@ export default {
     })
 
     const telegramDisplayName = computed(() => {
+      if (ownerTelegramUsername.value) {
+        return ownerTelegramUsername.value
+      }
+      if (telegramUser.value?.username) {
+        return `@${telegramUser.value.username}`
+      }
       const ownerName = ownerProfile.value?.name
       if (ownerName) {
         return ownerName
@@ -427,6 +433,15 @@ export default {
       const raw = String(ownerProfile.value?.telegram_username || '').trim()
       if (!raw) return ''
       return raw.startsWith('@') ? raw : `@${raw}`
+    })
+
+    const ownerAccountName = computed(() => {
+      const ownerName = String(ownerProfile.value?.name || '').trim()
+      if (!ownerName) return ''
+      if (ownerTelegramUsername.value && ownerName === ownerTelegramUsername.value) {
+        return ''
+      }
+      return ownerName
     })
 
     const cartTotalItems = computed(() => {
@@ -759,6 +774,7 @@ export default {
       telegramDisplayName,
       resolvedProfileAvatar,
       ownerTelegramUsername,
+      ownerAccountName,
       cartItems,
       cartTotalItems,
       cartSubtotal,
