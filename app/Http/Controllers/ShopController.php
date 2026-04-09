@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Shop;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class ShopController extends Controller
@@ -202,10 +203,21 @@ class ShopController extends Controller
      */
     public function publicShow($id)
     {
-        $shop = Shop::findOrFail($id);
+        $shop = Shop::with('user')->findOrFail($id);
         $managerUsername = $shop->notification_username
             ? ltrim((string) $shop->notification_username, '@')
             : null;
+        $owner = $shop->user;
+
+        $ownerAvatarRaw = (string) ($owner?->avatar ?? '');
+        $ownerAvatarUrl = null;
+        if ($ownerAvatarRaw !== '') {
+            if (str_starts_with($ownerAvatarRaw, 'http://') || str_starts_with($ownerAvatarRaw, 'https://') || str_starts_with($ownerAvatarRaw, '/')) {
+                $ownerAvatarUrl = $ownerAvatarRaw;
+            } else {
+                $ownerAvatarUrl = Storage::url($ownerAvatarRaw);
+            }
+        }
         
         return response()->json([
             'success' => true,
@@ -216,6 +228,12 @@ class ShopController extends Controller
                 'delivery_price' => $shop->delivery_price,
                 'manager_telegram_username' => $managerUsername,
                 'manager_telegram_url' => $managerUsername ? 'https://t.me/' . $managerUsername : null,
+                'owner_profile' => [
+                    'name' => $owner?->name,
+                    'email' => $owner?->email,
+                    'telegram_username' => $owner?->telegram_username,
+                    'avatar_url' => $ownerAvatarUrl,
+                ],
             ]
         ]);
     }

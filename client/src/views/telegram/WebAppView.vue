@@ -185,7 +185,8 @@
         <img v-if="resolvedProfileAvatar" :src="resolvedProfileAvatar" alt="avatar" class="profile-avatar">
         <div v-else class="profile-avatar profile-avatar-placeholder">👤</div>
         <h3>{{ telegramDisplayName }}</h3>
-        <p class="profile-username" v-if="telegramUser.username">@{{ telegramUser.username }}</p>
+        <p class="profile-username" v-if="ownerTelegramUsername">{{ ownerTelegramUsername }}</p>
+        <p class="profile-username" v-else-if="shop?.owner_profile?.email">{{ shop.owner_profile.email }}</p>
       </div>
       <div class="profile-list">
         <button class="profile-item" @click="setView('catalog')">Вернуться к покупкам</button>
@@ -318,7 +319,7 @@ export default {
     const selectedCategory = ref('')
     const showSearch = ref(false)
     const searchInput = ref(null)
-    const profileData = ref(null)
+    const ownerProfile = ref(null)
     const currentView = ref('catalog') // 'catalog', 'favorites', 'cart', 'profile', 'checkout'
     
     const normalizeShopId = (id) => String(id ?? '').trim()
@@ -408,6 +409,10 @@ export default {
     })
 
     const telegramDisplayName = computed(() => {
+      const ownerName = ownerProfile.value?.name
+      if (ownerName) {
+        return ownerName
+      }
       const firstName = telegramUser.value?.first_name || ''
       const lastName = telegramUser.value?.last_name || ''
       const fullName = `${firstName} ${lastName}`.trim()
@@ -415,7 +420,13 @@ export default {
     })
 
     const resolvedProfileAvatar = computed(() => {
-      return profileData.value?.avatar_url || profileData.value?.avatar || telegramUser.value?.photo_url || ''
+      return ownerProfile.value?.avatar_url || telegramUser.value?.photo_url || ''
+    })
+
+    const ownerTelegramUsername = computed(() => {
+      const raw = String(ownerProfile.value?.telegram_username || '').trim()
+      if (!raw) return ''
+      return raw.startsWith('@') ? raw : `@${raw}`
     })
 
     const cartTotalItems = computed(() => {
@@ -457,7 +468,7 @@ export default {
       favorites.value = readFavoritesFromStorage()
 
       try {
-        await Promise.all([loadShop(), loadProducts(), loadProfile()])
+        await Promise.all([loadShop(), loadProducts()])
       } finally {
         loading.value = false
       }
@@ -474,6 +485,7 @@ export default {
       try {
         const response = await axios.get(`/api/shops/${shopId}/public`)
         shop.value = response.data.shop
+        ownerProfile.value = response.data.shop?.owner_profile || null
       } catch (err) {
         error.value = 'Ошибка загрузки магазина'
         console.error(err)
@@ -506,15 +518,6 @@ export default {
         }
       } catch (err) {
         console.error('Ошибка загрузки товаров:', err)
-      }
-    }
-
-    const loadProfile = async () => {
-      try {
-        const response = await axios.get('/api/profile')
-        profileData.value = response.data
-      } catch {
-        profileData.value = null
       }
     }
 
@@ -755,6 +758,7 @@ export default {
       telegramUser,
       telegramDisplayName,
       resolvedProfileAvatar,
+      ownerTelegramUsername,
       cartItems,
       cartTotalItems,
       cartSubtotal,
