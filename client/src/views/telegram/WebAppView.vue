@@ -12,27 +12,24 @@
           <p class="kicker">WEB APP STORE</p>
           <h1>{{ shop?.name || 'Магазин' }}</h1>
         </div>
-        <div class="cart-icon" @click="setView('cart')">
-          🛒 <span class="cart-count" v-if="cartTotalItems">{{ cartTotalItems }}</span>
+        <div class="shop-actions">
+          <button class="search-toggle" @click="toggleSearch">
+            {{ showSearch ? '✕' : '🔍' }}
+          </button>
+          <div class="cart-icon" @click="setView('cart')">
+            🛒 <span class="cart-count" v-if="cartTotalItems">{{ cartTotalItems }}</span>
+          </div>
         </div>
       </div>
-      
-      <p class="delivery">
-        Доставка: {{ shop?.delivery_name || 'Не указана' }} - {{ Number(shop?.delivery_price || 0) }} ₽
-      </p>
 
-      <!-- Поиск и фильтры -->
-      <div class="filters">
+      <div v-if="showSearch" class="header-search">
         <input 
+          ref="searchInput"
           type="text" 
           v-model="searchQuery" 
           placeholder="Поиск товаров..."
           @input="debouncedSearch"
         >
-        <select v-model="selectedCategory" @change="loadProducts">
-          <option value="">Категории</option>
-          <option v-for="cat in categories" :key="cat.id" :value="String(cat.id)">{{ cat.name }}</option>
-        </select>
       </div>
 
       <div class="category-chips">
@@ -192,8 +189,7 @@
       </div>
       <div class="profile-list">
         <button class="profile-item" @click="setView('catalog')">Вернуться к покупкам</button>
-        <button class="profile-item" @click="setView('favorites')">Открыть избранное</button>
-        <button class="profile-item" @click="setView('cart')">Открыть корзину</button>
+        <button class="profile-item" @click="openSupportChat">Связаться с поддержкой</button>
       </div>
     </div>
 
@@ -293,13 +289,16 @@
         Корзина
         <span v-if="cartTotalItems" class="tab-badge">{{ cartTotalItems }}</span>
       </button>
-      <button class="tab-btn" :class="{ active: currentView === 'profile' }" @click="setView('profile')">Профиль</button>
+      <button class="tab-btn tab-profile" :class="{ active: currentView === 'profile' }" @click="setView('profile')">
+        <img v-if="telegramUser.photo_url" :src="telegramUser.photo_url" alt="profile" class="tab-avatar">
+        <span v-else>Профиль</span>
+      </button>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 import debounce from 'lodash/debounce'
@@ -317,6 +316,8 @@ export default {
     const categories = ref([])
     const searchQuery = ref('')
     const selectedCategory = ref('')
+    const showSearch = ref(false)
+    const searchInput = ref(null)
     const currentView = ref('catalog') // 'catalog', 'favorites', 'cart', 'profile', 'checkout'
     
     const normalizeShopId = (id) => String(id ?? '').trim()
@@ -392,7 +393,11 @@ export default {
     })
 
     const sliderProducts = computed(() => {
-      return products.value.filter((item) => item.show_in_slider && item.image)
+      const preferred = products.value.filter((item) => item.show_in_slider && item.image)
+      if (preferred.length > 0) {
+        return preferred
+      }
+      return products.value.filter((item) => item.image).slice(0, 5)
     })
 
     const showBottomNav = computed(() => !loading.value && !error.value)
@@ -574,6 +579,14 @@ export default {
       persistFavorites()
     }
 
+    const toggleSearch = async () => {
+      showSearch.value = !showSearch.value
+      if (showSearch.value) {
+        await nextTick()
+        searchInput.value?.focus()
+      }
+    }
+
     const goToCheckout = () => {
       if (cartItems.value.length === 0) {
         if (window.Telegram?.WebApp) {
@@ -625,6 +638,18 @@ export default {
         window.Telegram.WebApp.openLink(managerContactUrl.value)
       } else {
         window.open(managerContactUrl.value, '_blank')
+      }
+    }
+
+    const supportUrl = computed(() => {
+      return managerBaseUrl.value || 'https://t.me/tgshopCLO_bot'
+    })
+
+    const openSupportChat = () => {
+      if (window.Telegram?.WebApp?.openLink) {
+        window.Telegram.WebApp.openLink(supportUrl.value)
+      } else {
+        window.open(supportUrl.value, '_blank')
       }
     }
 
@@ -706,6 +731,8 @@ export default {
       categories,
       searchQuery,
       selectedCategory,
+      showSearch,
+      searchInput,
       currentView,
       sliderProducts,
       currentSlideIndex,
@@ -732,8 +759,10 @@ export default {
       setView,
       selectCategory,
       goToSlide,
+      toggleSearch,
       toggleFavorite,
       isFavorite,
+      openSupportChat,
       goToCheckout,
       openManagerContact,
       submitOrder,
@@ -875,6 +904,46 @@ export default {
   gap: 0.8rem;
 }
 
+.shop-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.search-toggle {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  border: 1px solid rgba(138, 178, 255, 0.34);
+  background: rgba(10, 20, 38, 0.74);
+  color: var(--ink-0);
+  cursor: pointer;
+}
+
+.header-search {
+  margin-bottom: 0.9rem;
+}
+
+.header-search input {
+  width: 100%;
+  padding: 0.7rem 0.8rem;
+  border-radius: 12px;
+  border: 1px solid rgba(138, 178, 255, 0.35);
+  background: rgba(10, 18, 37, 0.74);
+  color: var(--ink-0);
+  font-size: 0.92rem;
+  outline: none;
+}
+
+.header-search input::placeholder {
+  color: #9bb2db;
+}
+
+.header-search input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(56, 232, 255, 0.16);
+}
+
 .cart-header,
 .checkout-header {
   justify-content: flex-start;
@@ -944,49 +1013,6 @@ h2 {
   align-items: center;
   justify-content: center;
   padding: 0 4px;
-}
-
-.delivery {
-  margin: 0 0 1rem;
-  padding: 0.8rem 0.9rem;
-  border-radius: 12px;
-  border: 1px solid rgba(56, 232, 255, 0.22);
-  background: rgba(10, 19, 37, 0.55);
-  color: var(--ink-1);
-}
-
-.filters {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.55rem;
-  margin-bottom: 1.2rem;
-}
-
-.filters input,
-.filters select {
-  width: 100%;
-  padding: 0.7rem 0.8rem;
-  border-radius: 12px;
-  border: 1px solid rgba(138, 178, 255, 0.35);
-  background: rgba(10, 18, 37, 0.74);
-  color: var(--ink-0);
-  font-size: 0.92rem;
-  outline: none;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
-}
-
-.filters input::placeholder {
-  color: #9bb2db;
-}
-
-.filters input:focus,
-.filters select:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(56, 232, 255, 0.16);
-}
-
-.filters select {
-  max-width: 136px;
 }
 
 .category-chips {
@@ -1436,6 +1462,19 @@ h2 {
   background: rgba(56, 232, 255, 0.1);
 }
 
+.tab-profile {
+  display: grid;
+  place-items: center;
+}
+
+.tab-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid rgba(56, 232, 255, 0.45);
+}
+
 .tab-badge {
   margin-left: 0.3rem;
   display: inline-flex;
@@ -1495,14 +1534,6 @@ h2 {
   .panel-shell {
     margin: 8px;
     border-radius: 18px;
-  }
-
-  .filters {
-    grid-template-columns: 1fr;
-  }
-
-  .filters select {
-    max-width: 100%;
   }
 
   .product-card {
