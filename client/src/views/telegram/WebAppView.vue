@@ -182,7 +182,7 @@
         <h2>Профиль</h2>
       </div>
       <div class="profile-card">
-        <img v-if="telegramUser.photo_url" :src="telegramUser.photo_url" alt="avatar" class="profile-avatar">
+        <img v-if="resolvedProfileAvatar" :src="resolvedProfileAvatar" alt="avatar" class="profile-avatar">
         <div v-else class="profile-avatar profile-avatar-placeholder">👤</div>
         <h3>{{ telegramDisplayName }}</h3>
         <p class="profile-username" v-if="telegramUser.username">@{{ telegramUser.username }}</p>
@@ -290,7 +290,7 @@
         <span v-if="cartTotalItems" class="tab-badge">{{ cartTotalItems }}</span>
       </button>
       <button class="tab-btn tab-profile" :class="{ active: currentView === 'profile' }" @click="setView('profile')">
-        <img v-if="telegramUser.photo_url" :src="telegramUser.photo_url" alt="profile" class="tab-avatar">
+        <img v-if="resolvedProfileAvatar" :src="resolvedProfileAvatar" alt="profile" class="tab-avatar">
         <span v-else>Профиль</span>
       </button>
     </div>
@@ -318,6 +318,7 @@ export default {
     const selectedCategory = ref('')
     const showSearch = ref(false)
     const searchInput = ref(null)
+    const profileData = ref(null)
     const currentView = ref('catalog') // 'catalog', 'favorites', 'cart', 'profile', 'checkout'
     
     const normalizeShopId = (id) => String(id ?? '').trim()
@@ -393,11 +394,11 @@ export default {
     })
 
     const sliderProducts = computed(() => {
-      const preferred = products.value.filter((item) => item.show_in_slider && item.image)
+      const preferred = products.value.filter((item) => item.show_in_slider)
       if (preferred.length > 0) {
         return preferred
       }
-      return products.value.filter((item) => item.image).slice(0, 5)
+      return products.value.slice(0, 5)
     })
 
     const showBottomNav = computed(() => !loading.value && !error.value)
@@ -411,6 +412,10 @@ export default {
       const lastName = telegramUser.value?.last_name || ''
       const fullName = `${firstName} ${lastName}`.trim()
       return fullName || 'Пользователь'
+    })
+
+    const resolvedProfileAvatar = computed(() => {
+      return profileData.value?.avatar_url || profileData.value?.avatar || telegramUser.value?.photo_url || ''
     })
 
     const cartTotalItems = computed(() => {
@@ -452,7 +457,7 @@ export default {
       favorites.value = readFavoritesFromStorage()
 
       try {
-        await Promise.all([loadShop(), loadProducts()])
+        await Promise.all([loadShop(), loadProducts(), loadProfile()])
       } finally {
         loading.value = false
       }
@@ -501,6 +506,15 @@ export default {
         }
       } catch (err) {
         console.error('Ошибка загрузки товаров:', err)
+      }
+    }
+
+    const loadProfile = async () => {
+      try {
+        const response = await axios.get('/api/profile')
+        profileData.value = response.data
+      } catch {
+        profileData.value = null
       }
     }
 
@@ -740,6 +754,7 @@ export default {
       showBottomNav,
       telegramUser,
       telegramDisplayName,
+      resolvedProfileAvatar,
       cartItems,
       cartTotalItems,
       cartSubtotal,

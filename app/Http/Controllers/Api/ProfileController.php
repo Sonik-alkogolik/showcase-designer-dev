@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ProfileController extends Controller
@@ -15,11 +16,22 @@ class ProfileController extends Controller
     public function show(Request $request)
     {
         $user = $request->user();
+        $avatarRaw = (string) ($user->avatar ?? '');
+        $avatarUrl = null;
+        if ($avatarRaw !== '') {
+            if (Str::startsWith($avatarRaw, ['http://', 'https://', '/'])) {
+                $avatarUrl = $avatarRaw;
+            } else {
+                $avatarUrl = Storage::url($avatarRaw);
+            }
+        }
         
         return response()->json([
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
+            'avatar' => $avatarRaw !== '' ? $avatarRaw : null,
+            'avatar_url' => $avatarUrl,
             'telegram_linked' => $user->isTelegramLinked(),
             'telegram_id' => $user->telegram_id,
             'telegram_username' => $user->telegram_username,

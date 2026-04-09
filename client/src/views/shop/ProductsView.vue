@@ -94,6 +94,11 @@
             <label>Изображение (URL)</label>
             <input v-model="form.image" placeholder="https://...">
           </div>
+          <div class="form-group">
+            <label>Или загрузить изображение</label>
+            <input type="file" accept="image/*" @change="onImageFileChange">
+            <p v-if="selectedImageFileName" class="upload-note">Выбрано: {{ selectedImageFileName }}</p>
+          </div>
           <div class="form-group checkbox">
             <label>
               <input type="checkbox" v-model="form.in_stock">
@@ -233,6 +238,8 @@ export default {
     const editingAttributes = ref({})
     const newAttributeKey = ref('')
     const newAttributeValue = ref('')
+    const selectedImageFile = ref(null)
+    const selectedImageFileName = ref('')
     
     const filters = reactive({
       search: '',
@@ -339,7 +346,32 @@ export default {
         
         console.log('📤 Отправляемые данные:', productData)
         
-        const response = await axios[method](url, productData)
+        let response
+        if (selectedImageFile.value) {
+          const formData = new FormData()
+          Object.entries(productData).forEach(([key, value]) => {
+            if (value === null || value === undefined) {
+              return
+            }
+            if (key === 'attributes') {
+              formData.append('attributes', JSON.stringify(value || {}))
+              return
+            }
+            if (typeof value === 'boolean') {
+              formData.append(key, value ? '1' : '0')
+              return
+            }
+            formData.append(key, String(value))
+          })
+          formData.append('image_file', selectedImageFile.value)
+          response = await axios[method](url, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          })
+        } else {
+          response = await axios[method](url, productData)
+        }
         
         console.log('✅ Ответ сервера:', response.data)
         
@@ -396,6 +428,8 @@ export default {
       showCreateForm.value = false
       editingProduct.value = null
       editingAttributes.value = {}
+      selectedImageFile.value = null
+      selectedImageFileName.value = ''
       Object.assign(form, {
         name: '',
         price: '',
@@ -405,6 +439,12 @@ export default {
         in_stock: true,
         show_in_slider: false
       })
+    }
+
+    const onImageFileChange = (event) => {
+      const file = event?.target?.files?.[0] || null
+      selectedImageFile.value = file
+      selectedImageFileName.value = file ? file.name : ''
     }
 
     const closeImportModal = () => {
@@ -525,6 +565,8 @@ export default {
       closeImportModal,
       addAttribute,       
       removeAttribute,
+      onImageFileChange,
+      selectedImageFileName,
       // Новые свойства для категорий
       showCategoriesModal,
       editingCategory,
@@ -787,6 +829,12 @@ export default {
   padding: 0.5rem;
   border: 1px solid #ddd;
   border-radius: 4px;
+}
+
+.upload-note {
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+  color: #8ecbff;
 }
 
 .form-group.checkbox label {

@@ -6,12 +6,42 @@ use App\Models\Product;
 use App\Models\Shop;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class ProductController extends Controller
 {
+    private function normalizeAttributes(Request $request): void
+    {
+        $raw = $request->input('attributes');
+        if (is_string($raw) && $raw !== '') {
+            $decoded = json_decode($raw, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $request->merge(['attributes' => $decoded]);
+            }
+        }
+    }
+
+    private function handleProductImageUpload(Request $request, ?string $existingImage = null): ?string
+    {
+        if (! $request->hasFile('image_file')) {
+            return null;
+        }
+
+        $path = $request->file('image_file')->store('products', 'public');
+
+        if ($existingImage && str_starts_with($existingImage, '/storage/')) {
+            $oldPath = ltrim(str_replace('/storage/', '', $existingImage), '/');
+            if ($oldPath !== '' && Storage::disk('public')->exists($oldPath)) {
+                Storage::disk('public')->delete($oldPath);
+            }
+        }
+
+        return Storage::url($path);
+    }
+
     /**
      * Resolve category payload for product create/update.
      *
@@ -115,6 +145,7 @@ class ProductController extends Controller
     {
         $user = Auth::user();
         $shop = $user->shops()->findOrFail($shopId);
+        $this->normalizeAttributes($request);
 
         // Проверка лимита товаров по тарифу
         $productsCount = $shop->products()->count();
@@ -139,6 +170,7 @@ class ProductController extends Controller
             'in_stock' => 'boolean',
             'show_in_slider' => 'boolean',
             'image' => 'nullable|url',
+            'image_file' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:5120',
             'attributes' => 'nullable|array',
         ]);
 
@@ -162,6 +194,11 @@ class ProductController extends Controller
             'image' => $request->image,
             'attributes' => $request->attributes,
         ];
+
+        $uploadedImageUrl = $this->handleProductImageUpload($request);
+        if ($uploadedImageUrl) {
+            $data['image'] = $uploadedImageUrl;
+        }
 
         $product = $shop->products()->create($data);
 
@@ -196,6 +233,7 @@ class ProductController extends Controller
         $user = Auth::user();
         $shop = $user->shops()->findOrFail($shopId);
         $product = $shop->products()->findOrFail($productId);
+        $this->normalizeAttributes($request);
 
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|string|max:255',
@@ -209,6 +247,7 @@ class ProductController extends Controller
             'in_stock' => 'boolean',
             'show_in_slider' => 'boolean',
             'image' => 'nullable|url',
+            'image_file' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:5120',
             'attributes' => 'nullable|array',
         ]);
 
@@ -226,6 +265,11 @@ class ProductController extends Controller
         $categoryPayload = $this->resolveCategoryPayload($request, $shop, true);
         if ($categoryPayload !== null) {
             $data = array_merge($data, $categoryPayload);
+        }
+
+        $uploadedImageUrl = $this->handleProductImageUpload($request, $product->image);
+        if ($uploadedImageUrl) {
+            $data['image'] = $uploadedImageUrl;
         }
         
         $product->update($data);
