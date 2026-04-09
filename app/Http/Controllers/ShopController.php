@@ -113,8 +113,9 @@ class ShopController extends Controller
     {
         $user = Auth::user();
         $shop = $user->shops()->findOrFail($id);
+        $payload = $request->all();
 
-        $validator = Validator::make($request->all(), [
+        $validator = Validator::make($payload, [
             'name' => 'sometimes|string|max:255',
             'bot_token' => 'nullable|string',
             'notification_chat_id' => 'nullable|string|max:255',
@@ -132,8 +133,13 @@ class ShopController extends Controller
         }
 
         // Если обновляется токен, проверяем его
-        if ($request->has('bot_token')) {
-            $newToken = $request->input('bot_token');
+        if (array_key_exists('bot_token', $payload)) {
+            $newToken = $payload['bot_token'];
+
+            // Пустой токен в форме означает "не менять текущий токен"
+            if (blank($newToken)) {
+                unset($payload['bot_token']);
+            }
 
             if (filled($newToken) && $newToken !== $shop->bot_token) {
                 $tempShop = new Shop(['bot_token' => $newToken]);
@@ -146,7 +152,7 @@ class ShopController extends Controller
             }
         }
 
-        $shop->update($request->all());
+        $shop->update($payload);
 
         return response()->json([
             'success' => true,

@@ -244,9 +244,9 @@ export default {
       error.value = ''
 
       try {
-        const payload = {
-          ...form,
-          bot_token: form.bot_token || null
+        const payload = { ...form }
+        if (!form.bot_token) {
+          delete payload.bot_token
         }
         const { data } = await axios.patch(`/api/shops/${shopId}`, payload)
         if (data?.success) {
