@@ -10,6 +10,10 @@
           Главная
         </router-link>
 
+        <router-link to="/dashboard" class="nav-link" v-if="isAuthenticated">
+          Панель
+        </router-link>
+
         <router-link to="/create-shop" class="nav-link" v-if="isAuthenticated">
           Новый магазин
         </router-link>

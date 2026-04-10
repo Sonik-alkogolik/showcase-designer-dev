@@ -7,6 +7,7 @@ import ProfileView from '../views/ProfileView.vue';
 import PlansView from '../views/PlansView.vue'; 
 import PrivacyPolicyView from '../views/PrivacyPolicyView.vue';
 import PublicLandingView from '../views/PublicLandingView.vue';
+import DashboardLayout from '../views/dashboard/DashboardLayout.vue';
 import { useAuth } from '../composables/useAuth';
 
 const routes = [
@@ -15,6 +16,65 @@ const routes = [
     name: 'Landing',
     component: PublicLandingView,
     meta: { requiresGuest: true }
+  },
+  {
+    path: '/dashboard',
+    component: DashboardLayout,
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: '',
+        redirect: '/dashboard/products',
+      },
+      {
+        path: 'products',
+        name: 'DashboardProducts',
+        component: () => import('../views/dashboard/DashboardProductsView.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: 'orders',
+        name: 'DashboardOrders',
+        component: () => import('../views/dashboard/DashboardOrdersView.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: 'marketing',
+        name: 'DashboardMarketing',
+        component: () => import('../views/dashboard/DashboardMarketingView.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: 'analytics',
+        name: 'DashboardAnalytics',
+        component: () => import('../views/dashboard/DashboardAnalyticsView.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: 'settings',
+        name: 'DashboardSettings',
+        component: () => import('../views/dashboard/DashboardSettingsView.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: 'help',
+        name: 'DashboardHelp',
+        component: () => import('../views/dashboard/DashboardHelpView.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: 'language',
+        name: 'DashboardLanguage',
+        component: () => import('../views/dashboard/DashboardLanguageView.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: 'profile',
+        name: 'DashboardProfile',
+        component: () => import('../views/dashboard/DashboardProfileView.vue'),
+        meta: { requiresAuth: true },
+      },
+    ],
   },
   {
     path: '/create-shop',

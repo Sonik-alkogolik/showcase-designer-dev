@@ -1,7 +1,7 @@
 <template>
   <div class="app-shell">
     <Navbar v-if="!hideNavbar" />
-    <div :class="['main-content', { 'webapp-layout': hideNavbar }]">
+    <div :class="['main-content', { 'webapp-layout': hideNavbar, 'dashboard-layout': isDashboardRoute }]">
       <router-view />
     </div>
   </div>
@@ -25,6 +25,7 @@ const initialHasTelegramQueryHints = hasWindow
   : false
 
 const isWebAppRoute = computed(() => route.path.startsWith('/app'))
+const isDashboardRoute = computed(() => route.path.startsWith('/dashboard'))
 const hasShopQuery = computed(() => Boolean(route.query?.shop || route.query?.shopId))
 const hideNavbar = computed(() =>
   initialIsWebAppRoute ||
@@ -56,5 +57,10 @@ const hideNavbar = computed(() =>
   max-width: none;
   margin: 0;
   padding: 0;
+}
+
+.main-content.dashboard-layout {
+  width: min(1400px, 100% - 1rem);
+  margin-top: 0.8rem;
 }
 </style>
