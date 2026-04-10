@@ -57,6 +57,17 @@
         <p v-if="botSetup?.domain_hint_required" class="domain-hint">
           Важно: в @BotFather для этого бота должен быть установлен домен <strong>e-tgo.ru</strong> через <code>/setdomain</code>.
         </p>
+        <div v-if="manualSetupSteps.length" class="manual-setup">
+          <p class="manual-setup-title">Быстрый запуск (как у TGShop):</p>
+          <ol class="manual-setup-list">
+            <li v-for="(step, idx) in manualSetupSteps" :key="`setup-step-${idx}`">{{ step }}</li>
+          </ol>
+          <div v-if="botSetup?.webapp_url" class="manual-setup-actions">
+            <button type="button" class="btn-secondary" @click="copyWebAppUrl">
+              Копировать URL mini-app
+            </button>
+          </div>
+        </div>
         <div class="bot-setup-actions">
           <button type="button" class="btn-primary" :disabled="botSetupLoading" @click="connectBot">
             {{ botSetupLoading ? 'Подключаю...' : 'Подключить бота' }}
@@ -260,6 +271,14 @@ export default {
         !errors.webhook_url
     })
 
+    const manualSetupSteps = computed(() => {
+      const steps = botSetup.value?.manual_setup?.steps
+      if (!Array.isArray(steps)) {
+        return []
+      }
+      return steps
+    })
+
     const loadShop = async () => {
       loading.value = true
       error.value = ''
@@ -343,6 +362,17 @@ export default {
       }
     }
 
+    const copyWebAppUrl = async () => {
+      const url = botSetup.value?.webapp_url
+      if (!url) return
+
+      try {
+        await navigator.clipboard.writeText(url)
+      } catch (err) {
+        error.value = 'Не удалось скопировать URL mini-app'
+      }
+    }
+
     const handleSubmit = async () => {
       Object.keys(form).forEach(validateField)
       if (!isFormValid.value) {
@@ -399,6 +429,8 @@ export default {
       botSetup,
       connectBot,
       loadBotStatus,
+      manualSetupSteps,
+      copyWebAppUrl,
       isFormValid,
       validateField,
       handleSubmit
@@ -518,6 +550,30 @@ input.error {
   margin: 0.5rem 0 0;
   color: #ffdca8;
   font-size: 0.9rem;
+}
+
+.manual-setup {
+  margin-top: 0.65rem;
+  border-top: 1px dashed rgba(173, 186, 255, 0.28);
+  padding-top: 0.55rem;
+}
+
+.manual-setup-title {
+  margin: 0;
+  color: #deebff;
+  font-weight: 600;
+}
+
+.manual-setup-list {
+  margin: 0.4rem 0 0;
+  padding-left: 1.1rem;
+  color: #c3d2ff;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.manual-setup-actions {
+  margin-top: 0.55rem;
 }
 
 .bot-setup-actions {

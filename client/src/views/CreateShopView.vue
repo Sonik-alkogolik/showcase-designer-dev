@@ -139,6 +139,12 @@
       <p v-if="botSetup?.domain_hint_required" class="bot-setup-line bot-setup-warn">
         Для этого бота один раз задайте домен <strong>e-tgo.ru</strong> в @BotFather через <code>/setdomain</code>.
       </p>
+      <div v-if="manualSetupSteps.length" class="manual-setup">
+        <p class="manual-setup-title">Быстрый запуск:</p>
+        <ol class="manual-setup-list">
+          <li v-for="(step, idx) in manualSetupSteps" :key="`create-setup-step-${idx}`">{{ step }}</li>
+        </ol>
+      </div>
       <router-link to="/shops" class="btn-primary">Перейти к магазинам</router-link>
     </div>
 
@@ -290,6 +296,14 @@ export default {
              !errors.webhook_url
     })
 
+    const manualSetupSteps = computed(() => {
+      const steps = botSetup.value?.manual_setup?.steps
+      if (!Array.isArray(steps)) {
+        return []
+      }
+      return steps
+    })
+
     const handleSubmit = async () => {
       // Валидация всех полей
       Object.keys(form).forEach(field => validateField(field))
@@ -348,6 +362,7 @@ export default {
       success,
       error,
       botSetup,
+      manualSetupSteps,
       limits,
       validateField,
       isFormValid,
@@ -537,6 +552,23 @@ input.error {
 
 .bot-setup-warn {
   color: #ffd4a0;
+}
+
+.manual-setup {
+  margin-top: 0.65rem;
+}
+
+.manual-setup-title {
+  margin: 0;
+  color: #c9e5ff;
+  font-weight: 600;
+}
+
+.manual-setup-list {
+  margin: 0.35rem 0 0;
+  padding-left: 1rem;
+  color: #c4ddff;
+  line-height: 1.35;
 }
 
 @keyframes page-in {
