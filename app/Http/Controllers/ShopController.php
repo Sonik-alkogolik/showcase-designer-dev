@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Shop;
+use App\Services\TelegramBotOnboardingService;
 use App\Services\TelegramAvatarService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,6 +12,11 @@ use Illuminate\Support\Facades\Validator;
 
 class ShopController extends Controller
 {
+    public function __construct(
+        private readonly TelegramBotOnboardingService $telegramBotOnboardingService
+    ) {
+    }
+
     /**
      * Получить список магазинов пользователя
      */
@@ -86,7 +92,10 @@ class ShopController extends Controller
             'success' => true,
             'message' => 'Магазин успешно создан',
             'shop' => $shop,
-            'remaining_shops' => $user->getRemainingShops()
+            'remaining_shops' => $user->getRemainingShops(),
+            'bot_setup' => $request->filled('bot_token')
+                ? $this->telegramBotOnboardingService->connectShopBot($shop)
+                : null,
         ], 201);
     }
 
@@ -179,6 +188,42 @@ class ShopController extends Controller
             'success' => true,
             'message' => 'Магазин успешно обновлен',
             'shop' => $shopData,
+            'bot_setup' => array_key_exists('bot_token', $payload)
+                ? $this->telegramBotOnboardingService->connectShopBot($shop)
+                : null,
+        ]);
+    }
+
+    /**
+     * Автоподключение витринного бота: getMe + setChatMenuButton
+     */
+    public function connectBot($id)
+    {
+        $user = Auth::user();
+        $shop = $user->shops()->findOrFail($id);
+
+        $result = $this->telegramBotOnboardingService->connectShopBot($shop);
+        $statusCode = ($result['ok'] ?? false) ? 200 : 422;
+
+        return response()->json([
+            'success' => (bool) ($result['ok'] ?? false),
+            'bot_setup' => $result,
+        ], $statusCode);
+    }
+
+    /**
+     * Статус готовности витринного бота.
+     */
+    public function botStatus($id)
+    {
+        $user = Auth::user();
+        $shop = $user->shops()->findOrFail($id);
+
+        $result = $this->telegramBotOnboardingService->status($shop);
+
+        return response()->json([
+            'success' => true,
+            'bot_setup' => $result,
         ]);
     }
 

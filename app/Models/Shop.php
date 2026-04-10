@@ -85,7 +85,8 @@ class Shop extends Model
                 ->timeout(10)
                 ->get(TelegramHttp::botMethodUrl((string) $this->bot_token, 'getMe'));
 
-            return $response->ok();
+            $data = $response->json();
+            return $response->ok() && (bool) data_get($data, 'ok', false);
         } catch (\Throwable $e) {
             return false;
         }

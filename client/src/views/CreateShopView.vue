@@ -133,6 +133,12 @@
     <!-- Сообщение об успехе -->
     <div v-if="success" class="alert alert-success">
       <p>Магазин успешно создан!</p>
+      <p v-if="botSetup" class="bot-setup-line" :class="botSetup.ok ? 'bot-setup-ok' : 'bot-setup-warn'">
+        {{ botSetup.message }}
+      </p>
+      <p v-if="botSetup?.domain_hint_required" class="bot-setup-line bot-setup-warn">
+        Для этого бота один раз задайте домен <strong>e-tgo.ru</strong> в @BotFather через <code>/setdomain</code>.
+      </p>
       <router-link to="/shops" class="btn-primary">Перейти к магазинам</router-link>
     </div>
 
@@ -156,6 +162,7 @@ export default {
     const success = ref(false)
     const error = ref('')
     const limits = ref(null)
+    const botSetup = ref(null)
 
     const form = reactive({
       name: '',
@@ -299,6 +306,7 @@ export default {
         
         if (response.data.success) {
           success.value = true
+          botSetup.value = response.data.bot_setup || null
           // Очищаем форму
           Object.assign(form, {
             name: '',
@@ -339,6 +347,7 @@ export default {
       loading,
       success,
       error,
+      botSetup,
       limits,
       validateField,
       isFormValid,
@@ -516,6 +525,18 @@ input.error {
   display: inline-block;
   margin-top: 1rem;
   text-decoration: none;
+}
+
+.bot-setup-line {
+  margin-top: 0.55rem;
+}
+
+.bot-setup-ok {
+  color: #c9ffe2;
+}
+
+.bot-setup-warn {
+  color: #ffd4a0;
 }
 
 @keyframes page-in {

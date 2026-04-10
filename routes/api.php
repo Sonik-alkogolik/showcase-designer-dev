@@ -64,6 +64,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ->middleware('own.shop');
     Route::get('/shops/{shop}/bot-token', [App\Http\Controllers\ShopController::class, 'showBotToken'])
         ->middleware('own.shop');
+    Route::get('/shops/{shop}/bot-status', [App\Http\Controllers\ShopController::class, 'botStatus'])
+        ->middleware('own.shop');
+    Route::post('/shops/{shop}/bot-connect', [App\Http\Controllers\ShopController::class, 'connectBot'])
+        ->middleware('own.shop');
     Route::put('/shops/{shop}', [App\Http\Controllers\ShopController::class, 'update'])
         ->middleware('own.shop');
     Route::patch('/shops/{shop}', [App\Http\Controllers\ShopController::class, 'update'])

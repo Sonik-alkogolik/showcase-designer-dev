@@ -40,6 +40,33 @@
         <span v-else class="token-state">Токен пока не задан</span>
       </div>
 
+      <div class="bot-setup-card" v-if="hasBotToken">
+        <div class="bot-setup-head">
+          <h3>Подключение витринного бота</h3>
+          <span :class="botSetup?.ok ? 'setup-ok' : 'setup-pending'">
+            {{ botSetup?.ok ? 'Бот готов' : 'Требуется настройка' }}
+          </span>
+        </div>
+        <p class="bot-setup-message">{{ botSetup?.message || 'Проверяем состояние бота...' }}</p>
+        <p v-if="botSetup?.bot_username" class="bot-setup-meta">
+          Бот: {{ botSetup.bot_username }}
+        </p>
+        <p v-if="botSetup?.webapp_url" class="bot-setup-meta">
+          URL витрины: <code>{{ botSetup.webapp_url }}</code>
+        </p>
+        <p v-if="botSetup?.domain_hint_required" class="domain-hint">
+          Важно: в @BotFather для этого бота должен быть установлен домен <strong>e-tgo.ru</strong> через <code>/setdomain</code>.
+        </p>
+        <div class="bot-setup-actions">
+          <button type="button" class="btn-primary" :disabled="botSetupLoading" @click="connectBot">
+            {{ botSetupLoading ? 'Подключаю...' : 'Подключить бота' }}
+          </button>
+          <button type="button" class="btn-secondary" :disabled="botSetupLoading" @click="loadBotStatus">
+            Проверить
+          </button>
+        </div>
+      </div>
+
       <div class="form-row">
         <div class="form-group">
           <label for="delivery_name">Название доставки *</label>
@@ -141,6 +168,8 @@ export default {
     const hasBotToken = ref(false)
     const showBotToken = ref(false)
     const savedBotToken = ref('')
+    const botSetupLoading = ref(false)
+    const botSetup = ref(null)
 
     const form = reactive({
       name: '',
@@ -246,6 +275,11 @@ export default {
         hasBotToken.value = Boolean(shop.has_bot_token)
         savedBotToken.value = ''
         form.bot_token = hasBotToken.value ? BOT_TOKEN_MASK : ''
+        if (hasBotToken.value) {
+          await loadBotStatus()
+        } else {
+          botSetup.value = null
+        }
       } catch (err) {
         error.value = err?.response?.data?.message || 'Не удалось загрузить настройки магазина'
       } finally {
@@ -277,6 +311,38 @@ export default {
       }
     }
 
+    const loadBotStatus = async () => {
+      if (!hasBotToken.value) return
+      botSetupLoading.value = true
+      try {
+        const { data } = await axios.get(`/api/shops/${shopId}/bot-status`)
+        botSetup.value = data?.bot_setup || null
+      } catch (err) {
+        botSetup.value = {
+          ok: false,
+          message: err?.response?.data?.message || 'Не удалось получить статус бота',
+        }
+      } finally {
+        botSetupLoading.value = false
+      }
+    }
+
+    const connectBot = async () => {
+      if (!hasBotToken.value) return
+      botSetupLoading.value = true
+      try {
+        const { data } = await axios.post(`/api/shops/${shopId}/bot-connect`)
+        botSetup.value = data?.bot_setup || null
+      } catch (err) {
+        botSetup.value = err?.response?.data?.bot_setup || {
+          ok: false,
+          message: err?.response?.data?.message || 'Не удалось подключить бота',
+        }
+      } finally {
+        botSetupLoading.value = false
+      }
+    }
+
     const handleSubmit = async () => {
       Object.keys(form).forEach(validateField)
       if (!isFormValid.value) {
@@ -296,6 +362,7 @@ export default {
         if (data?.success) {
           success.value = true
           hasBotToken.value = Boolean(data?.shop?.has_bot_token)
+          botSetup.value = data?.bot_setup || botSetup.value
           savedBotToken.value = form.bot_token && form.bot_token !== BOT_TOKEN_MASK ? form.bot_token : savedBotToken.value
           showBotToken.value = false
           form.bot_token = hasBotToken.value ? BOT_TOKEN_MASK : ''
@@ -328,6 +395,10 @@ export default {
       hasBotToken,
       showBotToken,
       toggleBotTokenVisibility,
+      botSetupLoading,
+      botSetup,
+      connectBot,
+      loadBotStatus,
       isFormValid,
       validateField,
       handleSubmit
@@ -400,6 +471,59 @@ input.error {
 
 .token-state-ok {
   color: #98f5c7;
+}
+
+.bot-setup-card {
+  border: 1px solid rgba(173, 186, 255, 0.28);
+  border-radius: 12px;
+  padding: 0.9rem;
+  background: rgba(11, 18, 38, 0.38);
+}
+
+.bot-setup-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.bot-setup-head h3 {
+  margin: 0;
+  color: #deebff;
+  font-size: 1rem;
+}
+
+.setup-ok {
+  color: #9ef7cb;
+  font-weight: 600;
+}
+
+.setup-pending {
+  color: #ffd49e;
+  font-weight: 600;
+}
+
+.bot-setup-message {
+  margin: 0.45rem 0 0;
+  color: #c3d2ff;
+}
+
+.bot-setup-meta {
+  margin: 0.35rem 0 0;
+  color: #a8bbeb;
+  font-size: 0.92rem;
+}
+
+.domain-hint {
+  margin: 0.5rem 0 0;
+  color: #ffdca8;
+  font-size: 0.9rem;
+}
+
+.bot-setup-actions {
+  margin-top: 0.65rem;
+  display: flex;
+  gap: 0.55rem;
 }
 
 .form-actions {
