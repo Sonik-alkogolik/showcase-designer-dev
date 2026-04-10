@@ -210,6 +210,7 @@ class ShopController extends Controller
         $owner = $shop->user;
 
         $ownerAvatarRaw = (string) ($owner?->avatar ?? '');
+        $ownerTelegramAvatarUrl = trim((string) ($owner?->telegram_avatar_url ?? ''));
         $ownerAvatarUrl = null;
         if ($ownerAvatarRaw !== '') {
             if (str_starts_with($ownerAvatarRaw, 'http://') || str_starts_with($ownerAvatarRaw, 'https://') || str_starts_with($ownerAvatarRaw, '/')) {
@@ -217,6 +218,9 @@ class ShopController extends Controller
             } else {
                 $ownerAvatarUrl = Storage::url($ownerAvatarRaw);
             }
+        }
+        if ($ownerAvatarUrl === null && $ownerTelegramAvatarUrl !== '') {
+            $ownerAvatarUrl = $ownerTelegramAvatarUrl;
         }
         
         return response()->json([
@@ -232,6 +236,7 @@ class ShopController extends Controller
                     'name' => $owner?->name,
                     'email' => $owner?->email,
                     'telegram_username' => $owner?->telegram_username,
+                    'telegram_avatar_url' => $ownerTelegramAvatarUrl !== '' ? $ownerTelegramAvatarUrl : null,
                     'avatar_url' => $ownerAvatarUrl,
                 ],
             ]

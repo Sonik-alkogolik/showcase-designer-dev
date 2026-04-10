@@ -22,6 +22,7 @@ class User extends Authenticatable
         'password',
         'telegram_id',
         'telegram_username',
+        'telegram_avatar_url',
         'telegram_linked_at',
     ];
 
@@ -66,10 +67,11 @@ class User extends Authenticatable
      * @param string|null $username
      * @return void
      */
-    public function linkTelegram(int $telegramId, ?string $username = null): void
+    public function linkTelegram(int $telegramId, ?string $username = null, ?string $avatarUrl = null): void
     {
         $this->telegram_id = $telegramId;
         $this->telegram_username = $username ?: 'user_' . $telegramId;
+        $this->telegram_avatar_url = $avatarUrl;
         $this->telegram_linked_at = now();
         $this->save();
     }
@@ -83,6 +85,7 @@ class User extends Authenticatable
     {
         $this->telegram_id = null;
         $this->telegram_username = null;
+        $this->telegram_avatar_url = null;
         $this->telegram_linked_at = null;
         $this->save();
     }

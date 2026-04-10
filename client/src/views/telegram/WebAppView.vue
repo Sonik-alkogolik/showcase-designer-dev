@@ -426,7 +426,7 @@ export default {
     })
 
     const resolvedProfileAvatar = computed(() => {
-      return ownerProfile.value?.avatar_url || telegramUser.value?.photo_url || ''
+      return ownerProfile.value?.avatar_url || ownerProfile.value?.telegram_avatar_url || telegramUser.value?.photo_url || ''
     })
 
     const ownerTelegramUsername = computed(() => {

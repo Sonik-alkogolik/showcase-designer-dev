@@ -116,6 +116,10 @@
       </div>
       
       <div v-else class="telegram-linked">
+        <div v-if="resolvedTelegramAvatar" class="telegram-avatar-wrap">
+          <img :src="resolvedTelegramAvatar" alt="Telegram avatar" class="telegram-avatar">
+        </div>
+
         <div class="linked-status">
           <svg class="check-icon" viewBox="0 0 24 24">
             <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
@@ -181,6 +185,10 @@ const tokenExpiryMinutes = computed(() => {
   if (!tokenExpiry.value) return 0
   const remaining = Math.ceil((tokenExpiry.value - Date.now()) / 60000)
   return Math.max(0, remaining)
+})
+
+const resolvedTelegramAvatar = computed(() => {
+  return user.value?.telegram_avatar_url || user.value?.avatar_url || ''
 })
 
 const startCommand = computed(() => {
@@ -550,6 +558,19 @@ h1 {
 
 .telegram-linked {
   text-align: center;
+}
+
+.telegram-avatar-wrap {
+  margin-bottom: 0.8rem;
+}
+
+.telegram-avatar {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #7dd3fc;
+  box-shadow: 0 8px 22px rgba(2, 132, 199, 0.25);
 }
 
 .linked-status {

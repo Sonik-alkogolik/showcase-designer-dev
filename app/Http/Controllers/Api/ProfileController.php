@@ -32,6 +32,7 @@ class ProfileController extends Controller
             'email' => $user->email,
             'avatar' => $avatarRaw !== '' ? $avatarRaw : null,
             'avatar_url' => $avatarUrl,
+            'telegram_avatar_url' => $user->telegram_avatar_url,
             'telegram_linked' => $user->isTelegramLinked(),
             'telegram_id' => $user->telegram_id,
             'telegram_username' => $user->telegram_username,
