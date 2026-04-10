@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Shop;
+use App\Services\TelegramAvatarService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -208,6 +209,9 @@ class ShopController extends Controller
             ? ltrim((string) $shop->notification_username, '@')
             : null;
         $owner = $shop->user;
+        if ($owner) {
+            app(TelegramAvatarService::class)->ensureUserAvatar($owner);
+        }
 
         $ownerAvatarRaw = (string) ($owner?->avatar ?? '');
         $ownerTelegramAvatarUrl = trim((string) ($owner?->telegram_avatar_url ?? ''));

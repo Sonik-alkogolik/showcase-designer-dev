@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\TelegramAvatarService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
@@ -16,6 +17,7 @@ class ProfileController extends Controller
     public function show(Request $request)
     {
         $user = $request->user();
+        app(TelegramAvatarService::class)->ensureUserAvatar($user);
         $avatarRaw = (string) ($user->avatar ?? '');
         $avatarUrl = null;
         if ($avatarRaw !== '') {
