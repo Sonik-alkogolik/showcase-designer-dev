@@ -129,9 +129,10 @@ class AdvancedProductsImport implements ToModel, WithHeadingRow, WithValidation,
                     $value = $this->convertToUtf8($value);
                 }
                 
-                // Очистка описания от HTML-тегов
-                if ($field === 'description' && $value) {
-                    $value = strip_tags((string) $value);
+                // Очистка от HTML-тегов и спецсимволов (для названия и описания)
+                if (in_array($field, ['name', 'description']) && $value) {
+                    $value = html_entity_decode(strip_tags((string) $value), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                    $value = trim($value);
                 }
                 
                 $data[$field] = $value;

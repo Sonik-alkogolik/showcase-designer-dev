@@ -259,11 +259,15 @@ class ProductController extends Controller
         }
 
         $data = $request->only([
-            'name', 'price', 'in_stock', 'show_in_slider', 'image', 'attributes'
+            'price', 'in_stock', 'show_in_slider', 'image', 'attributes'
         ]);
 
+        if ($request->has('name')) {
+            $data['name'] = html_entity_decode(strip_tags((string)$request->name), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        }
+
         if ($request->has('description')) {
-            $data['description'] = $request->description ? strip_tags((string) $request->description) : null;
+            $data['description'] = $request->description ? html_entity_decode(strip_tags((string)$request->description), ENT_QUOTES | ENT_HTML5, 'UTF-8') : null;
         }
 
         $categoryPayload = $this->resolveCategoryPayload($request, $shop, true);

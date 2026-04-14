@@ -1216,8 +1216,8 @@ h2 {
 }
 
 .price {
-  margin: 0 0 0.15rem;
-  font-size: 1rem;
+  margin: 0 0 0.1rem;
+  font-size: 0.98rem;
   font-weight: 700;
   color: var(--accent-2);
 }
@@ -1374,7 +1374,7 @@ h2 {
   color: var(--ink-0);
 }
 
-.checkout-btn,
+.cckout-btn,
 .submit-order {
   width: 100%;
   margin-top: 1rem;
@@ -1597,5 +1597,8 @@ h2 {
     width: 68px;
     height: 68px;
   }
+}
+</style>
+>
 }
 </style>
