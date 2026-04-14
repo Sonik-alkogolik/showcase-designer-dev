@@ -1182,10 +1182,10 @@ h2 {
 }
 
 .product-image {
-  width: 80px;
-  height: 80px;
+  width: 70px;
+  height: 70px;
   flex-shrink: 0;
-  border-radius: 12px;
+  border-radius: 10px;
   overflow: hidden;
   border: 1px solid rgba(138, 178, 255, 0.2);
 }
@@ -1595,6 +1595,11 @@ h2 {
 
   .product-image {
     width: 74px;
+    height: 74px;
+  }
+}
+</style>
+ 74px;
     height: 74px;
   }
 }

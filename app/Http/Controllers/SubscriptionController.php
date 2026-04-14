@@ -20,10 +20,10 @@ class SubscriptionController extends Controller
                 'price_formatted' => '0 ₽/мес',
                 'auto_renew' => false,
                 'shops_limit' => 1,
-                'products_limit' => 100,
+                'products_limit' => 20,
                 'features' => [
                     '1 магазин',
-                    'До 100 товаров',
+                    'До 20 товаров',
                     'Telegram Web App'
                 ],
                 'popular' => false

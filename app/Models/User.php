@@ -147,8 +147,8 @@ class User extends Authenticatable
         }
         
         return match($subscription->plan) {
-            'starter' => 100,
-            'business' => 1000,
+            'starter' => 20,
+            'business' => 200,
             'premium' => 10000,
             default => 0
         };
