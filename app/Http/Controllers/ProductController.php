@@ -186,7 +186,7 @@ class ProductController extends Controller
         $data = [
             'name' => $request->name,
             'price' => $request->price,
-            'description' => $request->description,
+            'description' => $request->description ? strip_tags((string) $request->description) : null,
             'category' => $categoryPayload['category'],
             'category_id' => $categoryPayload['category_id'],
             'in_stock' => $request->in_stock ?? true,
@@ -259,8 +259,12 @@ class ProductController extends Controller
         }
 
         $data = $request->only([
-            'name', 'price', 'description', 'in_stock', 'show_in_slider', 'image', 'attributes'
+            'name', 'price', 'in_stock', 'show_in_slider', 'image', 'attributes'
         ]);
+
+        if ($request->has('description')) {
+            $data['description'] = $request->description ? strip_tags((string) $request->description) : null;
+        }
 
         $categoryPayload = $this->resolveCategoryPayload($request, $shop, true);
         if ($categoryPayload !== null) {

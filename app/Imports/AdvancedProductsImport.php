@@ -99,34 +99,44 @@ class AdvancedProductsImport implements ToModel, WithHeadingRow, WithValidation,
         return true;
     }
 
- /**
- * @param array $row
- * @return \Illuminate\Database\Eloquent\Model|null
- */
-public function model(array $row)
-{
-    $this->rowCount++;
-    
-    // Получаем ключи (заголовки) строки
-    $keys = array_keys($row);
-    
-    // Применяем маппинг колонок для стандартных полей
-    $data = [];
-    $attributes = []; // здесь будут дополнительные атрибуты
-    
-    foreach ($this->mapping as $field => $columnIndex) {
-        if ($columnIndex !== null && isset($keys[$columnIndex])) {
-            $key = $keys[$columnIndex];
-            $value = $row[$key] ?? null;
-            
-            // Конвертируем текстовые поля в UTF-8
-            if ($value && in_array($field, ['name', 'description', 'category'])) {
-                $value = $this->convertToUtf8($value);
-            }
-            
-            $data[$field] = $value;
+    /**
+     * @param array $row
+     * @return \Illuminate\Database\Eloquent\Model|null
+     */
+    public function model(array $row)
+    {
+        $this->rowCount++;
+        
+        // Ограничение импорта до 200 товаров
+        if ($this->rowCount > 200) {
+            return null;
         }
-    }
+        
+        // Получаем ключи (заголовки) строки
+        $keys = array_keys($row);
+        
+        // Применяем маппинг колонок для стандартных полей
+        $data = [];
+        $attributes = []; // здесь будут дополнительные атрибуты
+        
+        foreach ($this->mapping as $field => $columnIndex) {
+            if ($columnIndex !== null && isset($keys[$columnIndex])) {
+                $key = $keys[$columnIndex];
+                $value = $row[$key] ?? null;
+                
+                // Конвертируем текстовые поля в UTF-8
+                if ($value && in_array($field, ['name', 'description', 'category'])) {
+                    $value = $this->convertToUtf8($value);
+                }
+                
+                // Очистка описания от HTML-тегов
+                if ($field === 'description' && $value) {
+                    $value = strip_tags((string) $value);
+                }
+                
+                $data[$field] = $value;
+            }
+        }
     
     // Собираем все колонки, которые не попали в маппинг стандартных полей
     foreach ($keys as $index => $key) {

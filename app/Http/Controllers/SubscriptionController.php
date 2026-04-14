@@ -34,10 +34,10 @@ class SubscriptionController extends Controller
                 'price_formatted' => '500 ₽/мес',
                 'auto_renew' => true,
                 'shops_limit' => 5,
-                'products_limit' => 1000,
+                'products_limit' => 200,
                 'features' => [
                     '5 магазинов',
-                    'До 1000 товаров',
+                    'До 200 товаров',
                     'Импорт товаров из Excel',
                     'Приоритетная поддержка'
                 ],

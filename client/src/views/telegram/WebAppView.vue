@@ -1147,9 +1147,9 @@ h2 {
   --delay: 0ms;
   position: relative;
   display: flex;
-  gap: 0.9rem;
+  gap: 0.8rem;
   border-radius: 16px;
-  padding: 0.85rem;
+  padding: 0.8rem;
   border: 1px solid rgba(138, 178, 255, 0.25);
   background: var(--surface);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 10px 30px rgba(3, 10, 26, 0.38);
@@ -1157,20 +1157,24 @@ h2 {
   transform: translateY(12px);
   animation: revealItem 440ms ease forwards;
   animation-delay: var(--delay);
+  overflow: hidden; /* Чтобы ничего не вылетало */
 }
 
 .fav-btn {
   position: absolute;
-  right: 10px;
-  top: 10px;
+  right: 8px;
+  top: 8px;
   z-index: 2;
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border: 0;
   border-radius: 999px;
-  background: rgba(7, 11, 24, 0.55);
+  background: rgba(7, 11, 24, 0.65);
   color: #d2deff;
   cursor: pointer;
+  font-size: 0.9rem;
+  display: grid;
+  place-items: center;
 }
 
 .fav-btn.active {
@@ -1178,8 +1182,8 @@ h2 {
 }
 
 .product-image {
-  width: 84px;
-  height: 84px;
+  width: 80px;
+  height: 80px;
   flex-shrink: 0;
   border-radius: 12px;
   overflow: hidden;
@@ -1195,25 +1199,39 @@ h2 {
 .product-info {
   min-width: 0;
   flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .product-info h3 {
-  margin: 0 0 0.22rem;
-  font-size: 1rem;
+  margin: 0 0 0.15rem;
+  font-size: 0.95rem;
   color: var(--ink-0);
+  line-height: 1.3;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .price {
-  margin: 0 0 0.2rem;
+  margin: 0 0 0.15rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--accent-2);
 }
 
 .description {
-  margin: 0.2rem 0;
+  margin: 0.15rem 0;
   color: var(--ink-1);
-  font-size: 0.86rem;
-  line-height: 1.4;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .category {
