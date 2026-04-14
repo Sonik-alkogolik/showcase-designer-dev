@@ -1140,39 +1140,47 @@ h2 {
 .products-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.85rem;
+  gap: 1.2rem;
+  width: 100%;
+  box-sizing: border-box;
+  justify-items: center; /* Центрируем карточки в сетке */
 }
 
 .product-card {
   --delay: 0ms;
   position: relative;
   display: flex;
+  flex-direction: column; /* Вертикальный стек */
+  align-items: center; /* Центрирование элементов */
+  text-align: center; /* Центрирование текста */
   gap: 0.8rem;
-  border-radius: 16px;
-  padding: 0.8rem;
-  border: 1px solid rgba(138, 178, 255, 0.25);
+  border-radius: 20px;
+  padding: 1.2rem;
+  border: 1px solid rgba(138, 178, 255, 0.22);
   background: var(--surface);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 10px 30px rgba(3, 10, 26, 0.38);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 12px 36px rgba(3, 10, 26, 0.42);
   opacity: 0;
   transform: translateY(12px);
   animation: revealItem 440ms ease forwards;
   animation-delay: var(--delay);
-  overflow: hidden; /* Чтобы ничего не вылетало */
+  width: 100%;
+  max-width: 340px; /* Ограничил ширину для красоты */
+  box-sizing: border-box;
 }
 
 .fav-btn {
   position: absolute;
-  right: 8px;
-  top: 8px;
+  right: 12px;
+  top: 12px;
   z-index: 2;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border: 0;
   border-radius: 999px;
   background: rgba(7, 11, 24, 0.65);
   color: #d2deff;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 1rem;
   display: grid;
   place-items: center;
 }
@@ -1182,10 +1190,10 @@ h2 {
 }
 
 .product-image {
-  width: 70px;
-  height: 70px;
+  width: 140px; /* Крупная картинка сверху */
+  height: 140px;
   flex-shrink: 0;
-  border-radius: 10px;
+  border-radius: 16px;
   overflow: hidden;
   border: 1px solid rgba(138, 178, 255, 0.2);
 }
@@ -1197,22 +1205,18 @@ h2 {
 }
 
 .product-info {
-  min-width: 0;
-  flex: 1;
+  width: 100%;
   display: flex;
   flex-direction: column;
+  align-items: center;
 }
 
 .product-info h3 {
-  margin: 0 0 0.15rem;
-  font-size: 0.95rem;
+  margin: 0 0 0.25rem;
+  font-size: 1.1rem;
   color: var(--ink-0);
   line-height: 1.3;
   word-break: break-word;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .price {
