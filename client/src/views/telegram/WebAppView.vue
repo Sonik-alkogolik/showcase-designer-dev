@@ -1585,22 +1585,17 @@ h2 {
 
 @media (max-width: 480px) {
   .panel-shell {
-    margin: 8px;
+    margin: 6px;
     border-radius: 18px;
   }
 
   .product-card {
-    padding: 0.72rem;
+    padding: 0.65rem;
   }
 
   .product-image {
-    width: 74px;
-    height: 74px;
-  }
-}
-</style>
- 74px;
-    height: 74px;
+    width: 68px;
+    height: 68px;
   }
 }
 </style>
