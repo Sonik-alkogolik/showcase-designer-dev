@@ -1,0 +1,51 @@
+name,price,description,category,in_stock
+"Product 1 <b>Bold</b>",100.50,"<p>This is a <b>bold</b> description with <br> a line break.</p>","Electronics",1
+"Product 2 <i>Italic</i>",200.00,"<div>Some <i>italic</i> text inside a div.</div>","Home",1
+"Product 3 <h2>Header</h2>",350,"<h2>Main Header</h2><p>Subtitle</p><ul><li>List item</li></ul>","Kitchen",1
+"Product 4 <span>Span</span>",45,"<span style='color:red;'>Red text in span.</span>","Misc",0
+"Product 5 <a>Link</a>",550.99,"Check out this <a href='https://google.com'>link</a> in description.","Electronics",1
+"Product 6 &amp; Entities",120,"Description with &nbsp; non-breaking spaces &amp; amp.","Home",1
+"Product 7 <strong>Strong</strong>",80.15,"<strong>Very strong</strong> content here.","Kitchen",1
+"Product 8 <em>Emphasis</em>",99,"<em>Emphasized</em> text for testing.","Misc",1
+"Product 9 <code>Code</code>",150.50,"<code>echo 'hello world';</code> inside code tags.","Electronics",1
+"Product 10 <mark>Mark</mark>",40,"<mark>Highlighted</mark> text description.","Home",0
+"Product 11 <small>Small</small>",12,"<small>Small print</small> for legal reasons.","Kitchen",1
+"Product 12 <sub>Sub</sub>",300,"H<sub>2</sub>O description.","Misc",1
+"Product 13 <sup>Sup</sup>",450,"E = mc<sup>2</sup> description.","Electronics",1
+"Product 14 <del>Deleted</del>",20,"<del>Old price 100</del> Now only 20!","Home",1
+"Product 15 <ins>Inserted</ins>",60,"<ins>New arrival</ins> item!","Kitchen",1
+"Product 16 <blockquote>Quote</blockquote>",1000,"<blockquote>A wise man once said...</blockquote>","Misc",1
+"Product 17 <pre>Pre</pre>",25,"<pre>Formatted\n  text\n    block</pre>","Electronics",1
+"Product 18 <cite>Cite</cite>",15,"Description by <cite>Famous Author</cite>.","Home",1
+"Product 19 <abbr>Abbr</abbr>",75,"This is an <abbr title='HyperText Markup Language'>HTML</abbr> test.","Kitchen",1
+"Product 20 <dfn>Dfn</dfn>",85,"A <dfn>definition</dfn> of the product.","Misc",1
+"Product 21 <s>Strikethrough</s>",35,"<s>Stripped</s> through text.","Electronics",1
+"Product 22 <u>Underline</u>",45,"<u>Underlined</u> description.","Home",1
+"Product 23 <var>Var</var>",55,"Variable <var>x</var> description.","Kitchen",1
+"Product 24 <samp>Samp</samp>",65,"Sample output <samp>error</samp>.","Misc",1
+"Product 25 <kbd>Kbd</kbd>",75,"Press <kbd>Ctrl</kbd> + <kbd>C</kbd>.","Electronics",1
+"Product 26 <footer>Footer</footer>",95,"<footer>Bottom text</footer>","Home",1
+"Product 27 <header>Header</header>",105,"<header>Top text</header>","Kitchen",1
+"Product 28 <section>Section</section>",115,"<section>Part of a page</section>","Misc",1
+"Product 29 <article>Article</article>",125,"<article>An article</article>","Electronics",1
+"Product 30 <aside>Aside</aside>",135,"<aside>Aside content</aside>","Home",1
+"Product 31 <details>Details</details>",145,"<details><summary>Click me</summary>Hidden info</details>","Kitchen",1
+"Product 32 <ruby>Ruby</ruby>",155,"<ruby>汉 <rt>hàn</rt></ruby> text.","Misc",1
+"Product 33 <wbr>Wbr</wbr>",165,"Word<wbr>break test.","Electronics",1
+"Product 34 <picture>Picture</picture>",175,"<picture><source srcset='...'><img src='...'></picture>","Home",1
+"Product 35 <audio>Audio</audio>",185,"<audio controls src='...'></audio>","Kitchen",1
+"Product 36 <video>Video</video>",195,"<video controls src='...'></video>","Misc",1
+"Product 37 <iframe>Iframe</iframe>",205,"<iframe src='...'></iframe>","Electronics",1
+"Product 38 <canvas>Canvas</canvas>",215,"<canvas id='myCanvas'></canvas>","Home",1
+"Product 39 <svg>Svg</svg>",225,"<svg height='100' width='100'><circle cx='50' cy='50' r='40' /></svg>","Kitchen",1
+"Product 40 <math>Math</math>",235,"<math><msqrt><mn>2</mn></msqrt></math>","Misc",1
+"Product 41 <script>Script</script>",245,"<script>alert('hack');</script> Safe test.","Electronics",1
+"Product 42 <style>Style</style>",255,"<style>body {background: red;}</style> Invisible style.","Home",1
+"Product 43 <object>Object</object>",265,"<object data='...'></object>","Kitchen",1
+"Product 44 <embed>Embed</embed>",275,"<embed src='...'>","Misc",1
+"Product 45 <map>Map</map>",285,"<map name='map'><area shape='rect' coords='...'></map>","Electronics",1
+"Product 46 <label>Label</label>",295,"<label for='id'>Label text</label>","Home",1
+"Product 47 <legend>Legend</legend>",305,"<legend>Legend text</legend>","Kitchen",1
+"Product 48 <button>Button</button>",315,"<button>Clickable</button>","Misc",1
+"Product 49 <datalist>Datalist</datalist>",325,"<datalist><option value='1'></datalist>","Electronics",1
+"Product 50 <output>Output</output>",335,"<output name='x' for='a b'></output>","Home",1
