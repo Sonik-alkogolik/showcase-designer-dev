@@ -86,7 +86,23 @@
           <div class="product-info">
             <h3>{{ product.name }}</h3>
             <p class="price">{{ product.price }} ₽</p>
-            <p class="description">{{ product.description }}</p>
+            <div class="product-description-wrapper">
+              <p 
+                class="description" 
+                :class="{ expanded: isDescriptionExpanded(product.id) }"
+                v-if="product.description"
+              >
+                {{ product.description }}
+              </p>
+              <button 
+                v-if="product.description"
+                @click="toggleDescription(product.id)"
+                class="description-toggle-btn"
+                :class="{ expanded: isDescriptionExpanded(product.id) }"
+              >
+                {{ isDescriptionExpanded(product.id) ? 'Скрыть' : 'Подробнее' }} ▼
+              </button>
+            </div>
             <p class="category">{{ product.category_name || 'Без категории' }}</p>
             <button 
               class="add-to-cart" 
@@ -118,7 +134,23 @@
           <div class="product-info">
             <h3>{{ product.name }}</h3>
             <p class="price">{{ product.price }} ₽</p>
-            <p class="description">{{ product.description }}</p>
+            <div class="product-description-wrapper">
+              <p 
+                class="description" 
+                :class="{ expanded: isDescriptionExpanded(product.id) }"
+                v-if="product.description"
+              >
+                {{ product.description }}
+              </p>
+              <button 
+                v-if="product.description"
+                @click="toggleDescription(product.id)"
+                class="description-toggle-btn"
+                :class="{ expanded: isDescriptionExpanded(product.id) }"
+              >
+                {{ isDescriptionExpanded(product.id) ? 'Скрыть' : 'Подробнее' }} ▼
+              </button>
+            </div>
             <button class="add-to-cart" @click="addToCart(product)">В корзину</button>
           </div>
         </div>
@@ -321,7 +353,8 @@ export default {
     const searchInput = ref(null)
     const ownerProfile = ref(null)
     const currentView = ref('catalog') // 'catalog', 'favorites', 'cart', 'profile', 'checkout'
-    
+    const descriptionExpandedState = ref({}) // To track expanded descriptions
+
     const normalizeShopId = (id) => String(id ?? '').trim()
     const normalizedShopId = normalizeShopId(shopId)
     const cartStorageKey = computed(() => `webapp_cart_shop_${normalizedShopId}`)
@@ -428,6 +461,12 @@ export default {
       if (typeof category === 'string') return category
       if (typeof category === 'object' && category.name) return category.name
       return null
+    }
+
+    // Methods for description expansion
+    const isDescriptionExpanded = (productId) => descriptionExpandedState.value[productId] === true
+    const toggleDescription = (productId) => {
+      descriptionExpandedState.value[productId] = !isDescriptionExpanded(productId)
     }
 
     onMounted(async () => {
@@ -542,7 +581,9 @@ export default {
 
     const openManagerContact = () => {
       if (!managerBaseUrl.value) return
-      const text = encodeURIComponent(`Здравствуйте! Заказ #${orderNumber.value}\nМагазин: ${shop.value?.name}\nСумма: ${orderTotalForManager.value} ₽`)
+      const text = encodeURIComponent(`Здравствуйте! Заказ #${orderNumber.value}
+Магазин: ${shop.value?.name}
+Сумма: ${orderTotalForManager.value} ₽`)
       const url = `${managerBaseUrl.value}?text=${text}`
       if (window.Telegram?.WebApp?.openLink) window.Telegram.WebApp.openLink(url)
       else window.open(url, '_blank')
@@ -594,7 +635,9 @@ export default {
       orderNumber, orderError, hasManagerContact, loadProducts, debouncedSearch, addToCart, 
       updateQuantity, removeFromCart, setView, selectCategory, goToSlide, toggleSearch, 
       toggleFavorite, isFavorite, openSupportChat, goToCheckout, openManagerContact, 
-      submitOrder, resetOrder
+      submitOrder, resetOrder,
+      // Description expansion
+      descriptionExpandedState, isDescriptionExpanded, toggleDescription
     }
   }
 }
@@ -675,7 +718,48 @@ h1 { font-size: 1.5rem; margin: 0.2rem 0; }
 
 .product-info h3 { font-size: 1.1rem; margin: 0 0 0.5rem; }
 .price { font-size: 1.2rem; font-weight: bold; color: var(--accent-2); margin-bottom: 0.5rem; }
-.description { font-size: 0.9rem; color: var(--ink-1); margin-bottom: 1rem; line-height: 1.4; }
+
+.product-description-wrapper {
+  margin-bottom: 1rem;
+  width: 100%;
+  text-align: left;
+  font-size: 0.9rem;
+  color: var(--ink-1);
+  line-height: 1.4;
+}
+
+.description {
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+  max-height: 0; /* Collapsed by default */
+  margin-bottom: 0.5rem; /* Space for toggle button */
+}
+.description.expanded {
+  max-height: 200px; /* Or a more dynamic height if needed */
+}
+
+.description-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0.2rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+}
+.description-toggle-btn::after {
+  content: '▼'; /* Down arrow */
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+.description-toggle-btn.expanded::after {
+  transform: rotate(180deg);
+}
+
+.category { color: var(--ink-1); font-size: 0.8rem; margin-bottom: 1rem; }
 
 .add-to-cart {
   width: 100%; padding: 0.8rem; border-radius: 12px; border: none;

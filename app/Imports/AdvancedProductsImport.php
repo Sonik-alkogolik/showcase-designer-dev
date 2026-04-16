@@ -3,22 +3,70 @@
 namespace App\Imports;
 
 use App\Models\Product;
+use App\Models\Category;
+use Illuminate\Support\Str;
+use Maatwebsite\Excel\Concerns\Importable;
+use Maatwebsite\Excel\Concerns\SkipsOnFailure;
 use Maatwebsite\Excel\Concerns\ToModel;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
-use Maatwebsite\Excel\Concerns\SkipsOnFailure;
-use Maatwebsite\Excel\Concerns\WithStartRow;
-use Maatwebsite\Excel\Concerns\Importable;
-use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Validators\Failure;
-use Illuminate\Support\Facades\Log;
 
 class AdvancedProductsImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFailure, WithChunkReading
 {
     use Importable;
 
-    // Стандартные поля товара
     const STANDARD_FIELDS = ['name', 'price', 'description', 'category', 'in_stock', 'image'];
+
+    /**
+     * Поля, которые не стоит показывать пользователю как attributes.
+     * Они служебные и только засоряют карточку товара.
+     */
+    private const HIDDEN_ATTRIBUTE_KEYS = [
+        'product_id',
+        'categories',
+        'main_category',
+        'upc',
+        'ean',
+        'jan',
+        'isbn',
+        'mpn',
+        'location',
+        'points',
+        'date_added',
+        'date_modified',
+        'date_available',
+        'weight',
+        'weight_unit',
+        'length',
+        'width',
+        'height',
+        'length_unit',
+        'status',
+        'tax_class_id',
+        'seo_keyword',
+        'meta_title',
+        'meta_title(ru-ru)',
+        'meta_description',
+        'meta_description(ru-ru)',
+        'meta_h1',
+        'meta_h1(ru-ru)',
+        'meta_keywords',
+        'meta_keywords(ru-ru)',
+        'stock_status',
+        'stock_status_id',
+        'store_ids',
+        'layout',
+        'related_ids',
+        'sort_order',
+        'subtract',
+        'minimum',
+        'descriptionru_ru',
+        'description(ru-ru)',
+        'name(ru-ru)',
+        'tags(ru-ru)',
+    ];
 
     protected $shopId;
     protected $mapping;
@@ -33,39 +81,100 @@ class AdvancedProductsImport implements ToModel, WithHeadingRow, WithValidation,
     }
 
     /**
-     * Принудительная конвертация в UTF-8
+     * Безопасная нормализация строки в UTF-8.
+     * Не перекодируем повторно, если строка уже валидная UTF-8.
      */
     private function convertToUtf8($value)
     {
-        if (empty($value) || is_numeric($value)) {
+        if ($value === null || $value === '' || is_numeric($value) || is_bool($value)) {
             return $value;
         }
-        
-        // Пробуем разные варианты
-        $converted = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
-        
-        // Если после конвертации получилась битая строка, пробуем другие кодировки
-        if (strpos($converted, '�') !== false || preg_match('/[^\x20-\x7E\x80-\xFF]/', $converted)) {
-            // Пробуем из Windows-1251
-            $converted = mb_convert_encoding($value, 'UTF-8', 'Windows-1251');
+
+        $value = (string) $value;
+
+        if (mb_check_encoding($value, 'UTF-8')) {
+            return $value;
         }
-        
-        if (strpos($converted, '�') !== false || preg_match('/[^\x20-\x7E\x80-\xFF]/', $converted)) {
-            // Пробуем из KOI8-R
-            $converted = mb_convert_encoding($value, 'UTF-8', 'KOI8-R');
+
+        $encoding = mb_detect_encoding($value, ['UTF-8', 'Windows-1251', 'KOI8-R', 'ISO-8859-5'], true);
+
+        if ($encoding) {
+            return mb_convert_encoding($value, 'UTF-8', $encoding);
         }
-        
-        if (strpos($converted, '�') !== false || preg_match('/[^\x20-\x7E\x80-\xFF]/', $converted)) {
-            // Пробуем из ISO-8859-5
-            $converted = mb_convert_encoding($value, 'UTF-8', 'ISO-8859-5');
+
+        return $value;
+    }
+
+    /**
+     * Нормализация текстовых полей.
+     */
+    private function normalizeText($value, bool $stripHtml = true): ?string
+    {
+        if ($value === null) {
+            return null;
         }
-        
-        return $converted;
+
+        $value = $this->convertToUtf8($value);
+        $value = html_entity_decode((string) $value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        if ($stripHtml) {
+            $value = strip_tags($value);
+        }
+
+        $value = preg_replace('/[\x{00AD}\x{200B}-\x{200D}\x{FEFF}]/u', '', $value);
+        $value = preg_replace('/\s+/u', ' ', $value);
+        $value = trim($value);
+
+        return $value !== '' ? $value : null;
+    }
+
+    /**
+     * Нормализация ключа атрибута для сравнения/фильтрации.
+     */
+    private function normalizeAttributeKey(string $key): string
+    {
+        $key = $this->convertToUtf8($key);
+        $key = mb_strtolower(trim($key));
+        $key = preg_replace('/\s+/u', ' ', $key);
+
+        return $key;
+    }
+
+    /**
+     * Красивое имя атрибута для хранения/показа.
+     */
+    private function cleanAttributeName(string $key): ?string
+    {
+        $key = $this->convertToUtf8($key);
+        $key = trim($key);
+        $key = preg_replace('/[^\p{L}\p{N}\s\-_()]/u', '', $key);
+        $key = preg_replace('/\s+/u', ' ', $key);
+        $key = trim($key);
+
+        return $key !== '' ? $key : null;
+    }
+
+    /**
+     * Надо ли скрыть служебный атрибут.
+     */
+    private function shouldSkipAttribute(string $key): bool
+    {
+        $normalizedKey = $this->normalizeAttributeKey($key);
+
+        if (in_array($normalizedKey, self::HIDDEN_ATTRIBUTE_KEYS, true)) {
+            return true;
+        }
+
+        if (Str::startsWith($normalizedKey, ['meta_', 'oc_', '_'])) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
      * Нормализует значение "наличие" из CSV/XLSX в boolean.
-     * Пустое значение трактуем как true (обратная совместимость).
+     * Пустое значение трактуем как true.
      */
     private function normalizeInStock($rawValue): bool
     {
@@ -87,187 +196,197 @@ class AdvancedProductsImport implements ToModel, WithHeadingRow, WithValidation,
         }
 
         $normalized = mb_strtolower($value);
-        if (in_array($normalized, ['да', 'yes', 'true', '+', 'on', 'y'], true)) {
+
+        if (in_array($normalized, ['да', 'yes', 'true', '+', 'on', 'y', 'есть', 'available', 'instock'], true)) {
             return true;
         }
 
-        if (in_array($normalized, ['нет', 'no', 'false', '-', 'off', 'n'], true)) {
+        if (in_array($normalized, ['нет', 'no', 'false', '-', 'off', 'n', 'нет в наличии', 'outofstock'], true)) {
             return false;
         }
 
-        // На неизвестных значениях сохраняем историческое поведение "в наличии".
         return true;
     }
 
     /**
-     * @param array $row
-     * @return \Illuminate\Database\Eloquent\Model|null
+     * Нормализует цену.
      */
+    private function normalizePrice($rawPrice): ?float
+    {
+        if ($rawPrice === null || $rawPrice === '') {
+            return null;
+        }
+
+        $price = preg_replace('/[^0-9,.\-]/', '', (string) $rawPrice);
+
+        if ($price === '' || $price === '-' || $price === '.' || $price === ',') {
+            return null;
+        }
+
+        // Если и точка, и запятая встречаются, считаем запятую разделителем тысяч.
+        if (str_contains($price, ',') && str_contains($price, '.')) {
+            $price = str_replace(',', '', $price);
+        } else {
+            $price = str_replace(',', '.', $price);
+        }
+
+        return is_numeric($price) ? (float) $price : null;
+    }
+
+    /**
+     * Получить mapped-значение по индексу колонки.
+     */
+    private function getMappedValue(array $row, array $keys, $columnIndex)
+    {
+        if ($columnIndex === null || !isset($keys[$columnIndex])) {
+            return null;
+        }
+
+        $key = $keys[$columnIndex];
+
+        return $row[$key] ?? null;
+    }
+
     public function model(array $row)
     {
         $this->rowCount++;
-        
-        // Ограничение импорта до 200 товаров
+
         if ($this->rowCount > 200) {
             return null;
         }
-        
-        // Получаем ключи (заголовки) строки
+
         $keys = array_keys($row);
-        
-        // Применяем маппинг колонок для стандартных полей
+
         $data = [];
-        $attributes = []; // здесь будут дополнительные атрибуты
-        
-        foreach ($this->mapping as $field => $columnIndex) {
-            if ($columnIndex !== null && isset($keys[$columnIndex])) {
-                $key = $keys[$columnIndex];
-                $value = $row[$key] ?? null;
-                
-                // Конвертируем текстовые поля в UTF-8
-                if ($value && in_array($field, ['name', 'description', 'category'])) {
-                    $value = $this->convertToUtf8($value);
-                }
-                
-                // Очистка от HTML-тегов и спецсимволов (для названия и описания)
-                if (in_array($field, ['name', 'description']) && $value) {
-                    $value = html_entity_decode(strip_tags((string) $value), ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                    $value = trim($value);
-                }
-                
-                $data[$field] = $value;
+        $attributes = [];
+
+        foreach (self::STANDARD_FIELDS as $field) {
+            $columnIndex = $this->mapping[$field] ?? null;
+            $value = $this->getMappedValue($row, $keys, $columnIndex);
+
+            if (in_array($field, ['name', 'description', 'category'], true)) {
+                $value = $this->normalizeText($value);
             }
+
+            $data[$field] = $value;
         }
-    
-    // Собираем все колонки, которые не попали в маппинг стандартных полей
-    foreach ($keys as $index => $key) {
-        // Проверяем, используется ли эта колонка в маппинге
-        $isMapped = false;
-        foreach ($this->mapping as $field => $columnIndex) {
-            if ($columnIndex === $index) {
-                $isMapped = true;
-                break;
+
+        foreach ($keys as $index => $key) {
+            $isMapped = false;
+
+            foreach (self::STANDARD_FIELDS as $field) {
+                if (($this->mapping[$field] ?? null) === $index) {
+                    $isMapped = true;
+                    break;
+                }
             }
-        }
-        
-        // Если колонка не используется и в ней есть данные - сохраняем как атрибут
-        if (!$isMapped && isset($row[$key]) && !empty($row[$key])) {
-            $attributeName = $this->convertToUtf8($key); // название колонки
-            $attributeValue = $this->convertToUtf8($row[$key]); // значение
-            
-            // Очищаем название атрибута (убираем спецсимволы, делаем читаемым)
-            $attributeName = trim($attributeName);
-            $attributeName = preg_replace('/[^\p{L}\p{N}\s\-_]/u', '', $attributeName);
-            
+
+            if ($isMapped) {
+                continue;
+            }
+
+            $rawValue = $row[$key] ?? null;
+            if ($rawValue === null || $rawValue === '') {
+                continue;
+            }
+
+            if ($this->shouldSkipAttribute((string) $key)) {
+                continue;
+            }
+
+            $attributeName = $this->cleanAttributeName((string) $key);
+            if (!$attributeName) {
+                continue;
+            }
+
+            $attributeValue = $this->normalizeText($rawValue, false);
+            if ($attributeValue === null || $attributeValue === '') {
+                continue;
+            }
+
             $attributes[$attributeName] = $attributeValue;
         }
-    }
 
-    // Проверяем обязательные поля
-    if (empty($data['name']) || empty($data['price'])) {
-        return null;
-    }
+        if (empty($data['name'])) {
+            return null;
+        }
 
-    // Преобразование наличия
-    $data['in_stock'] = $this->normalizeInStock($data['in_stock'] ?? null);
+        $price = $this->normalizePrice($data['price'] ?? null);
+        if ($price === null) {
+            return null;
+        }
 
-    // Преобразование цены
-    $price = preg_replace('/[^0-9,.]/', '', $data['price']);
-    $price = str_replace(',', '.', $price);
-    $price = (float) $price;
+        $data['in_stock'] = $this->normalizeInStock($data['in_stock'] ?? null);
 
-    // Обработка категории
-    $categoryId = null;
-    $categoryName = $data['category'] ?? null;
-    
-    if ($categoryName) {
-        // Пытаемся найти существующую категорию
-        $category = \App\Models\Category::where('shop_id', $this->shopId)
-            ->where('name', $categoryName)
-            ->first();
-        
-        if ($category) {
+        $categoryId = null;
+        $categoryName = $data['category'] ?? null;
+
+        if ($categoryName) {
+            $category = Category::where('shop_id', $this->shopId)
+                ->where('name', $categoryName)
+                ->first();
+
+            if (!$category) {
+                $category = Category::create([
+                    'shop_id' => $this->shopId,
+                    'name' => $categoryName,
+                    'slug' => Str::slug($categoryName),
+                    'sort_order' => 0,
+                    'is_active' => true,
+                ]);
+            }
+
             $categoryId = $category->id;
         } else {
-            // Создаём новую категорию
-            $category = \App\Models\Category::create([
-                'shop_id' => $this->shopId,
-                'name' => $categoryName,
-                'slug' => \Illuminate\Support\Str::slug($categoryName),
-                'sort_order' => 0,
-                'is_active' => true,
-            ]);
-            $categoryId = $category->id;
+            $miscCategory = Category::where('shop_id', $this->shopId)
+                ->where('name', 'Без категории')
+                ->first();
+
+            if ($miscCategory) {
+                $categoryId = $miscCategory->id;
+            }
         }
-    } else {
-        // Если категория не указана, ищем "Без категории"
-        $miscCategory = \App\Models\Category::where('shop_id', $this->shopId)
-            ->where('name', 'Без категории')
-            ->first();
-        
-        if ($miscCategory) {
-            $categoryId = $miscCategory->id;
-        }
+
+        $this->successCount++;
+
+        return new Product([
+            'shop_id' => $this->shopId,
+            'category_id' => $categoryId,
+            'name' => $data['name'],
+            'price' => $price,
+            'description' => $data['description'] ?? null,
+            'category' => $data['category'] ?? null,
+            'in_stock' => $data['in_stock'],
+            'image' => $data['image'] ?? null,
+            'attributes' => !empty($attributes) ? $attributes : null,
+        ]);
     }
 
-    $this->successCount++;
-    
-    return new Product([
-        'shop_id' => $this->shopId,
-        'category_id' => $categoryId,
-        'name' => $data['name'],
-        'price' => $price,
-        'description' => $data['description'] ?? null,
-        'category' => $data['category'] ?? null, // пока оставляем для обратной совместимости
-        'in_stock' => $data['in_stock'],
-        'image' => $data['image'] ?? null,
-        'attributes' => !empty($attributes) ? $attributes : null,
-    ]);
-}
-
-    /**
-     * Валидация строк
-     */
     public function rules(): array
     {
         return [];
     }
 
-    /**
-     * Обработка ошибок валидации
-     */
     public function onFailure(Failure ...$failures)
     {
         $this->failures = array_merge($this->failures, $failures);
     }
 
-    /**
-     * Чтение чанками для оптимизации
-     */
     public function chunkSize(): int
     {
         return 100;
     }
 
-    /**
-     * Получить ошибки
-     */
     public function getFailures()
     {
         return $this->failures;
     }
 
-    /**
-     * Получить количество обработанных строк
-     */
     public function getRowCount(): int
     {
         return $this->rowCount;
     }
 
-    /**
-     * Получить количество успешно импортированных
-     */
     public function getSuccessCount(): int
     {
         return $this->successCount;

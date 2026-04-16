@@ -184,9 +184,9 @@ class ProductController extends Controller
         $categoryPayload = $this->resolveCategoryPayload($request, $shop);
 
         $data = [
-            'name' => $request->name,
+            'name' => html_entity_decode(strip_tags((string)$request->name), ENT_QUOTES | ENT_HTML5, 'UTF-8'),
             'price' => $request->price,
-            'description' => $request->description ? strip_tags((string) $request->description) : null,
+            'description' => $request->description ? html_entity_decode(strip_tags((string)$request->description), ENT_QUOTES | ENT_HTML5, 'UTF-8') : null,
             'category' => $categoryPayload['category'],
             'category_id' => $categoryPayload['category_id'],
             'in_stock' => $request->in_stock ?? true,

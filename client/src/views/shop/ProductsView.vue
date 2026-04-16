@@ -42,21 +42,52 @@
         <div class="product-image" v-if="product.image">
           <img :src="product.image" :alt="product.name">
         </div>
-        <div class="product-info">
+       <div class="product-info">
           <h3>{{ product.name }}</h3>
-          <p class="price">{{ product.price }} ₽</p>
-          <p class="description">{{ product.description }}</p>
+          <p class="price">{{ formatPrice(product.price) }} ₽</p>
+
+          <div v-if="cleanDescription(product.description)" class="description-block">
+            <button
+              type="button"
+              class="description-toggle"
+              @click="toggleDescription(product.id)"
+            >
+              <span>Описание</span>
+              <span class="description-arrow" :class="{ open: isDescriptionOpen(product.id) }">⌄</span>
+            </button>
+
+            <transition name="fade">
+              <div
+                v-if="isDescriptionOpen(product.id)"
+                class="description"
+              >
+                {{ cleanDescription(product.description) }}
+              </div>
+            </transition>
+          </div>
+
           <p class="category">Категория: {{ product.category_name || 'Без категории' }}</p>
+
           <p class="stock" :class="{ 'in-stock': product.in_stock }">
             {{ product.in_stock ? 'В наличии' : 'Нет в наличии' }}
           </p>
+
           <p v-if="product.show_in_slider" class="slider-badge">В слайдере</p>
-          <div v-if="product.attributes && Object.keys(product.attributes).length" class="product-attributes">
-            <div v-for="(value, key) in product.attributes" :key="key" class="attribute-item">
-              <span class="attribute-name">{{ key }}:</span>
-              <span class="attribute-value">{{ value }}</span>
+
+          <div
+            v-if="getVisibleAttributes(product).length"
+            class="product-attributes"
+          >
+            <div
+              v-for="attribute in getVisibleAttributes(product)"
+              :key="attribute.key"
+              class="attribute-item"
+            >
+              <span class="attribute-name">{{ attribute.key }}:</span>
+              <span class="attribute-value">{{ attribute.value }}</span>
             </div>
           </div>
+
           <div class="actions">
             <button @click="editProduct(product)" class="btn-edit">✏️</button>
             <button @click="deleteProduct(product)" class="btn-delete">🗑️</button>
@@ -230,7 +261,7 @@ export default {
     const showImportModal = ref(false)
     const showCategoriesModal = ref(false)
     const editingCategory = ref(null)
-    
+    const expandedDescriptions = ref({})
     const categoryForm = reactive({
       name: ''
     })
@@ -267,23 +298,130 @@ export default {
       return null
     }
 
+    const hiddenAttributeKeys = [
+      'product_id',
+      'categories',
+      'main_category',
+      'upc',
+      'ean',
+      'jan',
+      'isbn',
+      'mpn',
+      'location',
+      'points',
+      'date_added',
+      'date_modified',
+      'date_available',
+      'weight',
+      'weight_unit',
+      'length',
+      'width',
+      'height',
+      'length_unit',
+      'status',
+      'tax_class_id',
+      'seo_keyword',
+      'meta_title',
+      'meta_title(ru-ru)',
+      'meta_description',
+      'meta_description(ru-ru)',
+      'meta_h1',
+      'meta_h1(ru-ru)',
+      'meta_keywords',
+      'meta_keywords(ru-ru)',
+      'stock_status',
+      'stock_status_id',
+      'store_ids',
+      'layout',
+      'related_ids',
+      'sort_order',
+      'subtract',
+      'minimum',
+      'descriptionru_ru',
+      'description(ru-ru)',
+      'name(ru-ru)',
+      'tags(ru-ru)'
+]
+
+const normalizeAttributeKey = (key) => {
+  return String(key || '')
+    .trim()
+    .toLowerCase()
+}
+
+const cleanDescription = (value) => {
+  if (!value) return ''
+
+  return String(value)
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&amp;/gi, '&')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+const isBrokenEncoding = (value) => {
+  if (!value) return false
+
+  const text = String(value)
+  return /Ð|Ñ|Ã|�/.test(text)
+}
+
+const getVisibleAttributes = (product) => {
+  const attrs = product?.attributes || {}
+
+  return Object.entries(attrs)
+    .filter(([key, value]) => {
+      if (value === null || value === undefined || value === '') return false
+
+      const normalizedKey = normalizeAttributeKey(key)
+      if (hiddenAttributeKeys.includes(normalizedKey)) return false
+
+      if (isBrokenEncoding(value)) return false
+
+      return true
+    })
+    .map(([key, value]) => ({
+      key,
+      value: cleanDescription(value)
+    }))
+}
+
+    const toggleDescription = (productId) => {
+      expandedDescriptions.value = {
+        ...expandedDescriptions.value,
+        [productId]: !expandedDescriptions.value[productId]
+      }
+    }
+
+    const isDescriptionOpen = (productId) => {
+      return Boolean(expandedDescriptions.value[productId])
+    }
+
+    const formatPrice = (price) => {
+      const num = Number(price)
+      return Number.isFinite(num) ? num.toFixed(2) : price
+    }
+
     const loadProducts = async () => {
-      console.log('🔄 loadProducts started')
+      // console.log('🔄 loadProducts started')
       try {
         const response = await axios.get(`/api/shops/${shopId}/products`, {
           params: filters
         })
-        console.log('📦 API Response:', response.data)
+        // console.log('📦 API Response:', response.data)
         
         products.value = (response.data.products.data || []).map(product => ({
-          ...product,
-          category_name: resolveCategoryName(product.category)
-        }))
-        console.log('✅ products updated:', products.value)
-        
+            ...product,
+            category_name: resolveCategoryName(product.category)
+          }))
+        // console.log('✅ products updated:', products.value)
+        expandedDescriptions.value = {}
         // Используем категории с сервера
         categories.value = response.data.categories || []
-        console.log('✅ categories from server:', categories.value)
+        // console.log('✅ categories from server:', categories.value)
         
         // Обновляем использованное количество товаров
         if (limits.value) {
@@ -579,7 +717,13 @@ export default {
       cancelEditCategory,
       saveCategory,
       deleteCategory,
-      closeCategoriesModal
+      closeCategoriesModal,
+      expandedDescriptions,
+      toggleDescription,
+      isDescriptionOpen,
+      getVisibleAttributes,
+      cleanDescription,
+      formatPrice,
     }
   }
 }
@@ -895,7 +1039,94 @@ export default {
   border-top: 1px solid #eee;
   font-size: 0.9rem;
 }
+.description-block {
+  margin: 0.75rem 0;
+}
 
+.description-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f7f9fc;
+  border: 1px solid #e3e8ef;
+  border-radius: 8px;
+  padding: 0.65rem 0.85rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.description-arrow {
+  transition: transform 0.2s ease;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.description-arrow.open {
+  transform: rotate(180deg);
+}
+
+.description {
+  margin-top: 0.6rem;
+  color: #555;
+  line-height: 1.5;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.product-info h3,
+.description,
+.attribute-name,
+.attribute-value,
+.category,
+.stock,
+.price {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.product-attributes {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #eee;
+  font-size: 0.9rem;
+}
+
+.attribute-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.4rem;
+  align-items: flex-start;
+}
+
+.attribute-name {
+  color: #666;
+  font-weight: 600;
+  flex: 0 0 42%;
+}
+
+.attribute-value {
+  color: #333;
+  flex: 1;
+  text-align: right;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.18s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
 .attribute-item {
   display: flex;
   justify-content: space-between;
