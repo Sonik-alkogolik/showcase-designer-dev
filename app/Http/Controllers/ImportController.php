@@ -220,26 +220,69 @@ class ImportController extends Controller
             'description' => null,
             'category' => null,
             'in_stock' => null,
-            'image' => null
+            'image' => null,
         ];
 
-        $keywords = [
-            'name' => ['название', 'name', 'товар', 'product', 'наименование'],
-            'price' => ['цена', 'price', 'стоимость', 'cost', 'amount'],
-            'description' => ['описание', 'description', 'desc', 'опис'],
-            'category' => ['категория', 'category', 'cat', 'раздел'],
-            'in_stock' => ['наличие', 'in stock', 'stock', 'количество', 'quantity', 'in_stock'],
-            'image' => ['фото', 'image', 'img', 'picture', 'картинка', 'url']
+        $priorityMap = [
+            'name' => [
+                'name(ru-ru)',
+                'name',
+                'название',
+                'наименование',
+                'товар',
+                'product',
+            ],
+            'price' => [
+                'price',
+                'цена',
+                'стоимость',
+                'cost',
+                'amount',
+            ],
+            'description' => [
+                'description(ru-ru)',
+                'description',
+                'описание',
+                'desc',
+                'meta_description(ru-ru)',
+            ],
+            'category' => [
+                'category',
+                'категория',
+                'categories',
+                'main_category',
+                'раздел',
+            ],
+            'in_stock' => [
+                'quantity',
+                'in_stock',
+                'наличие',
+                'stock_status_id',
+                'stock_status',
+            ],
+            'image' => [
+                'image_name',
+                'image',
+                'img',
+                'picture',
+                'фото',
+                'картинка',
+                'url',
+            ],
         ];
+
+        $normalizedHeaders = [];
 
         foreach ($headers as $index => $header) {
-            if (empty($header)) continue;
-            
-            $headerLower = strtolower(trim($header));
-            
-            foreach ($keywords as $field => $variants) {
-                foreach ($variants as $variant) {
-                    if (str_contains($headerLower, $variant)) {
+            $normalizedHeaders[$index] = mb_strtolower(trim((string) $header));
+        }
+
+        foreach ($priorityMap as $field => $variants) {
+            foreach ($variants as $variant) {
+                $variant = mb_strtolower($variant);
+
+                foreach ($normalizedHeaders as $index => $header) {
+                    if ($header === $variant) {
                         $mapping[$field] = $index;
                         break 2;
                     }
