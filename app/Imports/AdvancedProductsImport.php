@@ -73,11 +73,15 @@ class AdvancedProductsImport implements ToModel, WithHeadingRow, WithValidation,
     protected $failures = [];
     protected $rowCount = 0;
     protected $successCount = 0;
+    protected $availableSlots = 0;
+    protected $importedWithinLimit = 0;
+    protected $skippedDueToLimit = 0;
 
-    public function __construct($shopId, array $mapping)
+    public function __construct($shopId, array $mapping, int $availableSlots = 0)
     {
         $this->shopId = $shopId;
         $this->mapping = $mapping;
+        $this->availableSlots = max(0, $availableSlots);
     }
 
     /**
@@ -316,6 +320,11 @@ class AdvancedProductsImport implements ToModel, WithHeadingRow, WithValidation,
             return null;
         }
 
+        if ($this->importedWithinLimit >= $this->availableSlots) {
+            $this->skippedDueToLimit++;
+            return null;
+        }
+
         $data['in_stock'] = $this->normalizeInStock($data['in_stock'] ?? null);
 
         $categoryId = null;
@@ -348,6 +357,7 @@ class AdvancedProductsImport implements ToModel, WithHeadingRow, WithValidation,
         }
 
         $this->successCount++;
+        $this->importedWithinLimit++;
 
         return new Product([
             'shop_id' => $this->shopId,
@@ -390,5 +400,10 @@ class AdvancedProductsImport implements ToModel, WithHeadingRow, WithValidation,
     public function getSuccessCount(): int
     {
         return $this->successCount;
+    }
+
+    public function getSkippedDueToLimit(): int
+    {
+        return $this->skippedDueToLimit;
     }
 }

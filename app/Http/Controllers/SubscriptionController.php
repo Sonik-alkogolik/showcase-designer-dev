@@ -21,6 +21,7 @@ class SubscriptionController extends Controller
                 'auto_renew' => false,
                 'shops_limit' => 1,
                 'products_limit' => 20,
+                'can_import_excel' => false,
                 'features' => [
                     '1 магазин',
                     'До 20 товаров',
@@ -35,6 +36,7 @@ class SubscriptionController extends Controller
                 'auto_renew' => true,
                 'shops_limit' => 5,
                 'products_limit' => 200,
+                'can_import_excel' => true,
                 'features' => [
                     '5 магазинов',
                     'До 200 товаров',
@@ -50,11 +52,20 @@ class SubscriptionController extends Controller
         if (Auth::check()) {
             $currentSubscription = Auth::user()->activeSubscription()->first();
         }
+
+        $currentCapabilities = Auth::check()
+            ? Auth::user()->getPlanFeatures()
+            : [
+                'shops_limit' => 0,
+                'products_limit' => 0,
+                'can_import_excel' => false,
+            ];
         
         return response()->json([
             'success' => true,
             'plans' => $plans,
-            'current_subscription' => $currentSubscription
+            'current_subscription' => $currentSubscription,
+            'current_capabilities' => $currentCapabilities,
         ]);
     }
 

@@ -10,6 +10,19 @@ use App\Imports\AdvancedProductsImport;
 
 class ImportController extends Controller
 {
+    private function getShopProductLimitContext($user, $shop): array
+    {
+        $limit = $user->getProductsLimit();
+        $currentCount = $shop->products()->count();
+        $availableSlots = max(0, $limit - $currentCount);
+
+        return [
+            'limit' => $limit,
+            'current_count_before_import' => $currentCount,
+            'available_slots_before_import' => $availableSlots,
+        ];
+    }
+
     /**
      * Предпросмотр файла и определение колонок
      */
@@ -17,6 +30,16 @@ class ImportController extends Controller
     {
         $user = Auth::user();
         $shop = $user->shops()->findOrFail($shopId);
+        $limitContext = $this->getShopProductLimitContext($user, $shop);
+
+        if (! $user->canImportExcel()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Импорт из Excel доступен только на платном тарифе',
+                'can_import_excel' => false,
+                ...$limitContext,
+            ], 403);
+        }
 
         $request->validate([
             'file' => 'required|file|mimetypes:application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain|max:10240',
@@ -81,7 +104,9 @@ class ImportController extends Controller
                 'sample_data' => $sampleData,
                 'detected_mapping' => $columnMapping,
                 'extra_columns' => $extraColumns,
-                'preview' => $previewData
+                'preview' => $previewData,
+                'can_import_excel' => true,
+                ...$limitContext,
             ]);
 
         } catch (\Exception $e) {
@@ -99,15 +124,23 @@ class ImportController extends Controller
     {
         $user = Auth::user();
         $shop = $user->shops()->findOrFail($shopId);
+        $limitContext = $this->getShopProductLimitContext($user, $shop);
 
-        // Проверка лимита товаров
-        $productsCount = $shop->products()->count();
-        $limit = $user->getProductsLimit();
-        
-        if ($productsCount >= $limit) {
+        if (! $user->canImportExcel()) {
             return response()->json([
                 'success' => false,
-                'message' => "Вы достигли лимита товаров для вашего тарифа ({$limit} шт.)"
+                'message' => 'Импорт из Excel доступен только на платном тарифе',
+                'can_import_excel' => false,
+                ...$limitContext,
+            ], 403);
+        }
+
+        if ($limitContext['available_slots_before_import'] <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => "Вы достигли лимита товаров для вашего тарифа ({$limitContext['limit']} шт.)",
+                'can_import_excel' => true,
+                ...$limitContext,
             ], 403);
         }
 
@@ -148,7 +181,11 @@ class ImportController extends Controller
             }
 
             // Создаем импорт с маппингом
-            $import = new AdvancedProductsImport($shopId, $mapping);
+            $import = new AdvancedProductsImport(
+                $shopId,
+                $mapping,
+                $limitContext['available_slots_before_import']
+            );
             
             // Выполняем импорт
             Excel::import($import, $file);
@@ -156,6 +193,15 @@ class ImportController extends Controller
             $failures = $import->getFailures();
             $successCount = $import->getSuccessCount();
             $totalRows = $import->getRowCount();
+            $skippedDueToLimit = $import->getSkippedDueToLimit();
+            $responseMeta = [
+                'success_count' => $successCount,
+                'imported_count' => $successCount,
+                'total_rows' => $totalRows,
+                'skipped_due_to_limit' => $skippedDueToLimit,
+                'can_import_excel' => true,
+                ...$limitContext,
+            ];
 
             if (count($failures) > 0) {
                 $errors = [];
@@ -171,9 +217,8 @@ class ImportController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Импорт завершен с ошибками',
-                    'success_count' => $successCount,
-                    'total_rows' => $totalRows,
-                    'errors' => $errors
+                    ...$responseMeta,
+                    'errors' => $errors,
                 ], 422);
             }
 
@@ -181,7 +226,7 @@ class ImportController extends Controller
                 'success' => true,
                 'message' => "Успешно импортировано {$successCount} товаров",
                 'count' => $successCount,
-                'total_rows' => $totalRows
+                ...$responseMeta,
             ]);
 
         } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
@@ -198,7 +243,9 @@ class ImportController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Ошибка валидации файла',
-                'errors' => $errors
+                'errors' => $errors,
+                'can_import_excel' => true,
+                ...$limitContext,
             ], 422);
 
         } catch (\Exception $e) {

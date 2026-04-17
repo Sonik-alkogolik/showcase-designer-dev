@@ -6,7 +6,12 @@
         <button @click="showCategoriesModal = true" class="btn-categories">
           📁 Категории (ред)
         </button>
-        <button @click="showImportModal = true" class="btn-secondary">
+        <button
+          @click="openImportModal"
+          class="btn-secondary"
+          :disabled="!canImportExcel"
+          :title="importRestrictionMessage"
+        >
           Импорт из Excel
         </button>
         <button @click="showCreateForm = true" class="btn-primary" v-if="canCreate">
@@ -256,6 +261,8 @@ export default {
     const shopName = ref('')
     const limits = ref(null)
     const categories = ref([])
+    const canImportExcel = ref(false)
+    const importRestrictionMessage = ref('Импорт из Excel доступен')
     const showCreateForm = ref(false)
     const editingProduct = ref(null)
     const showImportModal = ref(false)
@@ -443,19 +450,36 @@ const getVisibleAttributes = (product) => {
         const subscription = subscriptionResponse.data.current_subscription
         
         if (subscription) {
-          const limitsMap = {
-            'starter': 100,
-            'business': 1000,
-            'premium': 10000
-          }
+          const capabilities = subscriptionResponse.data.current_capabilities || {}
+          const totalLimit = Number(capabilities.products_limit ?? 0)
+          canImportExcel.value = Boolean(capabilities.can_import_excel)
+          importRestrictionMessage.value = canImportExcel.value
+            ? 'Импорт из Excel доступен'
+            : 'Импорт из Excel доступен только на платном тарифе'
+
           limits.value = {
-            total: limitsMap[subscription.plan] || 0,
+            total: totalLimit,
+            used: products.value.length
+          }
+        } else {
+          canImportExcel.value = false
+          importRestrictionMessage.value = 'Нет активной подписки'
+          limits.value = {
+            total: 0,
             used: products.value.length
           }
         }
       } catch (error) {
         console.error('Ошибка загрузки информации о магазине:', error)
       }
+    }
+
+    const openImportModal = () => {
+      if (!canImportExcel.value) {
+        alert(importRestrictionMessage.value || 'Импорт из Excel доступен только на платном тарифе')
+        return
+      }
+      showImportModal.value = true
     }
 
     const debouncedSearch = debounce(loadProducts, 300)
@@ -704,7 +728,10 @@ const getVisibleAttributes = (product) => {
       deleteProduct,
       closeModal,
       showImportModal,
+      openImportModal,
       closeImportModal,
+      canImportExcel,
+      importRestrictionMessage,
       addAttribute,       
       removeAttribute,
       onImageFileChange,

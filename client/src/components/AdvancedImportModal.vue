@@ -116,6 +116,16 @@
           <div v-if="importResult.success_count !== undefined" class="stats">
             <p>✅ Успешно импортировано: {{ importResult.success_count }}</p>
             <p v-if="importResult.total_rows">📊 Всего строк: {{ importResult.total_rows }}</p>
+            <p v-if="importResult.limit !== undefined">📦 Лимит тарифа: {{ importResult.limit }}</p>
+            <p v-if="importResult.current_count_before_import !== undefined">
+              До импорта в магазине было: {{ importResult.current_count_before_import }}
+            </p>
+            <p v-if="importResult.available_slots_before_import !== undefined">
+              Доступно слотов до импорта: {{ importResult.available_slots_before_import }}
+            </p>
+            <p v-if="importResult.skipped_due_to_limit > 0">
+              ⛔ Пропущено из-за лимита: {{ importResult.skipped_due_to_limit }}
+            </p>
           </div>
 
           <div v-if="importResult.errors && importResult.errors.length" class="errors">

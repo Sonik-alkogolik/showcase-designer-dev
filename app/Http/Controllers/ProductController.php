@@ -150,11 +150,15 @@ class ProductController extends Controller
         // Проверка лимита товаров по тарифу
         $productsCount = $shop->products()->count();
         $limit = $user->getProductsLimit();
-        
-        if ($productsCount >= $limit) {
+        $availableSlots = max(0, $limit - $productsCount);
+
+        if ($availableSlots <= 0) {
             return response()->json([
                 'success' => false,
-                'message' => "Вы достигли лимита товаров для вашего тарифа ({$limit} шт.)"
+                'message' => "Вы достигли лимита товаров для вашего тарифа ({$limit} шт.)",
+                'limit' => $limit,
+                'current_count' => $productsCount,
+                'available_slots' => 0,
             ], 403);
         }
 
@@ -206,7 +210,10 @@ class ProductController extends Controller
             'success' => true,
             'message' => 'Товар успешно создан',
             'product' => $product->load('category'),
-            'remaining' => $limit - ($productsCount + 1)
+            'remaining' => $availableSlots - 1,
+            'limit' => $limit,
+            'current_count' => $productsCount + 1,
+            'available_slots' => max(0, $availableSlots - 1),
         ], 201);
     }
 

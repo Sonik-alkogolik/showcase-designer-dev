@@ -121,18 +121,7 @@ class User extends Authenticatable
      */
     public function getShopsLimit(): int
     {
-        $subscription = $this->activeSubscription()->first();
-        
-        if (!$subscription) {
-            return 0; // Без подписки нельзя создавать магазины
-        }
-        
-        return match($subscription->plan) {
-            'starter' => 1,
-            'business' => 5,
-            'premium' => 10,
-            default => 0
-        };
+        return (int) ($this->getPlanFeatures()['shops_limit'] ?? 0);
     }
 
     /**
@@ -140,18 +129,62 @@ class User extends Authenticatable
      */
     public function getProductsLimit(): int
     {
-        $subscription = $this->activeSubscription()->first();
-        
-        if (!$subscription) {
-            return 0;
+        return (int) ($this->getPlanFeatures()['products_limit'] ?? 0);
+    }
+
+    /**
+     * Текущий активный тариф пользователя.
+     */
+    public function getActivePlan(): ?string
+    {
+        return $this->activeSubscription()->first()?->plan;
+    }
+
+    /**
+     * Единая таблица capabilities для тарифов.
+     */
+    public function getPlanFeatures(): array
+    {
+        $plan = $this->getActivePlan();
+
+        if (!$plan) {
+            return [
+                'shops_limit' => 0,
+                'products_limit' => 0,
+                'can_import_excel' => false,
+            ];
         }
-        
-        return match($subscription->plan) {
-            'starter' => 20,
-            'business' => 200,
-            'premium' => 10000,
-            default => 0
+
+        return match($plan) {
+            'starter' => [
+                'shops_limit' => 1,
+                'products_limit' => 20,
+                'can_import_excel' => false,
+            ],
+            'business' => [
+                'shops_limit' => 5,
+                'products_limit' => 200,
+                'can_import_excel' => true,
+            ],
+            'premium' => [
+                'shops_limit' => 10,
+                'products_limit' => 10000,
+                'can_import_excel' => true,
+            ],
+            default => [
+                'shops_limit' => 0,
+                'products_limit' => 0,
+                'can_import_excel' => false,
+            ],
         };
+    }
+
+    /**
+     * Доступен ли Excel-импорт для активного тарифа.
+     */
+    public function canImportExcel(): bool
+    {
+        return (bool) ($this->getPlanFeatures()['can_import_excel'] ?? false);
     }
 
 
