@@ -71,7 +71,10 @@
             </transition>
           </div>
 
-          <p class="category">Категория: {{ product.category_name || 'Без категории' }}</p>
+          <p class="category">
+            Категории:
+            {{ product.category_names?.length ? product.category_names.join(', ') : (product.category_name || 'Без категории') }}
+          </p>
 
           <p class="stock" :class="{ 'in-stock': product.in_stock }">
             {{ product.in_stock ? 'В наличии' : 'Нет в наличии' }}
@@ -123,8 +126,16 @@
             <textarea v-model="form.description" rows="3"></textarea>
           </div>
           <div class="form-group">
-            <label>Категория</label>
-            <input v-model="form.category">
+            <label>Категории</label>
+            <select v-model="form.category_ids" multiple size="6">
+              <option v-for="category in categories" :key="category.id" :value="category.id">
+                {{ category.name }}
+              </option>
+            </select>
+            <p class="field-hint">Можно выбрать несколько категорий (Ctrl/Cmd + клик)</p>
+            <button type="button" class="btn-clear-categories" @click="form.category_ids = []">
+              Очистить категории
+            </button>
           </div>
           <div class="form-group">
             <label>Изображение (URL)</label>
@@ -289,6 +300,7 @@ export default {
       price: '',
       description: '',
       category: '',
+      category_ids: [],
       image: '',
       in_stock: true,
       show_in_slider: false
@@ -421,9 +433,11 @@ const getVisibleAttributes = (product) => {
         // console.log('📦 API Response:', response.data)
         
         products.value = (response.data.products.data || []).map(product => ({
-            ...product,
-            category_name: resolveCategoryName(product.category)
-          }))
+          ...product,
+          category_name: resolveCategoryName(product.category),
+          category_names: (product.categories || []).map(category => category.name),
+          category_ids: (product.categories || []).map(category => category.id),
+        }))
         // console.log('✅ products updated:', products.value)
         expandedDescriptions.value = {}
         // Используем категории с сервера
@@ -485,11 +499,6 @@ const getVisibleAttributes = (product) => {
     const debouncedSearch = debounce(loadProducts, 300)
 
     const saveProduct = async () => {
-      console.log('🔵 saveProduct вызван!')
-      console.log('📦 editingProduct:', editingProduct.value)
-      console.log('📋 form:', {...form})
-      console.log('🏷️ editingAttributes:', {...editingAttributes.value})
-      
       try {
         const url = editingProduct.value 
           ? `/api/shops/${shopId}/products/${editingProduct.value.id}`
@@ -497,16 +506,13 @@ const getVisibleAttributes = (product) => {
         
         const method = editingProduct.value ? 'put' : 'post'
         
-        console.log('🌐 URL:', url)
-        console.log('🔄 Method:', method)
-        
         // Добавляем атрибуты к данным формы
         const productData = {
           ...form,
+          category_ids: Array.isArray(form.category_ids) ? form.category_ids : [],
+          category: '',
           attributes: editingAttributes.value
         }
-        
-        console.log('📤 Отправляемые данные:', productData)
         
         let response
         if (selectedImageFile.value) {
@@ -517,6 +523,10 @@ const getVisibleAttributes = (product) => {
             }
             if (key === 'attributes') {
               formData.append('attributes', JSON.stringify(value || {}))
+              return
+            }
+            if (key === 'category_ids') {
+              formData.append('category_ids', JSON.stringify(value || []))
               return
             }
             if (typeof value === 'boolean') {
@@ -538,13 +548,9 @@ const getVisibleAttributes = (product) => {
         } else {
           response = await axios[method](url, productData)
         }
-        
-        console.log('✅ Ответ сервера:', response.data)
-        
         if (response.data.success) {
           await loadProducts()
           closeModal()
-          console.log('📌 После закрытия модалки, products:', products.value)
           // Принудительно обновляем компонент
           products.value = [...products.value]
         }
@@ -559,7 +565,10 @@ const getVisibleAttributes = (product) => {
       editingProduct.value = product
       Object.assign(form, {
         ...product,
-        category: product.category_name || resolveCategoryName(product.category) || '',
+        category: '',
+        category_ids: Array.isArray(product.category_ids) && product.category_ids.length
+          ? [...product.category_ids]
+          : (product.category_id ? [product.category_id] : []),
         show_in_slider: Boolean(product.show_in_slider)
       })
       editingAttributes.value = product.attributes ? { ...product.attributes } : {}
@@ -601,6 +610,7 @@ const getVisibleAttributes = (product) => {
         price: '',
         description: '',
         category: '',
+        category_ids: [],
         image: '',
         in_stock: true,
         show_in_slider: false
@@ -1004,6 +1014,23 @@ const getVisibleAttributes = (product) => {
   padding: 0.5rem;
   border: 1px solid #ddd;
   border-radius: 4px;
+}
+
+.field-hint {
+  margin-top: 0.35rem;
+  font-size: 0.82rem;
+  color: #7a8599;
+}
+
+.btn-clear-categories {
+  margin-top: 0.5rem;
+  border: 1px solid #d4dbe6;
+  background: #f7f9fc;
+  color: #354052;
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
 }
 
 .upload-note {

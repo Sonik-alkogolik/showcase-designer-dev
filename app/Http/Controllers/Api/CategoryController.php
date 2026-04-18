@@ -149,8 +149,10 @@ class CategoryController extends Controller
         $shop = $user->shops()->findOrFail($shopId);
         $category = $shop->categories()->findOrFail($categoryId);
         
-        // У товаров этой категории сбрасываем category_id в null
+        // У товаров этой категории сбрасываем primary category_id
         $category->products()->update(['category_id' => null]);
+        // Убираем связь в many-to-many
+        $category->productsMany()->detach();
         
         $category->delete();
 

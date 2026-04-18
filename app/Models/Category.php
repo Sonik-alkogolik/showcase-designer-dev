@@ -38,4 +38,13 @@ class Category extends Model
     {
         return $this->hasMany(Product::class);
     }
+
+    /**
+     * Множественная связь товаров и категорий (pivot).
+     */
+    public function productsMany()
+    {
+        return $this->belongsToMany(Product::class, 'category_product')
+            ->withTimestamps();
+    }
 }

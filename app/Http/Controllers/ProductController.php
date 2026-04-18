@@ -24,6 +24,18 @@ class ProductController extends Controller
         }
     }
 
+    private function normalizeCategoryIds(Request $request): void
+    {
+        $raw = $request->input('category_ids');
+
+        if (is_string($raw) && $raw !== '') {
+            $decoded = json_decode($raw, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $request->merge(['category_ids' => $decoded]);
+            }
+        }
+    }
+
     private function handleProductImageUpload(Request $request, ?string $existingImage = null): ?string
     {
         if (! $request->hasFile('image_file')) {
@@ -45,27 +57,59 @@ class ProductController extends Controller
     /**
      * Resolve category payload for product create/update.
      *
-     * Rules:
-     * - category_id has priority over category text
-     * - category_id must belong to current shop
-     * - category text is mapped to existing shop category by name (if found)
-     * - if category text does not match existing category, keep text for backward compatibility
-     *
-     * Returns null when no category fields were provided and $allowNoChanges is true.
+     * Приоритет:
+     * 1) category_ids (many-to-many)
+     * 2) category_id (legacy primary)
+     * 3) category (legacy text)
      */
     private function resolveCategoryPayload(Request $request, Shop $shop, bool $allowNoChanges = false): ?array
     {
+        $hasCategoryIds = $request->has('category_ids');
         $hasCategoryId = $request->has('category_id');
         $hasCategoryText = $request->has('category');
 
-        if (!$hasCategoryId && !$hasCategoryText) {
-            return $allowNoChanges ? null : ['category_id' => null, 'category' => null];
+        if (!$hasCategoryIds && !$hasCategoryId && !$hasCategoryText) {
+            return $allowNoChanges ? null : ['category_id' => null, 'category' => null, 'category_ids' => []];
+        }
+
+        if ($hasCategoryIds) {
+            $rawCategoryIds = $request->input('category_ids', []);
+            $categoryIds = collect($rawCategoryIds)
+                ->filter(fn ($id) => $id !== null && $id !== '')
+                ->map(fn ($id) => (int) $id)
+                ->unique()
+                ->values();
+
+            if ($categoryIds->isEmpty()) {
+                return ['category_id' => null, 'category' => null, 'category_ids' => []];
+            }
+
+            $validIds = $shop->categories()
+                ->whereIn('id', $categoryIds->all())
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            $missing = array_values(array_diff($categoryIds->all(), $validIds));
+            if (!empty($missing)) {
+                throw ValidationException::withMessages([
+                    'category_ids' => ['Одна или несколько категорий не принадлежат этому магазину.'],
+                ]);
+            }
+
+            $firstCategory = $shop->categories()->find($validIds[0]);
+
+            return [
+                'category_id' => $firstCategory?->id,
+                'category' => $firstCategory?->name,
+                'category_ids' => $validIds,
+            ];
         }
 
         if ($hasCategoryId) {
             $rawCategoryId = $request->input('category_id');
             if ($rawCategoryId === null || $rawCategoryId === '') {
-                return ['category_id' => null, 'category' => null];
+                return ['category_id' => null, 'category' => null, 'category_ids' => []];
             }
 
             $category = $shop->categories()->find($rawCategoryId);
@@ -78,12 +122,13 @@ class ProductController extends Controller
             return [
                 'category_id' => $category->id,
                 'category' => $category->name,
+                'category_ids' => [$category->id],
             ];
         }
 
         $categoryName = trim((string) $request->input('category', ''));
         if ($categoryName === '') {
-            return ['category_id' => null, 'category' => null];
+            return ['category_id' => null, 'category' => null, 'category_ids' => []];
         }
 
         $matchedCategory = $shop->categories()
@@ -94,49 +139,62 @@ class ProductController extends Controller
             return [
                 'category_id' => $matchedCategory->id,
                 'category' => $matchedCategory->name,
+                'category_ids' => [$matchedCategory->id],
             ];
         }
 
-        return ['category_id' => null, 'category' => $categoryName];
+        return ['category_id' => null, 'category' => $categoryName, 'category_ids' => []];
+    }
+
+    private function syncProductCategories(Product $product, ?array $categoryIds): void
+    {
+        if ($categoryIds === null) {
+            return;
+        }
+
+        $product->categories()->sync($categoryIds);
     }
 
     /**
      * Получить список товаров магазина
      */
     public function index(Request $request, $shopId)
-{
-    $user = Auth::user();
-    $shop = $user->shops()->findOrFail($shopId);
-    
-    $products = $shop->products()
-        ->with('category')
-        ->when($request->category, function ($query, $category) {
-            // Проверяем, является ли category числом (ID) или строкой (название)
-            if (is_numeric($category)) {
-                return $query->where('category_id', $category);
-            } else {
-                // Для обратной совместимости ищем по названию
+    {
+        $user = Auth::user();
+        $shop = $user->shops()->findOrFail($shopId);
+
+        $products = $shop->products()
+            ->with(['category', 'categories:id,name'])
+            ->when($request->category, function ($query, $category) {
+                if (is_numeric($category)) {
+                    $categoryId = (int) $category;
+                    return $query->where(function ($subQuery) use ($categoryId) {
+                        $subQuery->where('category_id', $categoryId)
+                            ->orWhereHas('categories', function ($categoriesQuery) use ($categoryId) {
+                                $categoriesQuery->where('categories.id', $categoryId);
+                            });
+                    });
+                }
+
                 return $query->where('category', $category);
-            }
-        })
-        ->when($request->search, function ($query, $search) {
-            return $query->where('name', 'like', "%{$search}%");
-        })
-        ->orderBy($request->sort ?? 'created_at', $request->order ?? 'desc')
-        ->paginate($request->per_page ?? 20);
-    
-    // Получаем категории из таблицы categories
-    $categories = $shop->categories()
-        ->orderBy('sort_order')
-        ->orderBy('name')
-        ->get(['id', 'name']);
-    
-    return response()->json([
-        'success' => true,
-        'products' => $products,
-        'categories' => $categories
-    ]);
-}
+            })
+            ->when($request->search, function ($query, $search) {
+                return $query->where('name', 'like', "%{$search}%");
+            })
+            ->orderBy($request->sort ?? 'created_at', $request->order ?? 'desc')
+            ->paginate($request->per_page ?? 20);
+
+        $categories = $shop->categories()
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return response()->json([
+            'success' => true,
+            'products' => $products,
+            'categories' => $categories
+        ]);
+    }
 
     /**
      * Создать новый товар
@@ -146,6 +204,7 @@ class ProductController extends Controller
         $user = Auth::user();
         $shop = $user->shops()->findOrFail($shopId);
         $this->normalizeAttributes($request);
+        $this->normalizeCategoryIds($request);
 
         // Проверка лимита товаров по тарифу
         $productsCount = $shop->products()->count();
@@ -166,6 +225,11 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
             'description' => 'nullable|string',
+            'category_ids' => 'nullable|array',
+            'category_ids.*' => [
+                'integer',
+                Rule::exists('categories', 'id')->where(fn ($query) => $query->where('shop_id', $shop->id)),
+            ],
             'category_id' => [
                 'nullable',
                 Rule::exists('categories', 'id')->where(fn ($query) => $query->where('shop_id', $shop->id)),
@@ -205,11 +269,12 @@ class ProductController extends Controller
         }
 
         $product = $shop->products()->create($data);
+        $this->syncProductCategories($product, $categoryPayload['category_ids'] ?? []);
 
         return response()->json([
             'success' => true,
             'message' => 'Товар успешно создан',
-            'product' => $product->load('category'),
+            'product' => $product->load(['category', 'categories']),
             'remaining' => $availableSlots - 1,
             'limit' => $limit,
             'current_count' => $productsCount + 1,
@@ -224,7 +289,7 @@ class ProductController extends Controller
     {
         $user = Auth::user();
         $shop = $user->shops()->findOrFail($shopId);
-        $product = $shop->products()->with('category')->findOrFail($productId);
+        $product = $shop->products()->with(['category', 'categories'])->findOrFail($productId);
         
         return response()->json([
             'success' => true,
@@ -241,11 +306,17 @@ class ProductController extends Controller
         $shop = $user->shops()->findOrFail($shopId);
         $product = $shop->products()->findOrFail($productId);
         $this->normalizeAttributes($request);
+        $this->normalizeCategoryIds($request);
 
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|string|max:255',
             'price' => 'sometimes|numeric|min:0',
             'description' => 'nullable|string',
+            'category_ids' => 'nullable|array',
+            'category_ids.*' => [
+                'integer',
+                Rule::exists('categories', 'id')->where(fn ($query) => $query->where('shop_id', $shop->id)),
+            ],
             'category_id' => [
                 'nullable',
                 Rule::exists('categories', 'id')->where(fn ($query) => $query->where('shop_id', $shop->id)),
@@ -279,7 +350,10 @@ class ProductController extends Controller
 
         $categoryPayload = $this->resolveCategoryPayload($request, $shop, true);
         if ($categoryPayload !== null) {
-            $data = array_merge($data, $categoryPayload);
+            $data = array_merge($data, [
+                'category' => $categoryPayload['category'],
+                'category_id' => $categoryPayload['category_id'],
+            ]);
         }
 
         $uploadedImageUrl = $this->handleProductImageUpload($request, $product->image);
@@ -288,11 +362,12 @@ class ProductController extends Controller
         }
         
         $product->update($data);
+        $this->syncProductCategories($product, $categoryPayload['category_ids'] ?? null);
 
         return response()->json([
             'success' => true,
             'message' => 'Товар успешно обновлен',
-            'product' => $product->load('category')
+            'product' => $product->load(['category', 'categories'])
         ]);
     }
 
@@ -321,10 +396,15 @@ class ProductController extends Controller
         $shop = Shop::findOrFail($shopId);
         
         $products = $shop->products()
-            ->with('category')
+            ->with(['category', 'categories:id,name'])
             ->where('in_stock', true)
             ->when($request->category, function ($query, $category) {
-                return $query->where('category_id', $category);
+                return $query->where(function ($subQuery) use ($category) {
+                    $subQuery->where('category_id', $category)
+                        ->orWhereHas('categories', function ($categoriesQuery) use ($category) {
+                            $categoriesQuery->where('categories.id', $category);
+                        });
+                });
             })
             ->when($request->search, function ($query, $search) {
                 return $query->where('name', 'like', "%{$search}%");
