@@ -3,7 +3,7 @@
     <div class="ambient ambient-a" />
     <div class="ambient ambient-b" />
 
-    <header class="hero">
+    <div class="hero">
       <div class="hero-content">
         <p class="eyebrow">t-go</p>
         <h1>Создавайте магазины в Telegram быстро и без лишней настройки</h1>
@@ -119,7 +119,7 @@
           </div>
         </div>
       </div>
-    </header>
+    </div>
 
     <section class="about">
       <h2>Кратко о проекте</h2>
@@ -162,6 +162,8 @@
   gap: 1.25rem;
   z-index: 2;
   max-width: 1120px;
+  padding: 0 10px;
+  margin: 0px auto;
   animation: hero-drift 26s ease-in-out infinite;
 }
 

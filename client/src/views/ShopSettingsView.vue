@@ -54,9 +54,6 @@
         <p v-if="botSetup?.webapp_url" class="bot-setup-meta">
           URL витрины: <code>{{ botSetup.webapp_url }}</code>
         </p>
-        <p v-if="botSetup?.domain_hint_required" class="domain-hint">
-          Важно: в @BotFather для этого бота должен быть установлен домен <strong>e-tgo.ru</strong> через <code>/setdomain</code>.
-        </p>
         <div v-if="manualSetupSteps.length" class="manual-setup">
           <p class="manual-setup-title">Быстрый запуск (как у TGShop):</p>
           <ol class="manual-setup-list">
