@@ -138,13 +138,20 @@
       <div v-if="step === 3" class="step">
         <h3>Результат импорта</h3>
         
-        <div class="result" :class="{ 'success': importResult.success, 'error': !importResult.success }">
-          <div class="result-icon">{{ importResult.success ? '✅' : '❌' }}</div>
+        <div class="result" :class="resultStateClass">
+          <div class="result-icon">{{ resultIcon }}</div>
           <div class="result-message">{{ importResult.message }}</div>
 
           <p v-if="importResult.import_run_status" class="run-status">
             Статус: <strong>{{ getStatusLabel(importResult.import_run_status) }}</strong>
           </p>
+
+          <div v-if="isRunActive" class="progress-block">
+            <div class="progress-track">
+              <div class="progress-indeterminate"></div>
+            </div>
+            <p class="progress-hint">Обрабатываем файл. Обычно это занимает до пары минут.</p>
+          </div>
           
           <div v-if="importResult.success_count !== undefined" class="stats">
             <p>✅ Успешно импортировано: {{ importResult.success_count }}</p>
@@ -238,6 +245,26 @@ export default {
       return mapping.name !== null && mapping.price !== null
     })
 
+    const isRunActive = computed(() => {
+      const status = importResult.value?.import_run_status
+      return status === 'pending' || status === 'processing'
+    })
+
+    const resultStateClass = computed(() => {
+      const status = importResult.value?.import_run_status
+      if (status === 'pending' || status === 'processing') return 'pending'
+      if (status === 'failed') return 'error'
+      if (status === 'completed') return 'success'
+      return importResult.value?.success ? 'success' : 'error'
+    })
+
+    const resultIcon = computed(() => {
+      const status = importResult.value?.import_run_status
+      if (status === 'pending' || status === 'processing') return '⏳'
+      if (status === 'failed') return '❌'
+      return '✅'
+    })
+
     const formatFileSize = (bytes) => {
       if (bytes < 1024) return bytes + ' B'
       if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
@@ -297,7 +324,7 @@ export default {
             ? `Импорт завершен. Успешно импортировано ${run.success_count || 0} товаров`
             : run.status === 'failed'
               ? (run.error_message || 'Импорт завершился с ошибкой')
-              : 'Импорт выполняется в фоне',
+              : 'Импорт в процессе...',
         import_run_id: run.id,
         import_run_status: run.status,
         success_count: run.success_count ?? run.imported_count ?? 0,
@@ -360,9 +387,6 @@ export default {
       loading.value = true
       const formData = new FormData()
       formData.append('file', selectedFile.value)
-
-    console.log('Отправляю файл:', selectedFile.value)
-  console.log('FormData entries:', [...formData.entries()])
 
       try {
         const response = await axios.post(`/api/shops/${props.shopId}/import/preview`, formData, {
@@ -435,7 +459,7 @@ export default {
         if (asyncResponse.data?.success && asyncResponse.data?.import_run?.id) {
           importResult.value = {
             success: true,
-            message: 'Импорт поставлен в очередь. Ожидаем выполнение...',
+            message: 'Импорт начат. Подготавливаем обработку файла...',
             import_run_id: asyncResponse.data.import_run.id,
             import_run_status: asyncResponse.data.import_run.status,
             limit: asyncResponse.data.limit,
@@ -515,6 +539,9 @@ export default {
       mapping,
       mappingFields,
       isMappingValid,
+      isRunActive,
+      resultStateClass,
+      resultIcon,
       getStatusLabel,
       formatFileSize,
       handleFileSelect,
@@ -822,6 +849,11 @@ export default {
   color: #155724;
 }
 
+.result.pending {
+  background: #edf3ff;
+  color: #1f3c88;
+}
+
 .result.error {
   background: #f8d7da;
   color: #721c24;
@@ -840,6 +872,41 @@ export default {
 
 .run-status {
   margin: 0.35rem 0 0.9rem;
+}
+
+.progress-block {
+  margin: 0.4rem 0 1rem;
+}
+
+.progress-track {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(31, 60, 136, 0.15);
+  overflow: hidden;
+}
+
+.progress-indeterminate {
+  width: 40%;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2f80ed, #56ccf2);
+  animation: loading-slide 1.2s ease-in-out infinite;
+}
+
+.progress-hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.92rem;
+  opacity: 0.9;
+}
+
+@keyframes loading-slide {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(280%);
+  }
 }
 
 .stats {
