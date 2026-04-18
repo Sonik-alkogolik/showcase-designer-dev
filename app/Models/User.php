@@ -198,6 +198,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Запуски импорта пользователя
+     */
+    public function importRuns()
+    {
+        return $this->hasMany(ImportRun::class);
+    }
+
+    /**
      * Проверить, может ли пользователь создать новый магазин
      */
     public function canCreateMoreShops(): bool

@@ -55,6 +55,14 @@ class Shop extends Model
     {
         return $this->hasMany(Category::class);
     }
+
+    /**
+     * Связь с запусками импорта
+     */
+    public function importRuns(): HasMany
+    {
+        return $this->hasMany(ImportRun::class);
+    }
     /**
      * Шифрование токена бота при сохранении
      */

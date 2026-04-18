@@ -85,6 +85,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/shops/{shop}/import/preview', [ImportController::class, 'preview'])->middleware('own.shop');
     Route::post('/shops/{shop}/import', [ImportController::class, 'import'])->middleware('own.shop');
     Route::post('/shops/{shop}/import-products', [ImportController::class, 'import'])->middleware('own.shop');
+    Route::post('/shops/{shop}/import/async', [ImportController::class, 'importAsync'])->middleware('own.shop');
+    Route::get('/shops/{shop}/import/status/{run}', [ImportController::class, 'importStatus'])->middleware('own.shop');
+    Route::get('/shops/{shop}/import/history', [ImportController::class, 'importHistory'])->middleware('own.shop');
 
         // Маршруты для категорий
     Route::get('/shops/{shop}/categories', [App\Http\Controllers\Api\CategoryController::class, 'index'])->middleware('own.shop');
