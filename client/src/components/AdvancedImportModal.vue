@@ -108,6 +108,22 @@
               Если в файле путь вида <code>catalog/..../image.jpg</code>, укажи домен и он будет подставлен автоматически.
             </p>
           </div>
+
+          <div class="import-history" v-if="importHistory.length">
+            <h4>Последние импорты</h4>
+            <div class="history-list">
+              <div v-for="run in importHistory" :key="run.id" class="history-item">
+                <div>
+                  <strong>#{{ run.id }}</strong>
+                  <span class="status-badge" :class="`status-${run.status}`">{{ getStatusLabel(run.status) }}</span>
+                </div>
+                <div class="history-meta">
+                  <span>{{ run.source_filename || 'Файл не указан' }}</span>
+                  <span v-if="run.imported_count !== undefined">Импортировано: {{ run.imported_count }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="actions">
@@ -125,6 +141,10 @@
         <div class="result" :class="{ 'success': importResult.success, 'error': !importResult.success }">
           <div class="result-icon">{{ importResult.success ? '✅' : '❌' }}</div>
           <div class="result-message">{{ importResult.message }}</div>
+
+          <p v-if="importResult.import_run_status" class="run-status">
+            Статус: <strong>{{ getStatusLabel(importResult.import_run_status) }}</strong>
+          </p>
           
           <div v-if="importResult.success_count !== undefined" class="stats">
             <p>✅ Успешно импортировано: {{ importResult.success_count }}</p>
@@ -154,7 +174,14 @@
 
         <div class="actions">
           <button @click="$emit('close')" class="btn-primary">Закрыть</button>
-          <button v-if="importResult.success" @click="reloadProducts" class="btn-secondary">
+          <button
+            v-if="importResult.import_run_id && importResult.import_run_status !== 'completed' && importResult.import_run_status !== 'failed'"
+            @click="refreshImportStatus"
+            class="btn-secondary"
+          >
+            Обновить статус
+          </button>
+          <button v-if="importResult.success && importResult.import_run_status === 'completed'" @click="reloadProducts" class="btn-secondary">
             Обновить список
           </button>
         </div>
@@ -164,7 +191,7 @@
 </template>
 
 <script>
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, reactive, computed, watch, onBeforeUnmount } from 'vue'
 import axios from 'axios'
 
 export default {
@@ -186,6 +213,8 @@ export default {
     const detectedMapping = ref(null)
     const importResult = ref(null)
     const imageBaseUrl = ref('')
+    const importHistory = ref([])
+    const importPollTimer = ref(null)
     
     const mapping = reactive({
       name: null,
@@ -236,6 +265,95 @@ export default {
       return ''
     }
 
+    const getStatusLabel = (status) => {
+      switch (status) {
+        case 'pending':
+          return 'В очереди'
+        case 'processing':
+          return 'Обрабатывается'
+        case 'completed':
+          return 'Завершен'
+        case 'failed':
+          return 'Ошибка'
+        default:
+          return status || 'Неизвестно'
+      }
+    }
+
+    const stopImportPolling = () => {
+      if (importPollTimer.value) {
+        clearInterval(importPollTimer.value)
+        importPollTimer.value = null
+      }
+    }
+
+    const applyRunStatus = (run) => {
+      if (!run) return
+
+      importResult.value = {
+        success: run.status !== 'failed',
+        message:
+          run.status === 'completed'
+            ? `Импорт завершен. Успешно импортировано ${run.success_count || 0} товаров`
+            : run.status === 'failed'
+              ? (run.error_message || 'Импорт завершился с ошибкой')
+              : 'Импорт выполняется в фоне',
+        import_run_id: run.id,
+        import_run_status: run.status,
+        success_count: run.success_count ?? run.imported_count ?? 0,
+        imported_count: run.imported_count ?? 0,
+        failed_count: run.failed_count ?? 0,
+        total_rows: run.total_rows ?? 0,
+        skipped_due_to_limit: run.skipped_due_to_limit ?? 0,
+        limit: run.limit,
+        current_count_before_import: run.current_count_before_import,
+        available_slots_before_import: run.available_slots_before_import,
+        errors: run.failures || [],
+      }
+    }
+
+    const refreshImportStatus = async () => {
+      if (!importResult.value?.import_run_id) return
+
+      try {
+        const response = await axios.get(
+          `/api/shops/${props.shopId}/import/status/${importResult.value.import_run_id}`
+        )
+        const run = response.data?.import_run
+        applyRunStatus(run)
+
+        if (run?.status === 'completed' || run?.status === 'failed') {
+          stopImportPolling()
+          await fetchImportHistory()
+          if (run.status === 'completed') {
+            emit('import-complete')
+          }
+        }
+      } catch (error) {
+        console.error('Ошибка обновления статуса импорта:', error)
+      }
+    }
+
+    const startImportPolling = (runId) => {
+      stopImportPolling()
+      if (!runId) return
+
+      importPollTimer.value = setInterval(() => {
+        refreshImportStatus()
+      }, 2500)
+    }
+
+    const fetchImportHistory = async () => {
+      try {
+        const response = await axios.get(`/api/shops/${props.shopId}/import/history`, {
+          params: { per_page: 5 }
+        })
+        importHistory.value = response.data?.runs?.data || []
+      } catch (error) {
+        console.error('Ошибка загрузки истории импорта:', error)
+      }
+    }
+
     const previewFile = async () => {
       if (!selectedFile.value) return
 
@@ -260,6 +378,7 @@ export default {
           Object.assign(mapping, response.data.detected_mapping)
           
           step.value = 2
+          await fetchImportHistory()
         } else {
           alert(response.data.message)
         }
@@ -271,52 +390,92 @@ export default {
       }
     }
 
+    const runSyncFallbackImport = async (formData) => {
+      const response = await axios.post(`/api/shops/${props.shopId}/import`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+
+      importResult.value = {
+        ...response.data,
+        import_run_status: response.data.success ? 'completed' : 'failed',
+      }
+      step.value = 3
+
+      if (response.data.success) {
+        emit('import-complete')
+      }
+    }
+
     const startImport = async () => {
-  console.log('Current mapping object:', mapping)
-  console.log('Mapping as JSON:', JSON.stringify(mapping))
-  
-  if (!isMappingValid.value) {
-    alert('Пожалуйста, укажите название и цену товара')
-    return
-  }
+      if (!isMappingValid.value) {
+        alert('Пожалуйста, укажите название и цену товара')
+        return
+      }
 
-  loading.value = true
-  const formData = new FormData()
-  formData.append('file', selectedFile.value)
-  
-  // Преобразуем объект в массив вида [поле => индекс колонки]
-  const mappingArray = {};
-  Object.keys(mapping).forEach(key => {
-    if (mapping[key] !== null) {
-      mappingArray[key] = mapping[key];
+      loading.value = true
+      stopImportPolling()
+
+      const formData = new FormData()
+      formData.append('file', selectedFile.value)
+
+      const mappingArray = {}
+      Object.keys(mapping).forEach(key => {
+        if (mapping[key] !== null) {
+          mappingArray[key] = mapping[key]
+        }
+      })
+      formData.append('mapping', JSON.stringify(mappingArray))
+      formData.append('image_base_url', imageBaseUrl.value || '')
+
+      try {
+        const asyncResponse = await axios.post(`/api/shops/${props.shopId}/import/async`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
+
+        if (asyncResponse.data?.success && asyncResponse.data?.import_run?.id) {
+          importResult.value = {
+            success: true,
+            message: 'Импорт поставлен в очередь. Ожидаем выполнение...',
+            import_run_id: asyncResponse.data.import_run.id,
+            import_run_status: asyncResponse.data.import_run.status,
+            limit: asyncResponse.data.limit,
+            current_count_before_import: asyncResponse.data.current_count_before_import,
+            available_slots_before_import: asyncResponse.data.available_slots_before_import,
+          }
+          step.value = 3
+          await fetchImportHistory()
+          startImportPolling(asyncResponse.data.import_run.id)
+          await refreshImportStatus()
+        } else {
+          await runSyncFallbackImport(formData)
+        }
+      } catch (error) {
+        const statusCode = error?.response?.status
+
+        // fallback на старый синхронный endpoint, если async endpoint недоступен
+        if (statusCode === 404 || statusCode === 405) {
+          try {
+            await runSyncFallbackImport(formData)
+          } catch (fallbackError) {
+            console.error('Ошибка fallback импорта:', fallbackError)
+            importResult.value = fallbackError.response?.data || {
+              success: false,
+              message: 'Ошибка при импорте'
+            }
+            step.value = 3
+          }
+        } else {
+          console.error('Ошибка async импорта:', error)
+          importResult.value = error.response?.data || {
+            success: false,
+            message: 'Ошибка при импорте'
+          }
+          step.value = 3
+        }
+      } finally {
+        loading.value = false
+      }
     }
-  });
-  formData.append('mapping', JSON.stringify(mappingArray));
-  formData.append('image_base_url', imageBaseUrl.value || '');
-
-  try {
-    const response = await axios.post(`/api/shops/${props.shopId}/import`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
-
-    importResult.value = response.data
-    step.value = 3
-
-    if (response.data.success) {
-      emit('import-complete')
-    }
-  } catch (error) {
-    console.error('Ошибка импорта:', error)
-    console.error('Ответ сервера:', error.response?.data)
-    importResult.value = error.response?.data || {
-      success: false,
-      message: 'Ошибка при импорте'
-    }
-    step.value = 3
-  } finally {
-    loading.value = false
-  }
-}
 
     const reloadProducts = () => {
       emit('import-complete')
@@ -331,9 +490,15 @@ export default {
         sampleData.value = []
         detectedMapping.value = null
         importResult.value = null
+        importHistory.value = []
+        stopImportPolling()
         imageBaseUrl.value = ''
         Object.keys(mapping).forEach(key => mapping[key] = null)
       }
+    })
+
+    onBeforeUnmount(() => {
+      stopImportPolling()
     })
 
     return {
@@ -346,15 +511,18 @@ export default {
       detectedMapping,
       importResult,
       imageBaseUrl,
+      importHistory,
       mapping,
       mappingFields,
       isMappingValid,
+      getStatusLabel,
       formatFileSize,
       handleFileSelect,
       handleDrop,
       getSampleValue,
       previewFile,
       startImport,
+      refreshImportStatus,
       reloadProducts
     }
   }
@@ -555,6 +723,66 @@ export default {
   font-size: 0.9rem;
 }
 
+.import-history {
+  margin-top: 1rem;
+  border: 1px solid #e5e9f1;
+  border-radius: 6px;
+  padding: 0.75rem;
+  background: #fff;
+}
+
+.import-history h4 {
+  margin: 0 0 0.5rem;
+}
+
+.history-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.history-item {
+  border: 1px solid #edf1f7;
+  border-radius: 6px;
+  padding: 0.55rem 0.65rem;
+}
+
+.history-meta {
+  margin-top: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  color: #667085;
+}
+
+.status-badge {
+  margin-left: 0.5rem;
+  font-size: 0.78rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3f4a7a;
+}
+
+.status-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-processing {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.status-completed {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-failed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
 .image-base-url-block {
   margin-top: 1rem;
   padding: 0.9rem;
@@ -608,6 +836,10 @@ export default {
   font-size: 1.2rem;
   font-weight: 500;
   margin-bottom: 1rem;
+}
+
+.run-status {
+  margin: 0.35rem 0 0.9rem;
 }
 
 .stats {
