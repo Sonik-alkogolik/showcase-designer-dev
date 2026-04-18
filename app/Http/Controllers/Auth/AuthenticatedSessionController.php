@@ -28,7 +28,10 @@ class AuthenticatedSessionController extends Controller
         // Создаём токен Sanctum
         $token = $user->createToken('auth-token')->plainTextToken;
 
-        return response()->json(['token' => $token], 200);
+        return response()->json([
+            'token' => $token,
+            'requires_password_change' => (bool) $user->must_change_password,
+        ], 200);
     }
 
     /**

@@ -35,6 +35,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'must_change_password',
         'telegram_id',
         'telegram_username',
         'telegram_avatar_url',
@@ -61,6 +62,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'must_change_password' => 'boolean',
             'telegram_linked_at' => 'datetime',
         ];
     }
@@ -218,6 +220,11 @@ class User extends Authenticatable
     public function importRuns()
     {
         return $this->hasMany(ImportRun::class);
+    }
+
+    public function telegramPasswordResetTokens()
+    {
+        return $this->hasMany(TelegramPasswordResetToken::class);
     }
 
     /**

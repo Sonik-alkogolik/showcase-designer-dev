@@ -4,6 +4,9 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\PasswordRecoveryController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Telegram\WebhookController;
 use App\Http\Controllers\ImportController;
@@ -17,6 +20,10 @@ use App\Http\Controllers\ImportController;
 // Публичные маршруты
 Route::post('/register', [RegisteredUserController::class, 'store']);
 Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:login');
+Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])->middleware('throttle:6,1');
+Route::post('/reset-password', [NewPasswordController::class, 'store'])->middleware('throttle:6,1');
+Route::post('/forgot-password/telegram', [PasswordRecoveryController::class, 'sendTelegramToken'])->middleware('throttle:6,1');
+Route::post('/reset-password/telegram', [PasswordRecoveryController::class, 'resetWithTelegramToken'])->middleware('throttle:6,1');
 Route::get('/shops/{shop}/products/public', [App\Http\Controllers\ProductController::class, 'publicIndex']);
 Route::get('/shops/{shop}/public', [App\Http\Controllers\ShopController::class, 'publicShow']);
 // Тестовый маршрут для CORS
@@ -25,12 +32,13 @@ Route::get('/test-cors', function () {
 });
 
 // Защищённые маршруты (требуют только авторизации)
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'password.change.required'])->group(function () {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy']);
     
     // Профиль пользователя
     Route::get('/profile', [ProfileController::class, 'show']);
     Route::delete('/profile', [ProfileController::class, 'destroy']);
+    Route::post('/profile/password/force-change', [PasswordRecoveryController::class, 'forceChangePassword']);
     
     // Telegram привязка
     Route::post('/profile/telegram/generate-token', [ProfileController::class, 'generateTelegramLinkToken']);

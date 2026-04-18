@@ -19,6 +19,10 @@
         <button type="submit">Войти</button>
       </form>
 
+      <p class="alt-action">
+        <router-link to="/forgot-password">Забыли пароль?</router-link>
+      </p>
+
       <p v-if="error" class="error">{{ error }}</p>
       <p class="alt-action">
         Нет аккаунта? <router-link to="/register">Зарегистрироваться</router-link>
@@ -47,6 +51,11 @@ const handleLogin = async () => {
   }
 
   error.value = ''
+  if (result.requiresPasswordChange) {
+    router.push('/force-password-change')
+    return
+  }
+
   router.push('/shops')
 }
 </script>

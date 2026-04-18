@@ -63,6 +63,7 @@ class Kernel extends HttpKernel
         'has.active.subscription' => \App\Http\Middleware\HasActiveSubscription::class,
         'own.shop' => \App\Http\Middleware\OwnsShop::class,
         'verify.telegram.webapp' => \App\Http\Middleware\VerifyTelegramWebAppInitData::class,
+        'password.change.required' => \App\Http\Middleware\EnsurePasswordChangeCompleted::class,
     ];
     
 }

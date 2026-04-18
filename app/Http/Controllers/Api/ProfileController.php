@@ -39,6 +39,7 @@ class ProfileController extends Controller
             'telegram_id' => $user->telegram_id,
             'telegram_username' => $user->telegram_username,
             'telegram_linked_at' => $user->telegram_linked_at,
+            'requires_password_change' => (bool) $user->must_change_password,
         ]);
     }
     

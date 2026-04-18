@@ -28,6 +28,7 @@ export const useAuth = () => {
     try {
       const response = await axios.post('/api/login', { email, password });
       const newToken = response.data.token;
+      const requiresPasswordChange = Boolean(response.data.requires_password_change);
       
       // Устанавливаем токен
       setToken(newToken);
@@ -35,7 +36,7 @@ export const useAuth = () => {
       // Загружаем данные пользователя после входа
       await loadProfile();
       
-      return { success: true };
+      return { success: true, requiresPasswordChange };
     } catch (error) {
       return { success: false, error: error.response?.data?.message || 'Ошибка входа' };
     }
@@ -101,12 +102,88 @@ export const useAuth = () => {
       return response.data;
     } catch (error) {
       console.error('Error loading profile:', error);
+      if (error.response?.status === 423 && user.value) {
+        user.value.requires_password_change = true;
+      }
       // Если ошибка авторизации, очищаем токен
       if (error.response?.status === 401) {
         removeToken();
         user.value = null;
       }
       return null;
+    }
+  };
+
+  const forgotPasswordByEmail = async (email) => {
+    try {
+      const response = await axios.post('/api/forgot-password', { email });
+      return { success: true, message: response.data?.status || 'Письмо отправлено' };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.response?.data?.email?.[0] || 'Не удалось отправить письмо',
+      };
+    }
+  };
+
+  const resetPasswordByEmail = async (payload) => {
+    try {
+      const response = await axios.post('/api/reset-password', payload);
+      return { success: true, message: response.data?.status || 'Пароль обновлён' };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.response?.data?.email?.[0] || 'Не удалось обновить пароль',
+      };
+    }
+  };
+
+  const forgotPasswordByTelegram = async (email) => {
+    try {
+      const response = await axios.post('/api/forgot-password/telegram', { email });
+      return { success: true, message: response.data?.message || 'Код отправлен в Telegram' };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Не удалось отправить код в Telegram',
+      };
+    }
+  };
+
+  const resetPasswordByTelegram = async (email, tokenValue) => {
+    try {
+      const response = await axios.post('/api/reset-password/telegram', { email, token: tokenValue });
+      return { success: true, message: response.data?.message || 'Временный пароль отправлен в Telegram' };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.response?.data?.token?.[0] || 'Не удалось восстановить пароль',
+      };
+    }
+  };
+
+  const forceChangePassword = async (currentPassword, password, passwordConfirmation) => {
+    try {
+      const response = await axios.post('/api/profile/password/force-change', {
+        current_password: currentPassword,
+        password,
+        password_confirmation: passwordConfirmation,
+      });
+
+      if (user.value) {
+        user.value.requires_password_change = false;
+      }
+
+      return { success: true, message: response.data?.message || 'Пароль успешно изменен' };
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error.response?.data?.message ||
+          error.response?.data?.current_password?.[0] ||
+          error.response?.data?.password?.[0] ||
+          'Не удалось изменить пароль',
+      };
     }
   };
   // Генерация токена для привязки Telegram
@@ -161,6 +238,11 @@ export const useAuth = () => {
     register, 
     logout,
     loadProfile,
+    forgotPasswordByEmail,
+    resetPasswordByEmail,
+    forgotPasswordByTelegram,
+    resetPasswordByTelegram,
+    forceChangePassword,
     generateTelegramLinkToken,
     unlinkTelegram,
     deleteAccount

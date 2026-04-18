@@ -3,6 +3,9 @@ import CreateShopView from '../views/CreateShopView.vue';
 import ShopSettingsView from '../views/ShopSettingsView.vue';
 import LoginView from '../views/LoginView.vue';
 import RegisterView from '../views/RegisterView.vue';
+import ForgotPasswordView from '../views/ForgotPasswordView.vue';
+import PasswordResetView from '../views/PasswordResetView.vue';
+import ForcePasswordChangeView from '../views/ForcePasswordChangeView.vue';
 import ProfileView from '../views/ProfileView.vue';
 import PlansView from '../views/PlansView.vue'; 
 import PrivacyPolicyView from '../views/PrivacyPolicyView.vue';
@@ -107,6 +110,24 @@ const routes = [
     meta: { requiresGuest: true }
   },
   {
+    path: '/forgot-password',
+    name: 'ForgotPassword',
+    component: ForgotPasswordView,
+    meta: { requiresGuest: true }
+  },
+  {
+    path: '/password-reset/:token',
+    name: 'PasswordReset',
+    component: PasswordResetView,
+    meta: { requiresGuest: true }
+  },
+  {
+    path: '/force-password-change',
+    name: 'ForcePasswordChange',
+    component: ForcePasswordChangeView,
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/profile',
     name: 'Profile',
     component: ProfileView,
@@ -144,16 +165,32 @@ const router = createRouter({
 });
 
 // Навигационный гвард для защиты маршрутов
-router.beforeEach((to, from, next) => {
-  const { token } = useAuth();
+router.beforeEach(async (to, from, next) => {
+  const { token, user, loadProfile } = useAuth();
+
+  if (token.value && !user.value) {
+    await loadProfile();
+  }
+
+  const requiresPasswordChange = Boolean(user.value?.requires_password_change);
   
   // Если маршрут требует авторизации
   if (to.meta.requiresAuth && !token.value) {
     next('/login');
   }
+  else if (requiresPasswordChange && to.path !== '/force-password-change') {
+    next('/force-password-change');
+  }
+  else if (!requiresPasswordChange && to.path === '/force-password-change' && token.value) {
+    next('/shops');
+  }
   // Если маршрут требует гостя (не авторизованного)
   else if (to.meta.requiresGuest && token.value) {
-    next('/shops');
+    if (requiresPasswordChange) {
+      next('/force-password-change');
+    } else {
+      next('/shops');
+    }
   }
   // Все остальные случаи
   else {
