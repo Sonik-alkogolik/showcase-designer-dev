@@ -13,6 +13,10 @@ use MoonShine\Contracts\Core\TypeCasts\DataWrapperContract;
 use App\MoonShine\Resources\User\UserResource;
 use MoonShine\Support\ListOf;
 use MoonShine\UI\Fields\ID;
+use MoonShine\UI\Fields\Text;
+use MoonShine\UI\Fields\Email;
+use MoonShine\UI\Fields\Password;
+use MoonShine\UI\Fields\Date;
 use MoonShine\UI\Components\Layout\Box;
 use Throwable;
 
@@ -29,7 +33,14 @@ class UserFormPage extends FormPage
     {
         return [
             Box::make([
-                ID::make(),
+                ID::make()->sortable(),
+                Text::make('Имя', 'name')->required(),
+                Email::make('Email', 'email')->required(),
+                Password::make('Пароль', 'password')->nullable(),
+                Text::make('Telegram ID', 'telegram_id')->nullable(),
+                Text::make('Telegram username', 'telegram_username')->nullable(),
+                Text::make('Telegram avatar URL', 'telegram_avatar_url')->nullable(),
+                Date::make('Email подтвержден', 'email_verified_at')->withTime()->nullable(),
             ]),
         ];
     }

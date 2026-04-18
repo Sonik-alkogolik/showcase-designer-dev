@@ -12,6 +12,10 @@ use App\MoonShine\Resources\MoonShineUser\MoonShineUserResource;
 use App\MoonShine\Resources\MoonShineUserRole\MoonShineUserRoleResource;
 use App\MoonShine\Resources\Subscription\SubscriptionResource;
 use App\MoonShine\Resources\User\UserResource;
+use App\MoonShine\Resources\Shop\ShopResource;
+use App\MoonShine\Resources\Category\CategoryResource;
+use App\MoonShine\Resources\Product\ProductResource;
+use App\MoonShine\Resources\Order\OrderResource;
 
 class MoonShineServiceProvider extends ServiceProvider
 {
@@ -26,6 +30,10 @@ class MoonShineServiceProvider extends ServiceProvider
                 MoonShineUserRoleResource::class,
                 SubscriptionResource::class,
                 UserResource::class,
+                ShopResource::class,
+                CategoryResource::class,
+                ProductResource::class,
+                OrderResource::class,
             ])
             ->pages([
                 ...$core->getConfig()->getPages(),

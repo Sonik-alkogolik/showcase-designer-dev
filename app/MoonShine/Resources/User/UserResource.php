@@ -15,7 +15,7 @@ use MoonShine\Contracts\Core\PageContract;
 use MoonShine\UI\Fields\ID;
 use MoonShine\UI\Fields\Text;
 use MoonShine\UI\Fields\Email;
-use MoonShine\UI\Fields\DateTime;
+use MoonShine\UI\Fields\Date;
 use MoonShine\UI\Fields\Password;
 use MoonShine\Laravel\Fields\Relationships\HasMany;
 
@@ -40,6 +40,10 @@ class UserResource extends ModelResource
             ID::make()->sortable(),
             Text::make('Имя', 'name')->required(),
             Email::make('Email', 'email')->required(),
+            Text::make('Telegram ID', 'telegram_id')->sortable()->nullable(),
+            Text::make('Telegram username', 'telegram_username')->nullable(),
+            Text::make('Telegram avatar URL', 'telegram_avatar_url')->hideOnIndex()->nullable(),
+            Date::make('Telegram linked at', 'telegram_linked_at')->withTime()->hideOnIndex()->hideOnForm(),
             Password::make('Пароль', 'password')
                 ->hideOnIndex()
                 ->hideOnDetail()
@@ -47,27 +51,16 @@ class UserResource extends ModelResource
                     fn($field) => request()->routeIs('*.form-page') && !request()->route('resourceItem'),
                     fn($field) => $field->required()
                 ),
-            DateTime::make('Создан', 'created_at')->format('d.m.Y H:i')->hideOnForm(),
+            Date::make('Email подтвержден', 'email_verified_at')->withTime()->hideOnIndex(),
+            Date::make('Создан', 'created_at')->withTime()->hideOnForm(),
+            Date::make('Обновлен', 'updated_at')->withTime()->hideOnForm()->hideOnIndex(),
             HasMany::make('Подписки', 'subscriptions', resource: \App\MoonShine\Resources\Subscription\SubscriptionResource::class),
+            HasMany::make('Магазины', 'shops', resource: \App\MoonShine\Resources\Shop\ShopResource::class),
         ];
     }
 
-    protected function indexFields(): array
+    protected function search(): array
     {
-        dd('Метод indexFields вызван', [
-            'fields' => [
-                ID::make()->sortable(),
-                Text::make('Имя', 'name')->sortable(),
-                Email::make('Email', 'email')->sortable(),
-                DateTime::make('Создан', 'created_at')->format('d.m.Y')->sortable(),
-            ]
-        ]);
-        
-        return [
-            ID::make()->sortable(),
-            Text::make('Имя', 'name')->sortable(),
-            Email::make('Email', 'email')->sortable(),
-            DateTime::make('Создан', 'created_at')->format('d.m.Y')->sortable(),
-        ];
+        return ['id', 'name', 'email', 'telegram_id', 'telegram_username'];
     }
 }

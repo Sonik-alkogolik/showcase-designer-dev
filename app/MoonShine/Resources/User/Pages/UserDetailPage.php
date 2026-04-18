@@ -11,6 +11,9 @@ use MoonShine\Contracts\UI\FieldContract;
 use App\MoonShine\Resources\User\UserResource;
 use MoonShine\Support\ListOf;
 use MoonShine\UI\Fields\ID;
+use MoonShine\UI\Fields\Text;
+use MoonShine\UI\Fields\Email;
+use MoonShine\UI\Fields\Date;
 use Throwable;
 
 
@@ -26,6 +29,15 @@ class UserDetailPage extends DetailPage
     {
         return [
             ID::make(),
+            Text::make('Имя', 'name'),
+            Email::make('Email', 'email'),
+            Text::make('Telegram ID', 'telegram_id'),
+            Text::make('Telegram username', 'telegram_username'),
+            Text::make('Telegram avatar URL', 'telegram_avatar_url'),
+            Date::make('Email подтвержден', 'email_verified_at')->withTime(),
+            Date::make('Telegram linked at', 'telegram_linked_at')->withTime(),
+            Date::make('Создан', 'created_at')->withTime(),
+            Date::make('Обновлен', 'updated_at')->withTime(),
         ];
     }
 

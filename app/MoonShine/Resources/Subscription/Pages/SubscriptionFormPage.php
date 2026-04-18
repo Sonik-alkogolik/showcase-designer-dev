@@ -11,6 +11,7 @@ use MoonShine\UI\Fields\Select;
 use MoonShine\UI\Fields\Number;
 use MoonShine\UI\Fields\Date;
 use MoonShine\UI\Fields\Switcher;
+use MoonShine\UI\Fields\Text;
 use MoonShine\Laravel\Fields\Relationships\BelongsTo;
 use App\MoonShine\Resources\User\UserResource;
 use MoonShine\UI\Components\Layout\Box;
@@ -50,7 +51,7 @@ class SubscriptionFormPage extends FormPage
                 
                 Date::make('Действует до', 'expires_at')
                     ->required()
-                    ->format('d.m.Y'),
+                    ->withTime(),
                 
                 Switcher::make('Автопродление', 'auto_renew')
                     ->default(false),
@@ -67,7 +68,7 @@ class SubscriptionFormPage extends FormPage
                     ])
                     ->nullable(),
                 
-                Select::make('ID платежа YooKassa', 'yookassa_payment_id')
+                Text::make('ID платежа YooKassa', 'yookassa_payment_id')
                     ->nullable(),
             ]),
         ];

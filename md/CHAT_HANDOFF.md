@@ -1,6 +1,6 @@
 # Chat Handoff: showcase-designer
 
-Обновлено: 2026-04-10 (late)
+Обновлено: 2026-04-17
 
 ## Единый протокол фокуса
 
@@ -245,6 +245,30 @@
    - Для уже привязанных пользователей backfill аватара работает через `TelegramAvatarService` (без обязательной перепривязки).
    - В UI подтверждено отображение аватара в `/profile` и в mini-app профиле владельца.
 
+19. Tariff limits hardening for product import/create (2026-04-17):
+   - Добавлена единая capability-модель тарифа в `User`:
+     - `products_limit`, `shops_limit`, `can_import_excel`.
+   - Усилена защита импорта в `ImportController`:
+     - запрет Excel-импорта для тарифа без capability (`403`);
+     - предварительный расчёт `limit/current_count_before_import/available_slots_before_import`;
+     - передача `availableSlots` в `AdvancedProductsImport`;
+     - расширенный API-ответ: `imported_count`, `skipped_due_to_limit`, лимиты до импорта.
+   - Усилена защита в `AdvancedProductsImport`:
+     - введено ограничение на создание новых товаров внутри `model()` по `availableSlots`;
+     - добавлен счётчик `skippedDueToLimit`.
+   - Уточнён лимит в одиночном создании товара (`ProductController`):
+     - возвращаются `limit/current_count/available_slots` при отказе и при успехе.
+   - Обновлён frontend:
+     - в `ProductsView.vue` кнопка импорта блокируется на неподходящем тарифе;
+     - в `AdvancedImportModal.vue` отображается подробная статистика импорта и пропусков по лимиту.
+   - Добавлены и пройдены тесты:
+     - `ProductImportLimitsTest` (XLSX): запрет импорта на `starter` и частичный импорт до лимита на `business`;
+     - повторно проверены `ProductCategoryResolutionTest` и `ShopCreationTest`.
+   - Сборка frontend выполнена успешно (`npm run build`).
+   - Релизный цикл выполнен полностью:
+     - commit: `ed2cd6e`;
+     - `git push origin main` и `git push prod main` выполнены.
+
 ### Что не сделано
 
 1. Этап ЮKassa (интеграция + реальный E2E + боевые webhook-события) сознательно поставлен на паузу до следующей итерации.
@@ -256,8 +280,8 @@
 
 ## Следующий шаг
 
-1. Пройти полный ручной core-flow (`register -> link -> create shop -> product -> delete account -> repeat`) и зафиксировать найденные узкие места.
-2. После прохода обновить `CHAT_HANDOFF.md` кратким итогом (что прошло, что требует доработки, следующий шаг).
+1. Пройти ручной core-flow c акцентом на импорт (`starter`/`business`) и подтвердить поведение лимитов в UI/API на живых сценариях.
+2. Зафиксировать итоги ручной проверки в `CHAT_HANDOFF.md` (особенно кейсы частичного XLSX-импорта при остатке слотов).
 
 ## Быстрые опорные файлы
 

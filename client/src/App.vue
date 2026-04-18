@@ -49,7 +49,7 @@ const hideNavbar = computed(() =>
 }
 
 .main-content {
-  width: min(1200px, 100% - 2rem);
+  width: 100%;
   margin: 1.5rem auto 2.5rem;
 }
 

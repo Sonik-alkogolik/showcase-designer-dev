@@ -3,7 +3,7 @@
 > Процесс фиксации: "где остановились" ведем в `CHAT_HANDOFF.md` (single source of truth).  
 > `PLAN_TABLE.md` — это стратегическая карта задач и статусов.
 
-## Сводка статуса на 2026-03-28
+## Сводка статуса на 2026-04-17
 
 ### Сделано
 
@@ -23,6 +23,13 @@
   - fallback по `notification_username` через `getUpdates`,
   - новые поля магазина: `notification_username`, `webhook_url`,
   - добавлен UI настроек магазина `/shops/:shopId/settings`.
+- Защита тарифных лимитов при импорте и создании товаров:
+  - capability-модель тарифа в `User` (`products_limit`, `shops_limit`, `can_import_excel`);
+  - запрет Excel-импорта для неподходящего тарифа (`403`);
+  - частичный импорт до лимита внутри `AdvancedProductsImport` (ограничение в `model()` + `skipped_due_to_limit`);
+  - расширенный API-ответ импорта (`limit`, `current_count_before_import`, `available_slots_before_import`, `imported_count`, `skipped_due_to_limit`);
+  - UI: блокировка кнопки импорта на бесплатном тарифе и расширенная статистика результата в модалке импорта;
+  - feature-тесты XLSX: `tests/Feature/Shop/ProductImportLimitsTest.php` (PASS).
 
 ### Не сделано
 

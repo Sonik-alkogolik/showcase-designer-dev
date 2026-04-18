@@ -16,7 +16,7 @@ use MoonShine\UI\Fields\ID;
 use MoonShine\UI\Fields\Text;
 use MoonShine\UI\Fields\Select;
 use MoonShine\UI\Fields\Number;
-use MoonShine\UI\Fields\DateTime;
+use MoonShine\UI\Fields\Date;
 use MoonShine\UI\Fields\Switcher;
 use MoonShine\Laravel\Fields\Relationships\BelongsTo;
 
@@ -49,7 +49,7 @@ class SubscriptionResource extends ModelResource
             BelongsTo::make(
                 'Пользователь',
                 'user',
-                resource: new \App\MoonShine\Resources\UserResource(),
+                resource: \App\MoonShine\Resources\User\UserResource::class,
             )->required(),
             
             Select::make('Тариф', 'plan')
@@ -68,7 +68,7 @@ class SubscriptionResource extends ModelResource
                 ->default('active')
                 ->required(),
             
-            DateTime::make('Действует до', 'expires_at')
+            Date::make('Действует до', 'expires_at')
                 ->required()
                 ->withTime(),
             
@@ -85,6 +85,9 @@ class SubscriptionResource extends ModelResource
             
             Text::make('ID платежа YooKassa', 'yookassa_payment_id')
                 ->hideOnIndex(),
+
+            Date::make('Создано', 'created_at')->withTime()->hideOnForm()->hideOnIndex(),
+            Date::make('Обновлено', 'updated_at')->withTime()->hideOnForm()->hideOnIndex(),
         ];
     }
 
@@ -134,8 +137,7 @@ class SubscriptionResource extends ModelResource
     {
         return [
             ID::make()->sortable(),
-            BelongsTo::make('Пользователь', 'user', resource: new \App\MoonShine\Resources\UserResource())
-                ->badge(fn($value) => 'primary'),
+            BelongsTo::make('Пользователь', 'user', resource: \App\MoonShine\Resources\User\UserResource::class),
             Select::make('Тариф', 'plan')
                 ->options([
                     'starter' => 'Бесплатный',
@@ -152,7 +154,7 @@ class SubscriptionResource extends ModelResource
                     'expired' => 'default',
                     'cancelled' => 'error',
                 }),
-            DateTime::make('Действует до', 'expires_at')->format('d.m.Y'),
+            Date::make('Действует до', 'expires_at')->withTime(),
             Switcher::make('Автопродление', 'auto_renew'),
             Number::make('Цена', 'price')->sortable(),
         ];

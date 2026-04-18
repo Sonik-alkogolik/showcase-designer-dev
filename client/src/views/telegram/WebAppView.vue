@@ -12,12 +12,10 @@
       </header>
 
       <div class="category-select-wrap">
-        <select v-model="selectedCategory" @change="onCategoryChange" class="category-select">
-          <option value="">Весь магазин</option>
-          <option v-for="cat in categories" :key="cat.id" :value="String(cat.id)">
-            {{ cat.name }}
-          </option>
-        </select>
+        <button class="category-select-trigger" @click="toggleCategoryDropdown">
+          <span>{{ selectedCategoryLabel }}</span>
+          <span class="category-chevron" :class="{ open: isCategoryDropdownOpen }">⌄</span>
+        </button>
       </div>
 
       <div v-if="sliderProducts.length" class="hero-slider">
@@ -26,6 +24,7 @@
             v-if="sliderProducts[currentSlideIndex]?.image"
             :src="sliderProducts[currentSlideIndex]?.image"
             :alt="sliderProducts[currentSlideIndex]?.name"
+            @error="onImageError"
           />
           <div class="hero-slide-overlay">
             <h2>{{ sliderProducts[currentSlideIndex]?.name }}</h2>
@@ -55,7 +54,7 @@
           </button>
 
           <div class="product-image" v-if="product.image">
-            <img :src="product.image" :alt="product.name" />
+            <img :src="product.image" :alt="product.name" @error="onImageError" />
           </div>
 
           <div class="product-info">
@@ -103,7 +102,7 @@
         >
           <button class="fav-btn active" @click="toggleFavorite(product)">♥</button>
           <div class="product-image" v-if="product.image">
-            <img :src="product.image" :alt="product.name" />
+            <img :src="product.image" :alt="product.name" @error="onImageError" />
           </div>
           <div class="product-info">
             <h3>{{ product.name }}</h3>
@@ -290,6 +289,29 @@
         <div class="search-empty" v-else>Ничего не найдено</div>
       </div>
     </div>
+
+    <div v-if="isCategoryDropdownOpen" class="category-sheet-backdrop" @click.self="closeCategoryDropdown">
+      <div class="category-sheet">
+        <div class="category-sheet-head">
+          <h3>Категории</h3>
+          <button class="category-sheet-close" @click="closeCategoryDropdown">✕</button>
+        </div>
+        <div class="category-sheet-list">
+          <button class="category-option" :class="{ active: selectedCategory === '' }" @click="selectCategoryOption('')">
+            Весь магазин
+          </button>
+          <button
+            v-for="cat in categories"
+            :key="cat.id"
+            class="category-option"
+            :class="{ active: selectedCategory === String(cat.id) }"
+            @click="selectCategoryOption(String(cat.id))"
+          >
+            {{ cat.name }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -312,6 +334,7 @@ export default {
     const products = ref([]);
     const categories = ref([]);
     const selectedCategory = ref("");
+    const isCategoryDropdownOpen = ref(false);
     const searchQuery = ref("");
     const showSearch = ref(false);
     const searchInput = ref(null);
@@ -442,6 +465,32 @@ export default {
     const onCategoryChange = async () => {
       await loadProducts();
       visibleCount.value = PRODUCTS_STEP;
+    };
+
+    const selectedCategoryLabel = computed(() => {
+      if (!selectedCategory.value) return "Весь магазин";
+      const found = categories.value.find((cat) => String(cat.id) === selectedCategory.value);
+      return found?.name || "Весь магазин";
+    });
+
+    const toggleCategoryDropdown = () => {
+      isCategoryDropdownOpen.value = !isCategoryDropdownOpen.value;
+    };
+
+    const closeCategoryDropdown = () => {
+      isCategoryDropdownOpen.value = false;
+    };
+
+    const selectCategoryOption = async (value) => {
+      selectedCategory.value = value;
+      isCategoryDropdownOpen.value = false;
+      await onCategoryChange();
+    };
+
+    const onImageError = (event) => {
+      const target = event?.target;
+      if (!target) return;
+      target.style.display = "none";
     };
 
     const showMoreProducts = () => {
@@ -632,7 +681,12 @@ export default {
       shop,
       categories,
       selectedCategory,
+      selectedCategoryLabel,
+      isCategoryDropdownOpen,
       onCategoryChange,
+      toggleCategoryDropdown,
+      closeCategoryDropdown,
+      selectCategoryOption,
       showSearch,
       searchQuery,
       searchInput,
@@ -674,6 +728,7 @@ export default {
       resetOrder,
       isDescriptionExpanded,
       toggleDescription,
+      onImageError,
     };
   },
 };
@@ -734,8 +789,110 @@ export default {
 .brand-kicker { font-size: 0.72rem; color: var(--accent); letter-spacing: 0.09em; text-transform: uppercase; white-space: nowrap; }
 .shop-name { font-size: 1rem; font-weight: 700; color: var(--ink-0); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .search-toggle { border: 1px solid var(--line); background: rgba(255,255,255,.08); color:#fff; border-radius: 12px; width: 40px; height: 40px; font-size: 1rem; cursor: pointer; flex-shrink: 0; }
-.category-select-wrap { padding: 8px 10px 12px; }
-.category-select { width: 100%; height: 42px; border-radius: 12px; border: 1px solid var(--line); background: rgba(255,255,255,.08); color:#fff; padding: 0 10px; }
+.category-select-wrap {
+  padding: 8px 10px 12px;
+  position: relative;
+}
+
+.category-select-trigger {
+  width: 100%;
+  height: 42px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.category-chevron {
+  font-size: 1.05rem;
+  transition: transform 0.2s ease;
+}
+
+.category-chevron.open {
+  transform: rotate(180deg);
+}
+
+.category-dropdown-menu {
+  display: none;
+}
+
+.category-option {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  color: #fff;
+  text-align: left;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 0.92rem;
+}
+
+.category-option:last-child {
+  border-bottom: 0;
+}
+
+.category-option.active {
+  background: rgba(56, 232, 255, 0.15);
+  color: var(--accent);
+}
+
+.category-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  background: rgba(4, 8, 16, 0.75);
+  display: flex;
+  align-items: flex-end;
+}
+
+.category-sheet {
+  width: 100%;
+  max-height: min(62vh, 420px);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  background: #111d33;
+  box-shadow: 0 -10px 26px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+}
+
+.category-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.category-sheet-head h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.category-sheet-close {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.category-sheet-list {
+  overflow: auto;
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+}
 
 .hero-slider { margin: 0 10px 12px; }
 .hero-slide { position: relative; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); min-height: 180px; cursor: pointer; }
@@ -747,13 +904,14 @@ export default {
 .hero-dot { width: 8px; height: 8px; border-radius: 50%; border: 0; background: rgba(255,255,255,.3); }
 .hero-dot.active { background: var(--accent); }
 
-.products-list { display: grid; grid-template-columns: 1fr; gap: 10px; padding: 0 10px 12px; }
-.product-card { width: 100%; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); padding: 10px; box-sizing: border-box; position: relative; animation: cardIn .3s ease both; animation-delay: var(--delay); }
+.products-list { display: flex; flex-direction: column; gap: 10px; padding: 0 10px 12px; width: 100%; }
+.product-card { width: 100%; max-width: none; margin: 0 auto; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); padding: 12px; box-sizing: border-box; position: relative; animation: cardIn .3s ease both; animation-delay: var(--delay); }
 @keyframes cardIn { from { opacity:0; transform: translateY(6px);} to { opacity:1; transform: translateY(0);} }
 .fav-btn { position: absolute; top: 8px; right: 8px; border: 0; background: rgba(255,255,255,.88); border-radius: 8px; width: 30px; height: 30px; cursor: pointer; }
 .fav-btn.active { color: #ff4d6d; }
 .product-image { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 8px; }
 .product-image img { width: 100%; height: 180px; object-fit: cover; display:block; }
+.product-info { display: flex; flex-direction: column; gap: 6px; }
 .product-info h3 { margin: 0 0 4px; font-size: 1.08rem; line-height: 1.3; word-break: break-word; }
 .price { margin: 0 0 6px; font-size: 1.1rem; color: var(--accent-2); font-weight: 700; }
 .product-description-wrapper { margin-bottom: 8px; }
@@ -767,7 +925,7 @@ export default {
 .continue-shopping,
 .submit-order,
 .profile-item { border: 0; border-radius: 12px; cursor: pointer; }
-.add-to-cart { width: 100%; padding: 10px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); color: #00151a; font-weight: 700; }
+.add-to-cart { width: 100%; min-height: 42px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 10px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); color: #00151a; font-weight: 700; }
 .add-to-cart:disabled { background: rgba(255,255,255,.25); color: rgba(255,255,255,.7); }
 .show-more { width: 100%; padding: 12px; background: rgba(255,255,255,.12); color: #fff; border: 1px solid var(--line); }
 

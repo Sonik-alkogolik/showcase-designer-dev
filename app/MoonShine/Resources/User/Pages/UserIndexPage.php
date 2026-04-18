@@ -11,6 +11,9 @@ use MoonShine\Contracts\UI\FieldContract;
 use MoonShine\Laravel\QueryTags\QueryTag;
 use MoonShine\UI\Components\Metrics\Wrapped\Metric;
 use MoonShine\UI\Fields\ID;
+use MoonShine\UI\Fields\Text;
+use MoonShine\UI\Fields\Email;
+use MoonShine\UI\Fields\Date;
 use App\MoonShine\Resources\User\UserResource;
 use MoonShine\Support\ListOf;
 use Throwable;
@@ -29,7 +32,12 @@ class UserIndexPage extends IndexPage
     protected function fields(): iterable
     {
         return [
-            ID::make(),
+            ID::make()->sortable(),
+            Text::make('Имя', 'name')->sortable(),
+            Email::make('Email', 'email')->sortable(),
+            Text::make('Telegram ID', 'telegram_id'),
+            Text::make('Telegram username', 'telegram_username'),
+            Date::make('Создан', 'created_at')->withTime()->sortable(),
         ];
     }
 
@@ -46,7 +54,10 @@ class UserIndexPage extends IndexPage
      */
     protected function filters(): iterable
     {
-        return [];
+        return [
+            Email::make('Email', 'email'),
+            Text::make('Telegram username', 'telegram_username'),
+        ];
     }
 
     /**
