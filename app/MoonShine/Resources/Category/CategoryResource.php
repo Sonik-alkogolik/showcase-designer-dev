@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\MoonShine\Resources\Category;
 
 use App\Models\Category;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use App\MoonShine\Resources\Shop\ShopResource;
 use App\MoonShine\Resources\Product\ProductResource;
 use MoonShine\Laravel\Resources\ModelResource;
@@ -46,6 +47,15 @@ class CategoryResource extends ModelResource
     protected function search(): array
     {
         return ['id', 'name', 'slug', 'shop.name'];
+    }
+
+    protected function filters(): iterable
+    {
+        return [
+            BelongsTo::make('Магазин', 'shop', resource: ShopResource::class)
+                ->valuesQuery(static fn (Builder $q) => $q->select(['id', 'name'])),
+            Text::make('Название', 'name'),
+        ];
     }
 
     protected function rules(mixed $item): array

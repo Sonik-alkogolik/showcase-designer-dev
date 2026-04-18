@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\MoonShine\Resources\Order;
 
 use App\Models\Order;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use App\MoonShine\Resources\Shop\ShopResource;
 use MoonShine\Laravel\Resources\ModelResource;
 use MoonShine\UI\Fields\ID;
@@ -62,6 +63,8 @@ class OrderResource extends ModelResource
     protected function filters(): iterable
     {
         return [
+            BelongsTo::make('Магазин', 'shop', resource: ShopResource::class)
+                ->valuesQuery(static fn (Builder $q) => $q->select(['id', 'name'])),
             Select::make('Статус', 'status')->options([
                 'pending' => 'Ожидает',
                 'paid' => 'Оплачен',

@@ -919,13 +919,13 @@ export default {
 .product-image { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 8px; }
 .product-image img { width: 100%; height: 180px; object-fit: cover; display:block; }
 .product-info { display: flex; flex-direction: column; gap: 6px; }
-.product-info h3 { margin: 0 0 4px; font-size: 1.14rem; line-height: 1.3; word-break: break-word; color: #eef4ff; }
+.product-info h3 { margin: 0 0 4px; padding-right: 38px; font-size: 1.14rem; line-height: 1.3; color: #eef4ff; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-word; overflow-wrap: anywhere; }
 .price { margin: 0 0 6px; font-size: 2rem; color: #4CAF50; font-weight: 700; }
 .product-description-wrapper { margin-bottom: 8px; }
 .description { margin: 0; color: #c7d7ef; font-size: .96rem; line-height: 1.45; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; word-break: break-word; }
 .description.expanded { display: block; overflow: visible; }
 .description-toggle-btn { width: 100%; margin-top: 6px; border: 1px solid #e3e8ef; background: #f7f9fc; color: #2c3e50; border-radius: 8px; font-size: .95rem; padding: 10px 12px; cursor: pointer; text-align: left; font-weight: 600; }
-.category { margin: 0 0 4px; font-size: .92rem; color: #9fb4d0; }
+.category { margin: 0 0 4px; font-size: .92rem; color: #9fb4d0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-word; overflow-wrap: anywhere; }
 .stock { margin: 0 0 10px; color: #f44336; font-weight: 600; }
 .stock.in-stock { color: #4CAF50; }
 .add-to-cart,
@@ -936,7 +936,7 @@ export default {
 .profile-item { border: 0; border-radius: 12px; cursor: pointer; }
 .add-to-cart { width: 100%; min-height: 42px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 10px; background: linear-gradient(120deg, #38e8ff, #41ffbf); color: #00151a; font-weight: 700; }
 .add-to-cart:disabled { background: rgba(255,255,255,.2); color: rgba(255,255,255,.6); }
-.show-more { width: 100%; padding: 12px; background: rgba(255,255,255,.12); color: #fff; border: 1px solid var(--line); }
+.show-more { width: 100%; padding: 12px; margin-top: 2px; margin-bottom: calc(var(--bottom-nav-height) + 8px); background: #f7f9fc; color: #2c3e50; border: 1px solid #d7e3f3; font-weight: 700; }
 
 .cart-header,
 .checkout-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px; }
