@@ -25,6 +25,21 @@ class Shop extends Model
         'delivery_price' => 'decimal:2',
     ];
 
+    protected static function booted(): void
+    {
+        static::deleting(function (Shop $shop) {
+            // Принудительная доменная очистка на случай неполных FK-каскадов.
+            $shop->importRuns()->delete();
+            $shop->orders()->delete();
+
+            $shop->products()->get()->each(function (Product $product) {
+                $product->delete();
+            });
+
+            $shop->categories()->delete();
+        });
+    }
+
     /**
      * Связь с пользователем (владелец магазина)
      */

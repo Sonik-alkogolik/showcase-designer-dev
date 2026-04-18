@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Storage;
 
 class Product extends Model
 {
@@ -27,6 +28,19 @@ class Product extends Model
         'show_in_slider' => 'boolean',
         'attributes' => 'array',
     ];
+
+    protected static function booted(): void
+    {
+        static::deleting(function (Product $product) {
+            // Чистим локально загруженное изображение, если оно хранится в /storage.
+            if ($product->image && str_starts_with($product->image, '/storage/')) {
+                $oldPath = ltrim(str_replace('/storage/', '', $product->image), '/');
+                if ($oldPath !== '' && Storage::disk('public')->exists($oldPath)) {
+                    Storage::disk('public')->delete($oldPath);
+                }
+            }
+        });
+    }
 
     /**
      * Связь с магазином

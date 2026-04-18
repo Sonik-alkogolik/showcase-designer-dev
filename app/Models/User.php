@@ -11,6 +11,21 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    protected static function booted(): void
+    {
+        static::deleting(function (User $user) {
+            // Защитная очистка, чтобы удаление из MoonShine гарантированно
+            // убирало все связанные доменные данные пользователя.
+            $user->importRuns()->delete();
+            $user->subscriptions()->delete();
+            $user->tokens()->delete();
+
+            $user->shops()->get()->each(function (Shop $shop) {
+                $shop->delete();
+            });
+        });
+    }
+
     /**
      * Атрибуты, доступные для массового присвоения.
      *
