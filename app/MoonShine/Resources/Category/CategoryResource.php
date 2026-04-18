@@ -49,6 +49,18 @@ class CategoryResource extends ModelResource
         return ['id', 'name', 'slug', 'shop.name'];
     }
 
+    protected function indexFields(): array
+    {
+        return [
+            ID::make()->sortable(),
+            Text::make('Название', 'name')->sortable(),
+            Text::make('Slug', 'slug')->sortable(),
+            Number::make('Сортировка', 'sort_order')->sortable(),
+            Switcher::make('Активна', 'is_active'),
+            Date::make('Создана', 'created_at')->withTime()->sortable(),
+        ];
+    }
+
     protected function filters(): iterable
     {
         return [

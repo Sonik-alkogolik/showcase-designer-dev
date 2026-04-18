@@ -147,6 +147,7 @@ class ImportController extends Controller
         $request->validate([
             'file' => 'required|file|mimetypes:application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain|max:10240',
             'mapping' => 'required',
+            'image_base_url' => 'nullable|url',
         ]);
 
         try {
@@ -184,7 +185,8 @@ class ImportController extends Controller
             $import = new AdvancedProductsImport(
                 $shopId,
                 $mapping,
-                $limitContext['available_slots_before_import']
+                $limitContext['available_slots_before_import'],
+                (string) $request->input('image_base_url', '')
             );
             
             // Выполняем импорт

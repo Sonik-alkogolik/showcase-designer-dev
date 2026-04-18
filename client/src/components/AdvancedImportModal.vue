@@ -95,6 +95,19 @@
               </span>
             </p>
           </div>
+
+          <div class="image-base-url-block">
+            <label for="image-base-url">Базовый URL для изображений (необязательно)</label>
+            <input
+              id="image-base-url"
+              v-model.trim="imageBaseUrl"
+              type="url"
+              placeholder="https://site.com"
+            >
+            <p class="hint">
+              Если в файле путь вида <code>catalog/..../image.jpg</code>, укажи домен и он будет подставлен автоматически.
+            </p>
+          </div>
         </div>
 
         <div class="actions">
@@ -172,6 +185,7 @@ export default {
     const sampleData = ref([])
     const detectedMapping = ref(null)
     const importResult = ref(null)
+    const imageBaseUrl = ref('')
     
     const mapping = reactive({
       name: null,
@@ -278,6 +292,7 @@ export default {
     }
   });
   formData.append('mapping', JSON.stringify(mappingArray));
+  formData.append('image_base_url', imageBaseUrl.value || '');
 
   try {
     const response = await axios.post(`/api/shops/${props.shopId}/import`, formData, {
@@ -316,6 +331,7 @@ export default {
         sampleData.value = []
         detectedMapping.value = null
         importResult.value = null
+        imageBaseUrl.value = ''
         Object.keys(mapping).forEach(key => mapping[key] = null)
       }
     })
@@ -329,6 +345,7 @@ export default {
       sampleData,
       detectedMapping,
       importResult,
+      imageBaseUrl,
       mapping,
       mappingFields,
       isMappingValid,
@@ -536,6 +553,33 @@ export default {
   background: #e3f2fd;
   border-radius: 4px;
   font-size: 0.9rem;
+}
+
+.image-base-url-block {
+  margin-top: 1rem;
+  padding: 0.9rem;
+  border: 1px solid #e5e9f1;
+  border-radius: 6px;
+  background: #fafcff;
+}
+
+.image-base-url-block label {
+  display: block;
+  margin-bottom: 0.45rem;
+  font-weight: 600;
+}
+
+.image-base-url-block input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #d8dfeb;
+  border-radius: 4px;
+}
+
+.image-base-url-block .hint {
+  margin-top: 0.45rem;
+  color: #667085;
+  font-size: 0.86rem;
 }
 
 .result {

@@ -60,6 +60,23 @@ class OrderResource extends ModelResource
         return ['id', 'customer_name', 'phone', 'status', 'yookassa_payment_id', 'shop.name'];
     }
 
+    protected function indexFields(): array
+    {
+        return [
+            ID::make()->sortable(),
+            Text::make('Клиент', 'customer_name')->sortable(),
+            Text::make('Телефон', 'phone'),
+            Number::make('Сумма', 'total')->sortable(),
+            Select::make('Статус', 'status')
+                ->options([
+                    'pending' => 'Ожидает',
+                    'paid' => 'Оплачен',
+                    'cancelled' => 'Отменен',
+                ]),
+            Date::make('Создан', 'created_at')->withTime()->sortable(),
+        ];
+    }
+
     protected function filters(): iterable
     {
         return [

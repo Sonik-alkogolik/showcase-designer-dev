@@ -53,6 +53,18 @@ class ShopResource extends ModelResource
         return ['id', 'name', 'notification_chat_id', 'notification_username', 'user.name', 'user.email'];
     }
 
+    protected function indexFields(): array
+    {
+        return [
+            ID::make()->sortable(),
+            Text::make('Название', 'name')->sortable(),
+            Text::make('Chat ID', 'notification_chat_id'),
+            Text::make('Username', 'notification_username'),
+            Number::make('Доставка', 'delivery_price')->sortable(),
+            Date::make('Создан', 'created_at')->withTime()->sortable(),
+        ];
+    }
+
     protected function rules(mixed $item): array
     {
         return [

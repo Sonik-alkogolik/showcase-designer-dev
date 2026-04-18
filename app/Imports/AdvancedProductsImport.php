@@ -76,12 +76,14 @@ class AdvancedProductsImport implements ToModel, WithHeadingRow, WithValidation,
     protected $availableSlots = 0;
     protected $importedWithinLimit = 0;
     protected $skippedDueToLimit = 0;
+    protected $imageBaseUrl = '';
 
-    public function __construct($shopId, array $mapping, int $availableSlots = 0)
+    public function __construct($shopId, array $mapping, int $availableSlots = 0, string $imageBaseUrl = '')
     {
         $this->shopId = $shopId;
         $this->mapping = $mapping;
         $this->availableSlots = max(0, $availableSlots);
+        $this->imageBaseUrl = rtrim(trim($imageBaseUrl), '/');
     }
 
     /**
@@ -237,6 +239,28 @@ class AdvancedProductsImport implements ToModel, WithHeadingRow, WithValidation,
         return is_numeric($price) ? (float) $price : null;
     }
 
+    private function resolveImageUrl($rawImage): ?string
+    {
+        $image = $this->normalizeText($rawImage, false);
+        if (!$image) {
+            return null;
+        }
+
+        if (preg_match('~^https?://~i', $image)) {
+            return $image;
+        }
+
+        if (str_starts_with($image, '//')) {
+            return 'https:' . $image;
+        }
+
+        if ($this->imageBaseUrl === '') {
+            return $image;
+        }
+
+        return $this->imageBaseUrl . '/' . ltrim($image, '/');
+    }
+
     /**
      * Получить mapped-значение по индексу колонки.
      */
@@ -326,6 +350,7 @@ class AdvancedProductsImport implements ToModel, WithHeadingRow, WithValidation,
         }
 
         $data['in_stock'] = $this->normalizeInStock($data['in_stock'] ?? null);
+        $data['image'] = $this->resolveImageUrl($data['image'] ?? null);
 
         $categoryId = null;
         $categoryName = $data['category'] ?? null;
