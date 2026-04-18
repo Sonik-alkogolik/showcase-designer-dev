@@ -48,7 +48,7 @@ class SubscriptionFormPage extends FormPage
     protected function fields(): iterable
     {
         $resourceItem = request()->route('resourceItem');
-        $isEditMode = $resourceItem instanceof Subscription;
+        $isEditMode = ! empty($resourceItem);
 
         $baseFields = [
             ID::make()->sortable(),
