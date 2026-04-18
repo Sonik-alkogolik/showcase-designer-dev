@@ -911,7 +911,7 @@ export default {
 .hero-dot { width: 8px; height: 8px; border-radius: 50%; border: 0; background: rgba(255,255,255,.3); }
 .hero-dot.active { background: var(--accent); }
 
-.products-list { display: flex; flex-direction: column; gap: 10px; padding: 0 10px 12px; width: 100%; }
+.products-list { display: flex; flex-direction: column; gap: 10px; padding: 0 10px 12px; width: 100%; margin-bottom: 50px; }
 .product-card { width: 100%; max-width: none; margin: 0 auto; border-radius: 10px; background: #050b1d; border: 1px solid rgba(215, 229, 255, 0.65); padding: 12px; box-sizing: border-box; position: relative; animation: cardIn .3s ease both; animation-delay: var(--delay); }
 @keyframes cardIn { from { opacity:0; transform: translateY(6px);} to { opacity:1; transform: translateY(0);} }
 .fav-btn { position: absolute; top: 8px; right: 8px; border: 0; background: rgba(255,255,255,.88); border-radius: 8px; width: 30px; height: 30px; cursor: pointer; }
