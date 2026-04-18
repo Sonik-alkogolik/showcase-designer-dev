@@ -24,6 +24,10 @@ class ShopResource extends ModelResource
 
     protected string $title = 'Магазины';
 
+    protected string $column = 'name';
+
+    protected array $with = ['user'];
+
     protected function fields(): iterable
     {
         return [
@@ -60,4 +64,3 @@ class ShopResource extends ModelResource
         ];
     }
 }
-

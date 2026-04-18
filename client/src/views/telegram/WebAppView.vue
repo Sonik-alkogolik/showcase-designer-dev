@@ -74,7 +74,10 @@
               </button>
             </div>
 
-            <p class="category">{{ product.category_name || "Без категории" }}</p>
+            <p class="category">Категория: {{ product.category_name || "Без категории" }}</p>
+            <p class="stock" :class="{ 'in-stock': product.in_stock }">
+              {{ product.in_stock ? "В наличии" : "Нет в наличии" }}
+            </p>
             <button class="add-to-cart" @click="addToCart(product)" :disabled="!product.in_stock">
               {{ product.in_stock ? "В корзину" : "Нет в наличии" }}
             </button>
@@ -119,6 +122,10 @@
                 {{ isDescriptionExpanded(product.id) ? "Скрыть" : "Развернуть" }}
               </button>
             </div>
+            <p class="category">Категория: {{ product.category_name || "Без категории" }}</p>
+            <p class="stock" :class="{ 'in-stock': product.in_stock }">
+              {{ product.in_stock ? "В наличии" : "Нет в наличии" }}
+            </p>
             <button class="add-to-cart" @click="addToCart(product)">В корзину</button>
           </div>
         </article>
@@ -905,28 +912,30 @@ export default {
 .hero-dot.active { background: var(--accent); }
 
 .products-list { display: flex; flex-direction: column; gap: 10px; padding: 0 10px 12px; width: 100%; }
-.product-card { width: 100%; max-width: none; margin: 0 auto; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); padding: 12px; box-sizing: border-box; position: relative; animation: cardIn .3s ease both; animation-delay: var(--delay); }
+.product-card { width: 100%; max-width: none; margin: 0 auto; border-radius: 10px; background: #050b1d; border: 1px solid rgba(215, 229, 255, 0.65); padding: 12px; box-sizing: border-box; position: relative; animation: cardIn .3s ease both; animation-delay: var(--delay); }
 @keyframes cardIn { from { opacity:0; transform: translateY(6px);} to { opacity:1; transform: translateY(0);} }
 .fav-btn { position: absolute; top: 8px; right: 8px; border: 0; background: rgba(255,255,255,.88); border-radius: 8px; width: 30px; height: 30px; cursor: pointer; }
 .fav-btn.active { color: #ff4d6d; }
 .product-image { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 8px; }
 .product-image img { width: 100%; height: 180px; object-fit: cover; display:block; }
 .product-info { display: flex; flex-direction: column; gap: 6px; }
-.product-info h3 { margin: 0 0 4px; font-size: 1.08rem; line-height: 1.3; word-break: break-word; }
-.price { margin: 0 0 6px; font-size: 1.1rem; color: var(--accent-2); font-weight: 700; }
+.product-info h3 { margin: 0 0 4px; font-size: 1.14rem; line-height: 1.3; word-break: break-word; color: #eef4ff; }
+.price { margin: 0 0 6px; font-size: 2rem; color: #4CAF50; font-weight: 700; }
 .product-description-wrapper { margin-bottom: 8px; }
-.description { margin: 0; color: var(--ink-1); font-size: .92rem; line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; word-break: break-word; }
+.description { margin: 0; color: #c7d7ef; font-size: .96rem; line-height: 1.45; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; word-break: break-word; }
 .description.expanded { display: block; overflow: visible; }
-.description-toggle-btn { margin-top: 4px; border: 0; background: none; color: var(--accent); font-size: .85rem; padding: 0; cursor: pointer; }
-.category { margin: 0 0 8px; font-size: .82rem; color: var(--ink-1); }
+.description-toggle-btn { width: 100%; margin-top: 6px; border: 1px solid #e3e8ef; background: #f7f9fc; color: #2c3e50; border-radius: 8px; font-size: .95rem; padding: 10px 12px; cursor: pointer; text-align: left; font-weight: 600; }
+.category { margin: 0 0 4px; font-size: .92rem; color: #9fb4d0; }
+.stock { margin: 0 0 10px; color: #f44336; font-weight: 600; }
+.stock.in-stock { color: #4CAF50; }
 .add-to-cart,
 .show-more,
 .checkout-btn,
 .continue-shopping,
 .submit-order,
 .profile-item { border: 0; border-radius: 12px; cursor: pointer; }
-.add-to-cart { width: 100%; min-height: 42px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 10px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); color: #00151a; font-weight: 700; }
-.add-to-cart:disabled { background: rgba(255,255,255,.25); color: rgba(255,255,255,.7); }
+.add-to-cart { width: 100%; min-height: 42px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 10px; background: linear-gradient(120deg, #38e8ff, #41ffbf); color: #00151a; font-weight: 700; }
+.add-to-cart:disabled { background: rgba(255,255,255,.2); color: rgba(255,255,255,.6); }
 .show-more { width: 100%; padding: 12px; background: rgba(255,255,255,.12); color: #fff; border: 1px solid var(--line); }
 
 .cart-header,

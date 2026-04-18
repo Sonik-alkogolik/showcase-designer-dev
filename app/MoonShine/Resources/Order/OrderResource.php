@@ -21,6 +21,10 @@ class OrderResource extends ModelResource
 
     protected string $title = 'Заказы';
 
+    protected string $column = 'customer_name';
+
+    protected array $with = ['shop'];
+
     protected function fields(): iterable
     {
         return [

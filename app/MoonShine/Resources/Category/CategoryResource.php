@@ -23,6 +23,10 @@ class CategoryResource extends ModelResource
 
     protected string $title = 'Категории';
 
+    protected string $column = 'name';
+
+    protected array $with = ['shop'];
+
     protected function fields(): iterable
     {
         return [
@@ -57,4 +61,3 @@ class CategoryResource extends ModelResource
         ];
     }
 }
-
