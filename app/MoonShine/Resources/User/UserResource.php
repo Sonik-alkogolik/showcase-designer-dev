@@ -24,6 +24,8 @@ class UserResource extends ModelResource
     protected string $model = User::class;
 
     protected string $title = 'Пользователи';
+
+    protected string $column = 'name';
     
     protected function pages(): array
     {
