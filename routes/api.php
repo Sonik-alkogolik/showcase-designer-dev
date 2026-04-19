@@ -32,7 +32,7 @@ Route::get('/test-cors', function () {
 });
 
 // Защищённые маршруты (требуют только авторизации)
-Route::middleware(['auth:sanctum', 'password.change.required'])->group(function () {
+Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsurePasswordChangeCompleted::class])->group(function () {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy']);
     
     // Профиль пользователя
