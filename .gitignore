@@ -26,3 +26,5 @@ yarn-debug.log
 /tools/tmp-*.log
 /tools/tmp-*.out
 /tools/tmp-*.err
+/tools/autotest-reports/
+/tools/autotests/.env.prod

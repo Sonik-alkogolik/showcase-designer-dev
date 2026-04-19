@@ -52,6 +52,7 @@ Available actions:
   telegram-pin-dev - pin Telegram dev bot to URL (without editing .env) + show webhook status
   telegram-send-webapp-test - send test message with WebApp button to specific chat_id
   smoke-checkout-payment - run API smoke for checkout/payment flow with optional public URL check
+  autotest-prod-smoke - run safe pytest smoke suite against AUTO_BASE_URL (from tools/autotests/.env.prod)
   start-ui      - start Python web UI for quick commands
 
 Examples:
@@ -78,6 +79,7 @@ Examples:
   .\scripts\dev-shortcuts.ps1 telegram-send-webapp-test -ChatId "123456789" -ShopId "2"
   .\scripts\dev-shortcuts.ps1 smoke-checkout-payment -ShopId "2"
   .\scripts\dev-shortcuts.ps1 smoke-checkout-payment -PublicUrl "https://showcase-dev-20260321.loca.lt" -ShopId "2"
+  .\scripts\dev-shortcuts.ps1 autotest-prod-smoke
 "@
         break
     }
@@ -430,6 +432,12 @@ Examples:
         }
 
         & python @cmd
+        break
+    }
+
+    "autotest-prod-smoke" {
+        Set-Location $ProjectRoot
+        & python tools/run_prod_smoke.py --env-file tools/autotests/.env.prod
         break
     }
 
