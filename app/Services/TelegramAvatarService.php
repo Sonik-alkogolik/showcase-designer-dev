@@ -11,29 +11,39 @@ class TelegramAvatarService
 {
     public function ensureUserAvatar(User $user, ?int $updateId = null): ?string
     {
-        $existing = trim((string) ($user->telegram_avatar_url ?? ''));
-        if ($existing !== '') {
-            return $existing;
-        }
+        try {
+            $existing = trim((string) ($user->telegram_avatar_url ?? ''));
+            if ($existing !== '') {
+                return $existing;
+            }
 
-        if (! $user->isTelegramLinked() || ! $user->telegram_id) {
+            if (! $user->isTelegramLinked() || ! $user->telegram_id) {
+                return null;
+            }
+
+            $cooldownKey = "telegram_avatar_sync_cooldown_{$user->id}";
+            if (Cache::has($cooldownKey)) {
+                return null;
+            }
+
+            $avatarUrl = $this->resolveAvatarUrlByTelegramId((int) $user->telegram_id, $updateId);
+            if ($avatarUrl === null) {
+                Cache::put($cooldownKey, 1, now()->addMinutes(10));
+                return null;
+            }
+
+            $user->forceFill(['telegram_avatar_url' => $avatarUrl])->save();
+
+            return $avatarUrl;
+        } catch (\Throwable $e) {
+            Log::warning('Telegram avatar ensure failed', [
+                'user_id' => $user->id,
+                'update_id' => $updateId,
+                'error' => $e->getMessage(),
+            ]);
+
             return null;
         }
-
-        $cooldownKey = "telegram_avatar_sync_cooldown_{$user->id}";
-        if (Cache::has($cooldownKey)) {
-            return null;
-        }
-
-        $avatarUrl = $this->resolveAvatarUrlByTelegramId((int) $user->telegram_id, $updateId);
-        if ($avatarUrl === null) {
-            Cache::put($cooldownKey, 1, now()->addMinutes(10));
-            return null;
-        }
-
-        $user->forceFill(['telegram_avatar_url' => $avatarUrl])->save();
-
-        return $avatarUrl;
     }
 
     public function resolveAvatarUrlByTelegramId(int $telegramId, ?int $updateId = null): ?string
@@ -93,4 +103,3 @@ class TelegramAvatarService
         }
     }
 }
-
