@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\MoonShine\Resources\Subscription\Pages;
 
 use App\Models\User;
-use App\Models\Subscription;
 use MoonShine\Laravel\Pages\Crud\FormPage;
 use MoonShine\Contracts\UI\FieldContract;
 use MoonShine\UI\Fields\ID;
@@ -47,42 +46,13 @@ class SubscriptionFormPage extends FormPage
      */
     protected function fields(): iterable
     {
-        $resourceItem = request()->route('resourceItem');
-        $isEditMode = ! empty($resourceItem);
-
         $baseFields = [
             ID::make()->sortable(),
         ];
 
-        if ($isEditMode) {
-            $baseFields[] = Text::make('Пользователь')
-                ->changeFill(static function (mixed $data, mixed $field = null): string {
-                    $subscription = $data instanceof Subscription ? $data : null;
-
-                    if (! $subscription || ! $subscription->user) {
-                        return 'Пользователь не найден';
-                    }
-
-                    $user = $subscription->user;
-
-                    $parts = [
-                        "ID {$user->id}",
-                        $user->name ?: 'без имени',
-                        $user->email ?: 'без email',
-                    ];
-
-                    if (! empty($user->telegram_username)) {
-                        $parts[] = '@' . ltrim((string) $user->telegram_username, '@');
-                    }
-
-                    return implode(' | ', $parts);
-                })
-                ->readonly();
-        } else {
-            $baseFields[] = Select::make('Пользователь', 'user_id')
-                ->options($this->userOptions())
-                ->required();
-        }
+        $baseFields[] = Select::make('Пользователь', 'user_id')
+            ->options($this->userOptions())
+            ->required();
 
         $baseFields = array_merge($baseFields, [
             Select::make('Тариф', 'plan')
