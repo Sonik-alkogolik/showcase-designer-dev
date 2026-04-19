@@ -15,10 +15,24 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption("--password", action="store", default=os.getenv("AUTO_TEST_PASSWORD", ""))
     parser.addoption("--shop-id", action="store", default=os.getenv("AUTO_TEST_SHOP_ID", ""))
     parser.addoption("--timeout", action="store", default=os.getenv("AUTO_TEST_TIMEOUT", "20"))
+    parser.addoption("--bot-token", action="store", default=os.getenv("AUTO_TEST_BOT_TOKEN", ""))
+    parser.addoption("--chat-id", action="store", default=os.getenv("AUTO_TEST_CHAT_ID", ""))
+    parser.addoption(
+        "--telegram-username",
+        action="store",
+        default=os.getenv("AUTO_TEST_TELEGRAM_USERNAME", "internet_magaz_dev_bot"),
+    )
+    parser.addoption(
+        "--allow-mutation",
+        action="store_true",
+        default=(os.getenv("AUTO_TEST_ALLOW_MUTATION", "0") == "1"),
+        help="Allow mutation tests against target environment",
+    )
 
 
 def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line("markers", "prod_smoke: safe smoke checks for production")
+    config.addinivalue_line("markers", "prod_mutation: controlled mutation checks for production test account")
 
 
 @pytest.fixture(scope="session")
@@ -30,6 +44,10 @@ def test_config(pytestconfig: pytest.Config) -> AutoTestConfig:
         password=str(pytestconfig.getoption("--password")).strip(),
         shop_id=str(pytestconfig.getoption("--shop-id")).strip(),
         timeout=float(pytestconfig.getoption("--timeout")),
+        bot_token=str(pytestconfig.getoption("--bot-token")).strip(),
+        chat_id=str(pytestconfig.getoption("--chat-id")).strip(),
+        telegram_username=str(pytestconfig.getoption("--telegram-username")).strip(),
+        allow_mutation=bool(pytestconfig.getoption("--allow-mutation")),
     )
 
 

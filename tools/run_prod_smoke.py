@@ -20,6 +20,11 @@ def parse_args() -> argparse.Namespace:
         default="prod_smoke",
         help="Pytest marker expression to run",
     )
+    parser.add_argument(
+        "--include-mutation",
+        action="store_true",
+        help="Run mutation tests too (requires AUTO_TEST_ALLOW_MUTATION=1)",
+    )
     return parser.parse_args()
 
 
@@ -30,10 +35,14 @@ def main() -> int:
         load_dotenv(env_path)
 
     os.makedirs("tools/autotest-reports", exist_ok=True)
+    marker_expr = args.marker
+    if args.include_mutation and marker_expr.strip() == "prod_smoke":
+        marker_expr = "prod_smoke or prod_mutation"
+
     return pytest.main(
         [
             "-m",
-            args.marker,
+            marker_expr,
             "-q",
             "--disable-warnings",
             "--maxfail=1",
@@ -45,4 +54,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

@@ -28,3 +28,4 @@ yarn-debug.log
 /tools/tmp-*.err
 /tools/autotest-reports/
 /tools/autotests/.env.prod
+/tools/autotests/__pycache__/

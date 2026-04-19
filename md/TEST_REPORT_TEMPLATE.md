@@ -16,6 +16,8 @@
 1. `test_public_root_available` — `PASS/FAIL`
 2. `test_login_profile_and_logout` — `PASS/FAIL`
 3. `test_public_shop_endpoint` — `PASS/FAIL`
+4. `test_mutation_product_create_delete_and_bot_toggle` — `PASS/FAIL/N-A`
+5. `test_mutation_unlink_and_relink_telegram` — `PASS/FAIL/N-A`
 
 Артефакты:
 
@@ -41,4 +43,3 @@
 - Следующие действия:
   1. ...
   2. ...
-

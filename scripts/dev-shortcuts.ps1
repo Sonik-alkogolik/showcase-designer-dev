@@ -53,6 +53,7 @@ Available actions:
   telegram-send-webapp-test - send test message with WebApp button to specific chat_id
   smoke-checkout-payment - run API smoke for checkout/payment flow with optional public URL check
   autotest-prod-smoke - run safe pytest smoke suite against AUTO_BASE_URL (from tools/autotests/.env.prod)
+  autotest-prod-mutation - run smoke + mutation tests (requires AUTO_TEST_ALLOW_MUTATION=1)
   start-ui      - start Python web UI for quick commands
 
 Examples:
@@ -80,6 +81,7 @@ Examples:
   .\scripts\dev-shortcuts.ps1 smoke-checkout-payment -ShopId "2"
   .\scripts\dev-shortcuts.ps1 smoke-checkout-payment -PublicUrl "https://showcase-dev-20260321.loca.lt" -ShopId "2"
   .\scripts\dev-shortcuts.ps1 autotest-prod-smoke
+  .\scripts\dev-shortcuts.ps1 autotest-prod-mutation
 "@
         break
     }
@@ -438,6 +440,12 @@ Examples:
     "autotest-prod-smoke" {
         Set-Location $ProjectRoot
         & python tools/run_prod_smoke.py --env-file tools/autotests/.env.prod
+        break
+    }
+
+    "autotest-prod-mutation" {
+        Set-Location $ProjectRoot
+        & python tools/run_prod_smoke.py --env-file tools/autotests/.env.prod --include-mutation
         break
     }
 

@@ -29,6 +29,11 @@ copy tools\autotests\.env.prod.example tools\autotests\.env.prod
 - `AUTO_TEST_EMAIL=<тестовый email>`
 - `AUTO_TEST_PASSWORD=<тестовый пароль>`
 - `AUTO_TEST_SHOP_ID=<id тестового магазина>`
+- `AUTO_TEST_TIMEOUT=20`
+- `AUTO_TEST_BOT_TOKEN=<токен тестового бота>`
+- `AUTO_TEST_CHAT_ID=<telegram chat id для теста>`
+- `AUTO_TEST_TELEGRAM_USERNAME=<username для relink теста>`
+- `AUTO_TEST_ALLOW_MUTATION=0` (по умолчанию)
 
 ## 3. Запуск тестов
 
@@ -43,6 +48,31 @@ python tools/run_prod_smoke.py --env-file tools/autotests/.env.prod
 pytest -m prod_smoke -q tools/autotests
 ```
 
+## 3.1 Mutation-тесты (добавить/удалить товар, отвязать/привязать Telegram, проверить бота)
+
+Включать только для выделенного тестового аккаунта и магазина.
+
+1. В `.env.prod` выставить:
+
+```env
+AUTO_TEST_ALLOW_MUTATION=1
+AUTO_TEST_BOT_TOKEN=...
+AUTO_TEST_CHAT_ID=...
+AUTO_TEST_TELEGRAM_USERNAME=...
+```
+
+2. Запуск:
+
+```bash
+python tools/run_prod_smoke.py --env-file tools/autotests/.env.prod --include-mutation
+```
+
+3. После прогона вернуть обратно:
+
+```env
+AUTO_TEST_ALLOW_MUTATION=0
+```
+
 ## 4. Результаты
 
 Артефакты после запуска:
@@ -51,6 +81,8 @@ pytest -m prod_smoke -q tools/autotests
 - `tools/autotest-reports/public_root.json`
 - `tools/autotest-reports/auth_profile_smoke.json`
 - `tools/autotest-reports/public_shop.json`
+- `tools/autotest-reports/mutation_shop_bot_product.json` (если mutation включен)
+- `tools/autotest-reports/mutation_telegram_relink.json` (если mutation включен)
 
 ## 5. Что делать при падении
 
@@ -75,3 +107,8 @@ tail -n 120 /var/www/showcase-designer/storage/logs/laravel.log
 - без массовых изменений;
 - только smoke для критичных endpoints.
 
+`prod_mutation` запускать только:
+
+- на выделенном тестовом аккаунте;
+- на тестовом магазине;
+- с явным подтверждением (`AUTO_TEST_ALLOW_MUTATION=1`).
