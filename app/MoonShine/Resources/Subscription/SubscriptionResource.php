@@ -124,8 +124,10 @@ class SubscriptionResource extends ModelResource
 
     protected function rules(mixed $item): array
     {
+        $isEdit = $item instanceof Subscription && $item->exists;
+
         return [
-            'user_id' => 'required|exists:users,id',
+            'user_id' => $isEdit ? 'nullable|exists:users,id' : 'required|exists:users,id',
             'plan' => 'required|in:starter,business',
             'status' => 'required|in:active,expired,cancelled',
             'expires_at' => 'required|date',

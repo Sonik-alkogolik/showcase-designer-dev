@@ -55,7 +55,7 @@ class SubscriptionFormPage extends FormPage
         ];
 
         if ($isEditMode) {
-            $baseFields[] = Text::make('Пользователь', 'user_caption')
+            $baseFields[] = Text::make('Пользователь')
                 ->changeFill(static function (mixed $data, mixed $field = null): string {
                     $subscription = $data instanceof Subscription ? $data : null;
 
