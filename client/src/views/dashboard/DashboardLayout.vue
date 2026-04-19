@@ -1,7 +1,8 @@
 <template>
   <section class="dashboard-layout">
     <DashboardSidebar
-      :menu="dashboardMenu"
+      :groups="dashboardMenuGroups"
+      :quick-actions="dashboardQuickActions"
       :collapsed="sidebarCollapsed"
       @toggle-collapse="sidebarCollapsed = !sidebarCollapsed"
     />
@@ -30,7 +31,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import DashboardSidebar from '../../components/dashboard/DashboardSidebar.vue'
 import DashboardShopSelector from '../../components/dashboard/DashboardShopSelector.vue'
-import { dashboardMenu } from '../../config/dashboardMenu'
+import { dashboardMenu, dashboardMenuGroups, dashboardQuickActions } from '../../config/dashboardMenu'
 import { useDashboardContext } from '../../composables/useDashboardContext'
 
 const sidebarCollapsed = ref(false)

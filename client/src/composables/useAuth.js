@@ -3,6 +3,7 @@ import axios from 'axios';
 
 const token = ref(localStorage.getItem('auth_token') || null);
 const user = ref(null);
+let authInterceptorInstalled = false;
 
 // Устанавливаем токен при инициализации, если он есть
 if (token.value) {
@@ -22,6 +23,60 @@ const removeToken = () => {
   localStorage.removeItem('auth_token');
   delete axios.defaults.headers.common['Authorization'];
 };
+
+const isProtectedBootstrapEndpoint = (url = '') => {
+  return (
+    typeof url === 'string' &&
+    (
+      url.startsWith('/api/profile') ||
+      url.startsWith('/api/shops') ||
+      url.startsWith('/api/subscription/plans') ||
+      url.startsWith('/api/user')
+    )
+  );
+};
+
+const redirectToLogin = () => {
+  if (typeof window === 'undefined') return;
+
+  const pathname = window.location.pathname || '';
+  if (pathname === '/login') return;
+
+  window.location.assign('/login?reason=session_expired');
+};
+
+const handleAuthReset = () => {
+  removeToken();
+  user.value = null;
+  redirectToLogin();
+};
+
+if (!authInterceptorInstalled) {
+  axios.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      const status = error?.response?.status;
+      const requestUrl = String(error?.config?.url || '');
+      const hasToken = Boolean(token.value);
+
+      if (!hasToken) {
+        return Promise.reject(error);
+      }
+
+      if (status === 401 || status === 419) {
+        handleAuthReset();
+      } else if (status === 500 && isProtectedBootstrapEndpoint(requestUrl)) {
+        // Защита от "протухшей" вкладки после деплоя: лучше переавторизовать,
+        // чем показывать пользователю повторяющиеся 500 и ломать UX.
+        handleAuthReset();
+      }
+
+      return Promise.reject(error);
+    }
+  );
+
+  authInterceptorInstalled = true;
+}
 
 export const useAuth = () => {
   const login = async (email, password) => {
@@ -107,6 +162,11 @@ export const useAuth = () => {
       }
       // Если ошибка авторизации, очищаем токен
       if (error.response?.status === 401) {
+        removeToken();
+        user.value = null;
+      }
+
+      if (error.response?.status === 500) {
         removeToken();
         user.value = null;
       }

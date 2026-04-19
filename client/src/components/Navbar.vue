@@ -39,9 +39,6 @@
           Выйти
         </button>
         
-        <div v-if="isAuthenticated" class="user-info">
-          <span>{{ user?.name || 'Пользователь' }}</span>
-        </div>
       </div>
     </div>
   </nav>
@@ -52,7 +49,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 
-const { token, user, logout } = useAuth()
+const { token, logout } = useAuth()
 const router = useRouter()
 
 const isAuthenticated = computed(() => !!token.value)
@@ -175,12 +172,6 @@ const handleLogout = async () => {
 
 .btn-primary:hover {
   box-shadow: 0 14px 30px rgba(72, 116, 255, 0.42);
-}
-
-.user-info {
-  color: #aab4db;
-  font-size: 0.9rem;
-  padding-left: 0.4rem;
 }
 
 @media (max-width: 820px) {
