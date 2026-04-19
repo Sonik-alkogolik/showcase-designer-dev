@@ -55,29 +55,29 @@ class SubscriptionFormPage extends FormPage
         ];
 
         if ($isEditMode) {
-            $baseFields[] = Text::make('Пользователь', static function (?Subscription $subscription): string {
-                if (! $subscription) {
-                    return 'Пользователь не найден';
-                }
+            $baseFields[] = Text::make('Пользователь', 'user_caption')
+                ->changeFill(static function (mixed $data, mixed $field = null): string {
+                    $subscription = $data instanceof Subscription ? $data : null;
 
-                $user = $subscription->user;
+                    if (! $subscription || ! $subscription->user) {
+                        return 'Пользователь не найден';
+                    }
 
-                if (! $user) {
-                    return 'Пользователь не найден';
-                }
+                    $user = $subscription->user;
 
-                $parts = [
-                    "ID {$user->id}",
-                    $user->name ?: 'без имени',
-                    $user->email ?: 'без email',
-                ];
+                    $parts = [
+                        "ID {$user->id}",
+                        $user->name ?: 'без имени',
+                        $user->email ?: 'без email',
+                    ];
 
-                if (! empty($user->telegram_username)) {
-                    $parts[] = '@' . ltrim((string) $user->telegram_username, '@');
-                }
+                    if (! empty($user->telegram_username)) {
+                        $parts[] = '@' . ltrim((string) $user->telegram_username, '@');
+                    }
 
-                return implode(' | ', $parts);
-            })->readonly();
+                    return implode(' | ', $parts);
+                })
+                ->readonly();
         } else {
             $baseFields[] = Select::make('Пользователь', 'user_id')
                 ->options($this->userOptions())
