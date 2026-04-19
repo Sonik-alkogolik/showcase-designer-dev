@@ -28,8 +28,3 @@ export const dashboardMenuGroups = [
 ]
 
 export const dashboardMenu = dashboardMenuGroups.flatMap((group) => group.items)
-
-export const dashboardQuickActions = [
-  { key: 'qa-product', label: 'Новый товар', to: '/dashboard/products', icon: '+' },
-  { key: 'qa-orders', label: 'Новый заказ', to: '/dashboard/orders', icon: '•' },
-]

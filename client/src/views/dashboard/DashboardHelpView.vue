@@ -2,29 +2,29 @@
   <section class="page">
     <header class="page-head">
       <h1>Помощь</h1>
-      <p>Быстрые ссылки и опорные runbook-файлы.</p>
+      <p>Подсказки для работы с магазином и полезные контакты.</p>
     </header>
 
     <div class="cards">
       <article class="card">
-        <h3>Быстрый старт</h3>
-        <p>Проверить локальную среду и запуск сервиса.</p>
-        <a href="/md/DEV_ENV_RUNBOOK.md" target="_blank">Открыть DEV_ENV_RUNBOOK.md</a>
+        <h3>Как загрузить товары</h3>
+        <p>Откройте раздел “Товары”, нажмите импорт и загрузите Excel-файл.</p>
+        <router-link to="/dashboard/products">Перейти в товары</router-link>
       </article>
       <article class="card">
-        <h3>Релиз-процесс</h3>
-        <p>Команды push/deploy и правила синхронизации.</p>
-        <a href="/md/GIT_RELEASE_WORKFLOW.md" target="_blank">Открыть GIT_RELEASE_WORKFLOW.md</a>
+        <h3>Заказы и статусы</h3>
+        <p>Следите за новыми заказами и обновляйте статусы в одном месте.</p>
+        <router-link to="/dashboard/orders">Открыть заказы</router-link>
       </article>
       <article class="card">
-        <h3>Текущий handoff</h3>
-        <p>Где остановились и что делаем следующим шагом.</p>
-        <a href="/md/CHAT_HANDOFF.md" target="_blank">Открыть CHAT_HANDOFF.md</a>
+        <h3>Настройка магазина</h3>
+        <p>Проверьте доставку, контакты менеджера и параметры вашего бота.</p>
+        <router-link to="/dashboard/settings">Открыть настройки</router-link>
       </article>
       <article class="card">
         <h3>Поддержка</h3>
         <p>Связаться с поддержкой через Telegram.</p>
-        <a href="https://t.me/tgshopCLO_bot" target="_blank">Открыть Telegram</a>
+        <a href="https://t.me/tgshopCLO_bot" target="_blank" rel="noopener noreferrer">Открыть Telegram</a>
       </article>
     </div>
   </section>

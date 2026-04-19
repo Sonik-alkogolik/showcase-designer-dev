@@ -4,18 +4,6 @@
       {{ collapsed ? '›' : '‹' }}
     </button>
 
-    <div v-if="!collapsed && quickActions.length" class="quick-actions">
-      <router-link
-        v-for="action in quickActions"
-        :key="action.key"
-        :to="action.to"
-        class="quick-btn"
-      >
-        <span class="quick-icon">{{ action.icon }}</span>
-        <span>{{ action.label }}</span>
-      </router-link>
-    </div>
-
     <nav class="menu">
       <section
         v-for="group in groups"
@@ -42,10 +30,6 @@
 <script setup>
 defineProps({
   groups: {
-    type: Array,
-    default: () => [],
-  },
-  quickActions: {
     type: Array,
     default: () => [],
   },
@@ -92,35 +76,6 @@ defineEmits(['toggle-collapse'])
 .menu {
   display: grid;
   gap: 0.7rem;
-}
-
-.quick-actions {
-  display: grid;
-  gap: 0.42rem;
-  margin-bottom: 0.8rem;
-}
-
-.quick-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  min-height: 36px;
-  padding: 0 0.62rem;
-  border-radius: 9px;
-  text-decoration: none;
-  background: #dbe8ff;
-  color: #0f2a52;
-  font-size: 0.88rem;
-  font-weight: 600;
-}
-
-.quick-btn:hover {
-  background: #d0e1ff;
-}
-
-.quick-icon {
-  width: 20px;
-  text-align: center;
 }
 
 .menu-group {
@@ -196,10 +151,6 @@ defineEmits(['toggle-collapse'])
 
   .group-title {
     display: none;
-  }
-
-  .quick-actions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .menu-label {
