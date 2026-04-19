@@ -2,29 +2,14 @@
   <section class="page">
     <header class="page-head">
       <h1>Помощь</h1>
-      <p>Подсказки для работы с магазином и полезные контакты.</p>
+      <p>Поддержка</p>
     </header>
 
     <div class="cards">
       <article class="card">
-        <h3>Как загрузить товары</h3>
-        <p>Откройте раздел “Товары”, нажмите импорт и загрузите Excel-файл.</p>
-        <router-link to="/dashboard/products">Перейти в товары</router-link>
-      </article>
-      <article class="card">
-        <h3>Заказы и статусы</h3>
-        <p>Следите за новыми заказами и обновляйте статусы в одном месте.</p>
-        <router-link to="/dashboard/orders">Открыть заказы</router-link>
-      </article>
-      <article class="card">
-        <h3>Настройка магазина</h3>
-        <p>Проверьте доставку, контакты менеджера и параметры вашего бота.</p>
-        <router-link to="/dashboard/settings">Открыть настройки</router-link>
-      </article>
-      <article class="card">
         <h3>Поддержка</h3>
         <p>Связаться с поддержкой через Telegram.</p>
-        <a href="https://t.me/tgshopCLO_bot" target="_blank" rel="noopener noreferrer">Открыть Telegram</a>
+        <div class="manager-link-placeholder"></div>
       </article>
     </div>
   </section>
@@ -71,9 +56,8 @@
   color: #4f6280;
 }
 
-.card a {
-  color: #1d4ed8;
-  text-decoration: none;
+.manager-link-placeholder {
+  min-height: 20px;
 }
 
 @media (max-width: 760px) {
