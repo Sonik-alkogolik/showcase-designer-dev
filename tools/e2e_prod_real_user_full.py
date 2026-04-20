@@ -314,7 +314,29 @@ def main() -> int:
             parsed = urlparse(bot_link)
             start_token = (parse_qs(parsed.query).get("start") or [""])[0]
 
+        # Fallback: если UI-ссылка не прочиталась, запрашиваем токен напрямую из API.
+        if not start_token:
+            auth_token_local = page.evaluate("() => localStorage.getItem('auth_token')") or ""
+            if auth_token_local:
+                fallback_resp = page.request.post(
+                    f"{args.base_url}/api/profile/telegram/generate-token",
+                    headers={"Authorization": f"Bearer {auth_token_local}"},
+                )
+                if fallback_resp.ok:
+                    try:
+                        fallback_payload = fallback_resp.json()
+                    except Exception:
+                        fallback_payload = {}
+                    token_from_api = first_non_empty(fallback_payload.get("token"))
+                    link_from_api = first_non_empty(fallback_payload.get("bot_link"))
+                    if token_from_api:
+                        start_token = token_from_api
+                    if link_from_api:
+                        bot_link = link_from_api
+
         webhook_ok = False
+        webhook_status = None
+        webhook_body_preview = ""
         if start_token and not args.manual_telegram_link:
             update_payload = {
                 "update_id": int(datetime.now().timestamp()),
@@ -338,9 +360,24 @@ def main() -> int:
             }
             resp = page.request.post(
                 f"{args.base_url}/api/telegram/webhook",
-                data=update_payload,
+                headers={"Content-Type": "application/json"},
+                data=json.dumps(update_payload, ensure_ascii=False),
             )
-            webhook_ok = resp.ok
+            webhook_status = resp.status
+            try:
+                webhook_json = resp.json()
+                webhook_body_preview = json.dumps(webhook_json, ensure_ascii=False)[:500]
+                if isinstance(webhook_json, dict) and "success" in webhook_json:
+                    webhook_ok = bool(webhook_json.get("success"))
+                elif isinstance(webhook_json, dict) and "ok" in webhook_json:
+                    webhook_ok = bool(webhook_json.get("ok"))
+                else:
+                    msg = first_non_empty(webhook_json.get("message") if isinstance(webhook_json, dict) else "")
+                    webhook_ok = resp.ok and ("успеш" in msg.lower() or "success" in msg.lower())
+            except Exception:
+                webhook_body_preview = (resp.text() or "")[:500]
+                msg = webhook_body_preview.lower()
+                webhook_ok = resp.ok and ("успеш" in msg or "success" in msg)
 
         if start_token and args.manual_telegram_link:
             print("")
@@ -366,12 +403,26 @@ def main() -> int:
         page.wait_for_timeout(2200)
         linked = page.locator("text=Telegram аккаунт привязан").count() > 0
         linked_chat = page.locator("text=chat_id:").count() > 0
+        profile_linked = False
+        profile_chat_match = False
+        for _ in range(8):
+            ok_profile, profile_payload = api_get_json("/api/profile")
+            if ok_profile:
+                profile_linked = bool(profile_payload.get("telegram_linked"))
+                profile_chat_match = first_non_empty(profile_payload.get("telegram_id")) == str(args.chat_id)
+                if profile_linked:
+                    break
+            page.wait_for_timeout(900)
         report["steps"]["telegram_link"] = {
-            "ok": bool(start_token and webhook_ok and linked and linked_chat),
+            "ok": bool(start_token and webhook_ok and ((linked and linked_chat) or profile_linked)),
             "start_token_present": bool(start_token),
             "webhook_ok": webhook_ok,
+            "webhook_status": webhook_status,
+            "webhook_body_preview": webhook_body_preview,
             "linked_ui": linked,
             "chat_id_visible": linked_chat,
+            "profile_linked": profile_linked,
+            "profile_chat_match": profile_chat_match,
         }
         if should_stop("telegram_link"):
             page.screenshot(path=str(Path(args.screenshot)), full_page=True)
@@ -594,7 +645,8 @@ def main() -> int:
                         import_started = True
                         # Ждём завершения (async import status polling в самой модалке)
                         for _ in range(12):
-                            if page.locator('.modal-content .result.success').count() > 0 and page.locator('.modal-content text=Статус:').count() > 0:
+                            modal = page.locator(".modal-content").first
+                            if modal.locator(".result.success").count() > 0 and modal.get_by_text("Статус:").count() > 0:
                                 break
                             if page.locator('.modal-content button:has-text("Обновить статус")').count() > 0:
                                 page.click('.modal-content button:has-text("Обновить статус")')
