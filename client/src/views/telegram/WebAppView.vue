@@ -269,22 +269,15 @@
     <div v-if="showBottomNav" class="bottom-nav">
       <button class="tab-btn" :class="{ active: currentView === 'catalog' }" @click="setView('catalog')">Главная</button>
       <button class="tab-btn" :class="{ active: currentView === 'favorites' }" @click="setView('favorites')">
-        Избранное
-        <span v-if="favoriteTotalItems" class="tab-badge">{{ favoriteTotalItems }}</span>
+        Избранное<span v-if="favoriteTotalItems">: {{ favoriteTotalItems }}</span>
       </button>
       <button class="tab-btn" :class="{ active: currentView === 'cart' }" @click="setView('cart')">
-        Корзина
-        <span v-if="cartTotalItems" class="tab-badge">{{ cartTotalItems }}</span>
+        Корзина<span v-if="cartTotalItems">: {{ cartTotalItems }}</span>
       </button>
       <button class="tab-btn tab-profile" :class="{ active: currentView === 'profile' }" @click="setView('profile')">
         <img v-if="resolvedProfileAvatar" :src="resolvedProfileAvatar" alt="profile" class="tab-avatar" />
         <span v-else>Профиль</span>
       </button>
-    </div>
-
-    <div v-if="showBottomNav" class="bottom-status-line">
-      <span>Корзина: {{ cartTotalItems }}</span>
-      <span>Избранное: {{ favoriteTotalItems }}</span>
     </div>
 
     <div v-if="bottomNoticeVisible" class="bottom-notice">
@@ -1022,9 +1015,7 @@ export default {
 .bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; height: var(--bottom-nav-height); display: grid; grid-template-columns: repeat(4,1fr); align-items: center; gap: 4px; padding: 8px 10px; background: rgba(10,15,30,.96); border-top: 1px solid var(--line); backdrop-filter: blur(12px); z-index: 999; box-sizing: border-box; }
 .tab-btn { border: 0; background: none; color: #9fb0d3; font-size: .78rem; line-height: 1.2; padding: 4px; position: relative; cursor: pointer; }
 .tab-btn.active { color: var(--accent); }
-.tab-badge { position: absolute; top: -2px; right: 8px; min-width: 16px; height: 16px; border-radius: 999px; background: var(--accent-2); color: #00131a; font-size: .7rem; display: inline-flex; align-items: center; justify-content: center; padding: 0 4px; font-weight: 700; }
 .tab-avatar { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
-.bottom-status-line { position: fixed; left: 10px; right: 10px; bottom: calc(var(--bottom-nav-height) + 8px); z-index: 998; display: flex; justify-content: space-between; gap: 10px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line); background: rgba(8, 14, 28, .9); color: #d3e2ff; font-size: .82rem; backdrop-filter: blur(8px); }
 .bottom-notice { position: fixed; left: 10px; right: 10px; bottom: calc(var(--bottom-nav-height) + 52px); z-index: 1000; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(65,255,191,.45); background: rgba(6, 26, 24, .93); color: #dafff0; font-size: .86rem; text-align: center; font-weight: 700; backdrop-filter: blur(8px); }
 
 .search-overlay { position: fixed; inset: 0; background: rgba(6,10,18,.96); z-index: 1200; padding: 10px; box-sizing: border-box; display: flex; }
