@@ -268,10 +268,10 @@
 
     <div v-if="showBottomNav" class="bottom-nav">
       <button class="tab-btn" :class="{ active: currentView === 'catalog' }" @click="setView('catalog')">Главная</button>
-      <button class="tab-btn" :class="{ active: currentView === 'favorites' }" @click="setView('favorites')">
+      <button class="tab-btn tab-favorites" :class="{ active: currentView === 'favorites' }" @click="setView('favorites')">
         Избранное<span v-if="favoriteTotalItems">: {{ favoriteTotalItems }}</span>
       </button>
-      <button class="tab-btn" :class="{ active: currentView === 'cart' }" @click="setView('cart')">
+      <button class="tab-btn tab-cart" :class="{ active: currentView === 'cart' }" @click="setView('cart')">
         Корзина<span v-if="cartTotalItems">: {{ cartTotalItems }}</span>
       </button>
       <button class="tab-btn tab-profile" :class="{ active: currentView === 'profile' }" @click="setView('profile')">
@@ -1012,10 +1012,12 @@ export default {
 .profile-list { display: grid; gap: 8px; padding: 0 10px 12px; }
 .profile-item { width: 100%; padding: 12px; background: rgba(255,255,255,.12); color: #fff; border: 1px solid var(--line); }
 
-.bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; height: var(--bottom-nav-height); display: grid; grid-template-columns: repeat(4,1fr); align-items: center; gap: 4px; padding: 8px 10px; background: rgba(10,15,30,.96); border-top: 1px solid var(--line); backdrop-filter: blur(12px); z-index: 999; box-sizing: border-box; }
+.bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; height: var(--bottom-nav-height); display: grid; grid-template-columns: repeat(2,1fr); align-items: center; gap: 4px; padding: 8px 10px; background: rgba(10,15,30,.96); border-top: 1px solid var(--line); backdrop-filter: blur(12px); z-index: 999; box-sizing: border-box; }
 .tab-btn { border: 0; background: none; color: #9fb0d3; font-size: .78rem; line-height: 1.2; padding: 4px; position: relative; cursor: pointer; }
 .tab-btn.active { color: var(--accent); }
 .tab-avatar { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
+.tab-favorites,
+.tab-cart { display: none; }
 .bottom-notice { position: fixed; left: 10px; right: 10px; bottom: calc(var(--bottom-nav-height) + 52px); z-index: 1000; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(65,255,191,.45); background: rgba(6, 26, 24, .93); color: #dafff0; font-size: .86rem; text-align: center; font-weight: 700; backdrop-filter: blur(8px); }
 
 .search-overlay { position: fixed; inset: 0; background: rgba(6,10,18,.96); z-index: 1200; padding: 10px; box-sizing: border-box; display: flex; }
