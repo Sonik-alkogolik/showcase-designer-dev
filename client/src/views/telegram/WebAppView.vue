@@ -29,9 +29,6 @@
           <div class="hero-slide-overlay">
             <h2>{{ sliderProducts[currentSlideIndex]?.name }}</h2>
             <p>{{ sliderProducts[currentSlideIndex]?.price }} ₽</p>
-            <p v-if="getProductQuantity(sliderProducts[currentSlideIndex]?.id) > 0" class="hero-cart-qty">
-              В корзине: {{ getProductQuantity(sliderProducts[currentSlideIndex]?.id) }} шт.
-            </p>
           </div>
         </div>
         <div class="hero-dots">
@@ -82,10 +79,7 @@
               {{ product.in_stock ? "В наличии" : "Нет в наличии" }}
             </p>
             <button class="add-to-cart" @click="addToCart(product)" :disabled="!product.in_stock">
-              <template v-if="product.in_stock">
-                В корзину
-                <span v-if="getProductQuantity(product.id) > 0" class="inline-qty-badge">{{ getProductQuantity(product.id) }}</span>
-              </template>
+              <template v-if="product.in_stock">В корзину</template>
               <template v-else>Нет в наличии</template>
             </button>
           </div>
@@ -135,7 +129,6 @@
             </p>
             <button class="add-to-cart" @click="addToCart(product)">
               В корзину
-              <span v-if="getProductQuantity(product.id) > 0" class="inline-qty-badge">{{ getProductQuantity(product.id) }}</span>
             </button>
           </div>
         </article>
@@ -275,7 +268,10 @@
 
     <div v-if="showBottomNav" class="bottom-nav">
       <button class="tab-btn" :class="{ active: currentView === 'catalog' }" @click="setView('catalog')">Главная</button>
-      <button class="tab-btn" :class="{ active: currentView === 'favorites' }" @click="setView('favorites')">Избранное</button>
+      <button class="tab-btn" :class="{ active: currentView === 'favorites' }" @click="setView('favorites')">
+        Избранное
+        <span v-if="favoriteTotalItems" class="tab-badge">{{ favoriteTotalItems }}</span>
+      </button>
       <button class="tab-btn" :class="{ active: currentView === 'cart' }" @click="setView('cart')">
         Корзина
         <span v-if="cartTotalItems" class="tab-badge">{{ cartTotalItems }}</span>
@@ -284,6 +280,15 @@
         <img v-if="resolvedProfileAvatar" :src="resolvedProfileAvatar" alt="profile" class="tab-avatar" />
         <span v-else>Профиль</span>
       </button>
+    </div>
+
+    <div v-if="showBottomNav" class="bottom-status-line">
+      <span>Корзина: {{ cartTotalItems }}</span>
+      <span>Избранное: {{ favoriteTotalItems }}</span>
+    </div>
+
+    <div v-if="bottomNoticeVisible" class="bottom-notice">
+      {{ bottomNotice }}
     </div>
 
     <div v-if="showSearch" class="search-overlay" @click.self="closeSearch">
@@ -301,7 +306,6 @@
             </div>
             <button class="search-add" @click="addToCart(item)">
               В корзину
-              <span v-if="getProductQuantity(item.id) > 0" class="inline-qty-badge">{{ getProductQuantity(item.id) }}</span>
             </button>
           </div>
         </div>
@@ -409,6 +413,9 @@ export default {
     const orderNumber = ref(null);
     const orderError = ref("");
     const orderTotalForManager = ref(0);
+    const bottomNotice = ref("");
+    const bottomNoticeVisible = ref(false);
+    let bottomNoticeTimer = null;
 
     const cartItems = computed(() => Object.values(cart.value));
     const favoriteItems = computed(() => Object.values(favorites.value));
@@ -456,6 +463,7 @@ export default {
       if (ownerTelegramUsername.value && ownerName === ownerTelegramUsername.value) return "";
       return ownerName;
     });
+    const favoriteTotalItems = computed(() => favoriteItems.value.length);
     const cartTotalItems = computed(() => cartItems.value.reduce((sum, item) => sum + item.quantity, 0));
     const cartSubtotal = computed(() => cartItems.value.reduce((sum, item) => sum + ((parseFloat(item.price) || 0) * item.quantity), 0));
     const cartTotal = computed(() => cartSubtotal.value + (parseFloat(shop.value?.delivery_price) || 0));
@@ -480,6 +488,15 @@ export default {
       if (!sliderTimer) return;
       clearInterval(sliderTimer);
       sliderTimer = null;
+    };
+
+    const showBottomNotice = (message) => {
+      bottomNotice.value = message;
+      bottomNoticeVisible.value = true;
+      if (bottomNoticeTimer) clearTimeout(bottomNoticeTimer);
+      bottomNoticeTimer = setTimeout(() => {
+        bottomNoticeVisible.value = false;
+      }, 1600);
     };
 
     const onCategoryChange = async () => {
@@ -555,6 +572,7 @@ export default {
 
     onUnmounted(() => {
       clearSlider();
+      if (bottomNoticeTimer) clearTimeout(bottomNoticeTimer);
     });
 
     watch(currentView, (value) => {
@@ -607,10 +625,8 @@ export default {
 
       persistCart();
       const qty = cart.value[product.id]?.quantity || 0;
-      if (window.Telegram?.WebApp) window.Telegram.WebApp.showAlert(`"${product.name}" в корзине: ${qty} шт.`);
+      showBottomNotice(`Добавлено в корзину: ${qty} шт.`);
     };
-
-    const getProductQuantity = (productId) => Number(cart.value?.[productId]?.quantity || 0);
 
     const updateQuantity = (productId, delta) => {
       if (!cart.value[productId]) return;
@@ -635,8 +651,13 @@ export default {
 
     const isFavorite = (productId) => Boolean(favorites.value[productId]);
     const toggleFavorite = (product) => {
-      if (isFavorite(product.id)) delete favorites.value[product.id];
-      else favorites.value[product.id] = { ...product };
+      if (isFavorite(product.id)) {
+        delete favorites.value[product.id];
+        showBottomNotice("Удалено из избранного");
+      } else {
+        favorites.value[product.id] = { ...product };
+        showBottomNotice("Добавлено в избранное");
+      }
       persistFavorites();
     };
 
@@ -728,6 +749,7 @@ export default {
       resolvedProfileAvatar,
       ownerAccountName,
       cartItems,
+      favoriteTotalItems,
       cartTotalItems,
       cartSubtotal,
       cartTotal,
@@ -736,9 +758,10 @@ export default {
       orderSuccess,
       orderNumber,
       orderError,
+      bottomNotice,
+      bottomNoticeVisible,
       hasManagerContact,
       addToCart,
-      getProductQuantity,
       updateQuantity,
       removeFromCart,
       setView,
@@ -924,7 +947,6 @@ export default {
 .hero-slide-overlay { position: absolute; inset: auto 0 0; background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.78) 100%); padding: 14px; }
 .hero-slide-overlay h2 { margin: 0; font-size: 1rem; }
 .hero-slide-overlay p { margin: 4px 0 0; color: var(--accent-2); font-weight: 700; }
-.hero-cart-qty { color: #eef6ff !important; font-size: .82rem; opacity: .95; }
 .hero-dots { display: flex; justify-content: center; gap: 6px; margin-top: 8px; }
 .hero-dot { width: 8px; height: 8px; border-radius: 50%; border: 0; background: rgba(255,255,255,.3); }
 .hero-dot.active { background: var(--accent); }
@@ -954,7 +976,6 @@ export default {
 .profile-item { border: 0; border-radius: 12px; cursor: pointer; }
 .add-to-cart { width: 100%; min-height: 42px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 10px; background: linear-gradient(120deg, #38e8ff, #41ffbf); color: #00151a; font-weight: 700; }
 .add-to-cart:disabled { background: rgba(255,255,255,.2); color: rgba(255,255,255,.6); }
-.inline-qty-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; margin-left: 8px; padding: 0 6px; border-radius: 999px; background: #041621; color: var(--accent-2); font-size: .78rem; font-weight: 800; line-height: 1; border: 1px solid rgba(65,255,191,.45); }
 .show-more { width: 100%; padding: 12px; margin-top: 2px; margin-bottom: calc(var(--bottom-nav-height) + 8px); background: #f7f9fc; color: #2c3e50; border: 1px solid #d7e3f3; font-weight: 700; }
 
 .cart-header,
@@ -1003,6 +1024,8 @@ export default {
 .tab-btn.active { color: var(--accent); }
 .tab-badge { position: absolute; top: -2px; right: 8px; min-width: 16px; height: 16px; border-radius: 999px; background: var(--accent-2); color: #00131a; font-size: .7rem; display: inline-flex; align-items: center; justify-content: center; padding: 0 4px; font-weight: 700; }
 .tab-avatar { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
+.bottom-status-line { position: fixed; left: 10px; right: 10px; bottom: calc(var(--bottom-nav-height) + 8px); z-index: 998; display: flex; justify-content: space-between; gap: 10px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line); background: rgba(8, 14, 28, .9); color: #d3e2ff; font-size: .82rem; backdrop-filter: blur(8px); }
+.bottom-notice { position: fixed; left: 10px; right: 10px; bottom: calc(var(--bottom-nav-height) + 52px); z-index: 1000; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(65,255,191,.45); background: rgba(6, 26, 24, .93); color: #dafff0; font-size: .86rem; text-align: center; font-weight: 700; backdrop-filter: blur(8px); }
 
 .search-overlay { position: fixed; inset: 0; background: rgba(6,10,18,.96); z-index: 1200; padding: 10px; box-sizing: border-box; display: flex; }
 .search-overlay-panel { width: 100%; border-radius: 14px; border: 1px solid var(--line); background: #0b1326; display: flex; flex-direction: column; max-height: 100%; }
