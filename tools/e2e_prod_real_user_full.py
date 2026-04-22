@@ -237,59 +237,68 @@ def main() -> int:
         page.goto(f"{args.base_url}/plans", wait_until="domcontentloaded", timeout=30000)
         page.wait_for_timeout(2200)
 
-        def ensure_plan_subscription() -> tuple[bool, str]:
-            selected_via_ui = False
-            # Надежно выбираем карточку: по слову "Платный"/"Бизнес" или "Бесплатный".
-            desired_candidates = (
-                ['.plan-card:has-text("Платный")', '.plan-card:has-text("Бизнес")']
-                if args.plan == "business"
-                else ['.plan-card:has-text("Бесплатный")', '.plan-card:has-text("Starter")']
-            )
-            for selector in desired_candidates:
-                card = page.locator(selector).first
-                if card.count() > 0:
-                    card.click()
-                    selected_via_ui = True
-                    page.wait_for_timeout(350)
-                    break
+        def ensure_plan_subscription() -> tuple[bool, str, dict[str, object]]:
+            diagnostics: dict[str, object] = {}
 
-            if selected_via_ui:
-                for i in range(page.locator("input[type='checkbox']").count()):
-                    cb = page.locator("input[type='checkbox']").nth(i)
-                    if not cb.is_checked():
-                        cb.check()
-                if page.locator('button.subscribe-btn:has-text("Оформить подписку")').count() > 0:
-                    page.click('button.subscribe-btn:has-text("Оформить подписку")')
-                    page.wait_for_timeout(2200)
-
-            # Жестко выставляем требуемый план через API (бизнес/стартер),
-            # чтобы результат не зависел от вариаций UI-карточек.
+            ok_plans_before, plans_payload_before = api_get_json("/api/subscription/plans")
             current_plan = ""
-            auth_token_local = page.evaluate("() => localStorage.getItem('auth_token')") or ""
-            if auth_token_local:
-                sub_resp = page.request.post(
-                    f"{args.base_url}/api/subscription/subscribe",
-                    headers={"Authorization": f"Bearer {auth_token_local}"},
-                    data={
-                        "plan": args.plan,
-                        "auto_renew": False,
-                        "offer_accepted": True,
-                        "privacy_accepted": True,
-                    },
-                )
-                if sub_resp.ok:
-                    page.wait_for_timeout(900)
-            ok_plans2, plans_payload2 = api_get_json("/api/subscription/plans")
-            if ok_plans2:
-                current_plan = first_non_empty((plans_payload2.get("current_subscription") or {}).get("plan"))
-            return current_plan == args.plan, current_plan
+            if ok_plans_before:
+                current_plan = first_non_empty((plans_payload_before.get("current_subscription") or {}).get("plan"))
+            diagnostics["initial_plan"] = current_plan
 
-        plan_ok, current_plan = ensure_plan_subscription()
+            if current_plan == args.plan:
+                diagnostics["already_active"] = True
+                return True, current_plan, diagnostics
+
+            if current_plan and current_plan != args.plan:
+                diagnostics["blocked_by_existing_plan"] = True
+                diagnostics["blocked_message"] = (
+                    "Cannot switch active plan in current API flow. "
+                    "A fresh user is required for deterministic e2e plan selection."
+                )
+                return False, current_plan, diagnostics
+
+            auth_token_local = page.evaluate("() => localStorage.getItem('auth_token')") or ""
+            if not auth_token_local:
+                diagnostics["error"] = "No auth token in localStorage before subscription step"
+                return False, current_plan, diagnostics
+
+            subscribe_payload = {
+                "plan": args.plan,
+                "auto_renew": False,
+                "offer_accepted": True,
+                "privacy_accepted": True,
+            }
+            sub_resp = page.request.post(
+                f"{args.base_url}/api/subscription/subscribe",
+                headers={
+                    "Authorization": f"Bearer {auth_token_local}",
+                    "Content-Type": "application/json",
+                },
+                data=json.dumps(subscribe_payload, ensure_ascii=False),
+            )
+            diagnostics["subscribe_status"] = sub_resp.status
+            diagnostics["subscribe_ok"] = bool(sub_resp.ok)
+            try:
+                sub_json = sub_resp.json()
+                diagnostics["subscribe_response"] = sub_json
+            except Exception:
+                diagnostics["subscribe_response"] = (sub_resp.text() or "")[:500]
+
+            page.wait_for_timeout(900)
+            ok_plans_after, plans_payload_after = api_get_json("/api/subscription/plans")
+            if ok_plans_after:
+                current_plan = first_non_empty((plans_payload_after.get("current_subscription") or {}).get("plan"))
+            diagnostics["final_plan"] = current_plan
+            return current_plan == args.plan, current_plan, diagnostics
+
+        plan_ok, current_plan, plan_diagnostics = ensure_plan_subscription()
         report["steps"]["subscribe_plan"] = {
             "ok": plan_ok,
             "final_url": page.url,
             "plan_expected": args.plan,
             "plan_actual": current_plan,
+            "diagnostics": plan_diagnostics,
         }
         if should_stop("subscribe_plan"):
             page.screenshot(path=str(Path(args.screenshot)), full_page=True)

@@ -29,6 +29,9 @@
           <div class="hero-slide-overlay">
             <h2>{{ sliderProducts[currentSlideIndex]?.name }}</h2>
             <p>{{ sliderProducts[currentSlideIndex]?.price }} ₽</p>
+            <p v-if="getProductQuantity(sliderProducts[currentSlideIndex]?.id) > 0" class="hero-cart-qty">
+              В корзине: {{ getProductQuantity(sliderProducts[currentSlideIndex]?.id) }} шт.
+            </p>
           </div>
         </div>
         <div class="hero-dots">
@@ -79,7 +82,11 @@
               {{ product.in_stock ? "В наличии" : "Нет в наличии" }}
             </p>
             <button class="add-to-cart" @click="addToCart(product)" :disabled="!product.in_stock">
-              {{ product.in_stock ? "В корзину" : "Нет в наличии" }}
+              <template v-if="product.in_stock">
+                В корзину
+                <span v-if="getProductQuantity(product.id) > 0" class="inline-qty-badge">{{ getProductQuantity(product.id) }}</span>
+              </template>
+              <template v-else>Нет в наличии</template>
             </button>
           </div>
         </article>
@@ -126,7 +133,10 @@
             <p class="stock" :class="{ 'in-stock': product.in_stock }">
               {{ product.in_stock ? "В наличии" : "Нет в наличии" }}
             </p>
-            <button class="add-to-cart" @click="addToCart(product)">В корзину</button>
+            <button class="add-to-cart" @click="addToCart(product)">
+              В корзину
+              <span v-if="getProductQuantity(product.id) > 0" class="inline-qty-badge">{{ getProductQuantity(product.id) }}</span>
+            </button>
           </div>
         </article>
       </div>
@@ -289,7 +299,10 @@
               <p class="search-item-name">{{ item.name }}</p>
               <p class="search-item-meta">{{ item.price }} ₽ · {{ item.category_name || "Без категории" }}</p>
             </div>
-            <button class="search-add" @click="addToCart(item)">В корзину</button>
+            <button class="search-add" @click="addToCart(item)">
+              В корзину
+              <span v-if="getProductQuantity(item.id) > 0" class="inline-qty-badge">{{ getProductQuantity(item.id) }}</span>
+            </button>
           </div>
         </div>
 
@@ -593,8 +606,11 @@ export default {
       }
 
       persistCart();
-      if (window.Telegram?.WebApp) window.Telegram.WebApp.showAlert(`"${product.name}" в корзине`);
+      const qty = cart.value[product.id]?.quantity || 0;
+      if (window.Telegram?.WebApp) window.Telegram.WebApp.showAlert(`"${product.name}" в корзине: ${qty} шт.`);
     };
+
+    const getProductQuantity = (productId) => Number(cart.value?.[productId]?.quantity || 0);
 
     const updateQuantity = (productId, delta) => {
       if (!cart.value[productId]) return;
@@ -722,6 +738,7 @@ export default {
       orderError,
       hasManagerContact,
       addToCart,
+      getProductQuantity,
       updateQuantity,
       removeFromCart,
       setView,
@@ -907,6 +924,7 @@ export default {
 .hero-slide-overlay { position: absolute; inset: auto 0 0; background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.78) 100%); padding: 14px; }
 .hero-slide-overlay h2 { margin: 0; font-size: 1rem; }
 .hero-slide-overlay p { margin: 4px 0 0; color: var(--accent-2); font-weight: 700; }
+.hero-cart-qty { color: #eef6ff !important; font-size: .82rem; opacity: .95; }
 .hero-dots { display: flex; justify-content: center; gap: 6px; margin-top: 8px; }
 .hero-dot { width: 8px; height: 8px; border-radius: 50%; border: 0; background: rgba(255,255,255,.3); }
 .hero-dot.active { background: var(--accent); }
@@ -936,6 +954,7 @@ export default {
 .profile-item { border: 0; border-radius: 12px; cursor: pointer; }
 .add-to-cart { width: 100%; min-height: 42px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 10px; background: linear-gradient(120deg, #38e8ff, #41ffbf); color: #00151a; font-weight: 700; }
 .add-to-cart:disabled { background: rgba(255,255,255,.2); color: rgba(255,255,255,.6); }
+.inline-qty-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; margin-left: 8px; padding: 0 6px; border-radius: 999px; background: #041621; color: var(--accent-2); font-size: .78rem; font-weight: 800; line-height: 1; border: 1px solid rgba(65,255,191,.45); }
 .show-more { width: 100%; padding: 12px; margin-top: 2px; margin-bottom: calc(var(--bottom-nav-height) + 8px); background: #f7f9fc; color: #2c3e50; border: 1px solid #d7e3f3; font-weight: 700; }
 
 .cart-header,
