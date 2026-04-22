@@ -498,6 +498,31 @@ const getVisibleAttributes = (product) => {
 
     const debouncedSearch = debounce(loadProducts, 300)
 
+    const getApiErrorMessage = (error) => {
+      const status = Number(error?.response?.status || 0)
+      const data = error?.response?.data || {}
+
+      if (status === 413) {
+        return 'Файл слишком большой для загрузки. Уменьшите размер изображения и попробуйте снова.'
+      }
+
+      if (data?.message) {
+        return String(data.message)
+      }
+
+      const validationErrors = data?.errors
+      if (validationErrors && typeof validationErrors === 'object') {
+        const firstError = Object.values(validationErrors)
+          .flat()
+          .find(Boolean)
+        if (firstError) {
+          return String(firstError)
+        }
+      }
+
+      return 'Ошибка при сохранении товара'
+    }
+
     const saveProduct = async () => {
       try {
         const url = editingProduct.value 
@@ -557,7 +582,7 @@ const getVisibleAttributes = (product) => {
       } catch (error) {
         console.error('❌ Ошибка сохранения товара:', error)
         console.error('📄 Детали ошибки:', error.response?.data)
-        alert(error.response?.data?.message || 'Ошибка при сохранении')
+        alert(getApiErrorMessage(error))
       }
     }
 

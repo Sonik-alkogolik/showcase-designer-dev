@@ -13,6 +13,31 @@ use Illuminate\Validation\ValidationException;
 
 class ProductController extends Controller
 {
+    private function imageFieldRules(): array
+    {
+        return [
+            'nullable',
+            'string',
+            'max:2048',
+            function (string $attribute, mixed $value, \Closure $fail): void {
+                if ($value === null || $value === '') {
+                    return;
+                }
+
+                $image = (string) $value;
+                if (filter_var($image, FILTER_VALIDATE_URL)) {
+                    return;
+                }
+
+                if (str_starts_with($image, '/storage/')) {
+                    return;
+                }
+
+                $fail('Поле image должно быть корректным URL или путём вида /storage/...');
+            },
+        ];
+    }
+
     private function normalizeAttributes(Request $request): void
     {
         $raw = $request->input('attributes');
@@ -237,8 +262,8 @@ class ProductController extends Controller
             'category' => 'nullable|string|max:100', // Для обратной совместимости
             'in_stock' => 'boolean',
             'show_in_slider' => 'boolean',
-            'image' => 'nullable|url',
-            'image_file' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:5120',
+            'image' => $this->imageFieldRules(),
+            'image_file' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:10240',
             'attributes' => 'nullable|array',
         ]);
 
@@ -324,8 +349,8 @@ class ProductController extends Controller
             'category' => 'nullable|string|max:100',
             'in_stock' => 'boolean',
             'show_in_slider' => 'boolean',
-            'image' => 'nullable|url',
-            'image_file' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:5120',
+            'image' => $this->imageFieldRules(),
+            'image_file' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:10240',
             'attributes' => 'nullable|array',
         ]);
 
