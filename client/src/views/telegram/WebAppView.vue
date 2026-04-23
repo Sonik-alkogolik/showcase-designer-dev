@@ -53,7 +53,7 @@
             {{ isFavorite(product.id) ? "♥" : "♡" }}
           </button>
 
-          <div class="product-image" v-if="product.image">
+          <div class="product-image" v-if="product.image" @click.stop="openImagePreview(product.image, product.name)">
             <img :src="product.image" :alt="product.name" @error="onImageError" />
           </div>
 
@@ -105,7 +105,7 @@
           :style="{ '--delay': `${index * 50}ms` }"
         >
           <button class="fav-btn active" @click="toggleFavorite(product)">♥</button>
-          <div class="product-image" v-if="product.image">
+          <div class="product-image" v-if="product.image" @click.stop="openImagePreview(product.image, product.name)">
             <img :src="product.image" :alt="product.name" @error="onImageError" />
           </div>
           <div class="product-info">
@@ -284,6 +284,13 @@
       {{ bottomNotice }}
     </div>
 
+    <div v-if="previewImageUrl" class="image-preview-overlay" @click="closeImagePreview">
+      <div class="image-preview-content" @click.stop>
+        <button type="button" class="image-preview-close" @click="closeImagePreview">✕</button>
+        <img :src="previewImageUrl" :alt="previewImageAlt || 'preview'" class="image-preview-full">
+      </div>
+    </div>
+
     <div v-if="showSearch" class="search-overlay" @click.self="closeSearch">
       <div class="search-overlay-panel">
         <div class="search-overlay-head">
@@ -408,6 +415,8 @@ export default {
     const orderTotalForManager = ref(0);
     const bottomNotice = ref("");
     const bottomNoticeVisible = ref(false);
+    const previewImageUrl = ref("");
+    const previewImageAlt = ref("");
     let bottomNoticeTimer = null;
 
     const cartItems = computed(() => Object.values(cart.value));
@@ -540,6 +549,16 @@ export default {
 
     const toggleSearch = () => {
       showSearch.value ? closeSearch() : openSearch();
+    };
+
+    const openImagePreview = (url, alt = "") => {
+      previewImageUrl.value = String(url || "");
+      previewImageAlt.value = String(alt || "");
+    };
+
+    const closeImagePreview = () => {
+      previewImageUrl.value = "";
+      previewImageAlt.value = "";
     };
 
     onMounted(async () => {
@@ -753,8 +772,12 @@ export default {
       orderError,
       bottomNotice,
       bottomNoticeVisible,
+      previewImageUrl,
+      previewImageAlt,
       hasManagerContact,
       addToCart,
+      openImagePreview,
+      closeImagePreview,
       updateQuantity,
       removeFromCart,
       setView,
@@ -1033,6 +1056,10 @@ export default {
 .search-empty,
 .loading,
 .error { padding: 14px; text-align: center; color: var(--ink-1); }
+.image-preview-overlay { position: fixed; inset: 0; z-index: 1400; background: rgba(4, 8, 16, 0.82); display: flex; align-items: center; justify-content: center; padding: 12px; }
+.image-preview-content { position: relative; max-width: 96vw; max-height: 92vh; }
+.image-preview-full { display: block; max-width: 96vw; max-height: 92vh; width: auto; height: auto; border-radius: 12px; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5); }
+.image-preview-close { position: absolute; top: -12px; right: -12px; width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 999px; background: rgba(10, 15, 30, 0.95); color: #fff; cursor: pointer; font-size: 1rem; line-height: 1; }
 
 @media (min-width: 768px) {
   .content { max-width: 720px; }
