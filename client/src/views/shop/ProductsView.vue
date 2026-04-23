@@ -44,7 +44,7 @@
     <!-- Список товаров -->
     <div class="products-grid" v-if="products.length">
       <div v-for="product in products" :key="product.id" class="product-card">
-        <div class="product-image" v-if="product.image">
+        <div class="product-image" v-if="product.image" @click="openImagePreview(product.image, product.name)">
           <img :src="product.image" :alt="product.name">
         </div>
        <div class="product-info">
@@ -106,6 +106,13 @@
 
     <div v-else class="empty-state">
       <p>Товаров пока нет</p>
+    </div>
+
+    <div v-if="previewImageUrl" class="image-preview-overlay" @click="closeImagePreview">
+      <div class="image-preview-content" @click.stop>
+        <button type="button" class="image-preview-close" @click="closeImagePreview">✕</button>
+        <img :src="previewImageUrl" :alt="previewImageAlt || 'preview'" class="image-preview-full">
+      </div>
     </div>
 
     <!-- Модальное окно для создания/редактирования товара -->
@@ -289,6 +296,8 @@ export default {
     const newAttributeValue = ref('')
     const selectedImageFile = ref(null)
     const selectedImageFileName = ref('')
+    const previewImageUrl = ref('')
+    const previewImageAlt = ref('')
     
     const filters = reactive({
       search: '',
@@ -652,6 +661,16 @@ const getVisibleAttributes = (product) => {
       showImportModal.value = false
     }
 
+    const openImagePreview = (url, alt = '') => {
+      previewImageUrl.value = String(url || '')
+      previewImageAlt.value = String(alt || '')
+    }
+
+    const closeImagePreview = () => {
+      previewImageUrl.value = ''
+      previewImageAlt.value = ''
+    }
+
     // Методы для работы с категориями
     const editCategory = (category) => {
       editingCategory.value = category
@@ -771,6 +790,10 @@ const getVisibleAttributes = (product) => {
       removeAttribute,
       onImageFileChange,
       selectedImageFileName,
+      previewImageUrl,
+      previewImageAlt,
+      openImagePreview,
+      closeImagePreview,
       // Новые свойства для категорий
       showCategoriesModal,
       editingCategory,
@@ -837,14 +860,56 @@ const getVisibleAttributes = (product) => {
 }
 
 .product-image {
-  height: 200px;
+  height: 300px;
   overflow: hidden;
+  cursor: zoom-in;
 }
 
 .product-image img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: fill;
+}
+
+.image-preview-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 1rem;
+}
+
+.image-preview-content {
+  position: relative;
+  max-width: 92vw;
+  max-height: 92vh;
+}
+
+.image-preview-full {
+  display: block;
+  max-width: 92vw;
+  max-height: 92vh;
+  width: auto;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+}
+
+.image-preview-close {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 999px;
+  background: #111;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1rem;
 }
 
 .product-info {
