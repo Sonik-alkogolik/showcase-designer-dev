@@ -11,8 +11,8 @@
         v-for="(plan, key) in plans" 
         :key="key"
         class="plan-card"
-        :class="{ 'popular': plan.popular, 'selected': selectedPlan === key }"
-        @click="selectedPlan = key"
+        :class="{ 'popular': plan.popular, 'selected': selectedPlan === key && canSelectPlan(plan) }"
+        @click="handlePlanClick(key, plan)"
       >
         <div v-if="plan.popular" class="popular-badge">Популярное</div>
         <h2>{{ plan.name }}</h2>
@@ -22,6 +22,13 @@
             ✓ {{ feature }}
           </li>
         </ul>
+        <button
+          v-if="!canSelectPlan(plan)"
+          class="manager-btn"
+          @click.stop="contactManager(plan)"
+        >
+          Связаться с менеджером
+        </button>
       </div>
     </div>
 
@@ -74,6 +81,18 @@ const canSubscribe = computed(() => {
   return selectedPlan.value && offerAccepted.value && privacyAccepted.value
 })
 
+const canSelectPlan = (plan) => plan?.self_service !== false
+
+const handlePlanClick = (key, plan) => {
+  if (!canSelectPlan(plan)) return
+  selectedPlan.value = key
+}
+
+const contactManager = (plan) => {
+  const url = plan?.contact_url || 'https://t.me/vveb_front'
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
+
 onMounted(async () => {
   try {
     const response = await axios.get('/api/subscription/plans')
@@ -87,6 +106,10 @@ onMounted(async () => {
 
 const subscribe = async () => {
   if (!canSubscribe.value) return
+  if (selectedPlan.value !== 'starter') {
+    alert('Переход на платный тариф выполняется через менеджера')
+    return
+  }
   
   subscribeLoading.value = true
   try {
@@ -251,6 +274,22 @@ h1 {
 .subscribe-btn:disabled {
   background: #556087;
   cursor: not-allowed;
+}
+
+.manager-btn {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(144, 206, 255, 0.45);
+  border-radius: 8px;
+  background: rgba(84, 152, 255, 0.12);
+  color: #dce9ff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.manager-btn:hover {
+  background: rgba(84, 152, 255, 0.2);
 }
 
 .loading {

@@ -19,6 +19,7 @@ class SubscriptionController extends Controller
                 'price' => 0,
                 'price_formatted' => '0 ₽/мес',
                 'auto_renew' => false,
+                'self_service' => true,
                 'shops_limit' => 1,
                 'products_limit' => 20,
                 'can_import_excel' => false,
@@ -34,6 +35,8 @@ class SubscriptionController extends Controller
                 'price' => 500,
                 'price_formatted' => '500 ₽/мес',
                 'auto_renew' => true,
+                'self_service' => false,
+                'contact_url' => 'https://t.me/vveb_front',
                 'shops_limit' => 5,
                 'products_limit' => 200,
                 'can_import_excel' => true,
@@ -96,6 +99,15 @@ class SubscriptionController extends Controller
                 'success' => false,
                 'message' => 'У вас уже есть активная подписка'
             ], 400);
+        }
+
+        // Платный тариф переводим только через менеджера/админку.
+        if ($request->plan !== 'starter') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Переход на платный тариф выполняется через менеджера',
+                'contact_url' => 'https://t.me/vveb_front',
+            ], 403);
         }
 
         // Цены в рублях
