@@ -198,7 +198,7 @@
 
       <div class="profile-list">
         <button class="profile-item" @click="setView('catalog')">Вернуться к покупкам</button>
-        <button class="profile-item" @click="openSupportChat">Связаться с поддержкой</button>
+        <button class="profile-item" @click="openSupportChat">Связаться с продавцом</button>
       </div>
     </div>
     <div v-else-if="currentView === 'checkout'" class="content panel-shell checkout-view">
