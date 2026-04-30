@@ -57,8 +57,9 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import axios from 'axios'
 import DashboardSidebar from '../../components/dashboard/DashboardSidebar.vue'
 import DashboardShopSelector from '../../components/dashboard/DashboardShopSelector.vue'
 import { dashboardMenu, dashboardMenuGroups } from '../../config/dashboardMenu'
@@ -78,8 +79,23 @@ const onboardingStorageKey = computed(() => {
   return `dashboard_onboarding_done_${userId}`
 })
 
-const hasCompletedOnboarding = () => localStorage.getItem(onboardingStorageKey.value) === '1'
+const hasCompletedOnboarding = () => {
+  const localDone = localStorage.getItem(onboardingStorageKey.value) === '1'
+  const serverDone = Boolean(user.value?.onboarding_completed_at)
+  return localDone || serverDone
+}
 const markOnboardingDone = () => localStorage.setItem(onboardingStorageKey.value, '1')
+
+const syncOnboardingCompleteToServer = async () => {
+  try {
+    await axios.post('/api/profile/onboarding/complete')
+    if (user.value) {
+      user.value.onboarding_completed_at = new Date().toISOString()
+    }
+  } catch (error) {
+    console.warn('Failed to mark onboarding complete:', error)
+  }
+}
 
 const pageTitle = computed(() => {
   const item = dashboardMenu.find((entry) => route.path.startsWith(entry.to))
@@ -93,12 +109,19 @@ const nextQuizStep = () => {
 const dismissOnboarding = () => {
   markOnboardingDone()
   showOnboardingModal.value = false
+  syncOnboardingCompleteToServer()
 }
 
 const openHelpFromOnboarding = async () => {
   markOnboardingDone()
   showOnboardingModal.value = false
+  syncOnboardingCompleteToServer()
   await router.push('/dashboard/help')
+}
+
+const openOnboardingByRequest = () => {
+  quizStep.value = 0
+  showOnboardingModal.value = true
 }
 
 onMounted(() => {
@@ -106,6 +129,11 @@ onMounted(() => {
   if (!hasCompletedOnboarding()) {
     showOnboardingModal.value = true
   }
+  window.addEventListener('dashboard:open-onboarding', openOnboardingByRequest)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('dashboard:open-onboarding', openOnboardingByRequest)
 })
 </script>
 

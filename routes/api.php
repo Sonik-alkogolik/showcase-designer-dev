@@ -43,6 +43,8 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsurePasswordChangeComp
     // Telegram привязка
     Route::post('/profile/telegram/generate-token', [ProfileController::class, 'generateTelegramLinkToken']);
     Route::delete('/profile/telegram/unlink', [ProfileController::class, 'unlinkTelegram']);
+    Route::post('/profile/onboarding/complete', [ProfileController::class, 'completeOnboarding']);
+    Route::post('/profile/onboarding/reset', [ProfileController::class, 'resetOnboarding']);
     
     // Совместимость: старый маршрут /user
     Route::get('/user', function (Request $request) {

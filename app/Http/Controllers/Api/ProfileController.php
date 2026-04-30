@@ -39,7 +39,38 @@ class ProfileController extends Controller
             'telegram_id' => $user->telegram_id,
             'telegram_username' => $user->telegram_username,
             'telegram_linked_at' => $user->telegram_linked_at,
+            'onboarding_completed_at' => $user->onboarding_completed_at,
             'requires_password_change' => (bool) $user->must_change_password,
+        ]);
+    }
+
+    /**
+     * Отметить onboarding как завершенный.
+     */
+    public function completeOnboarding(Request $request)
+    {
+        $user = $request->user();
+        $user->onboarding_completed_at = now();
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'onboarding_completed_at' => $user->onboarding_completed_at,
+        ]);
+    }
+
+    /**
+     * Сбросить onboarding (позволить показать обучение снова).
+     */
+    public function resetOnboarding(Request $request)
+    {
+        $user = $request->user();
+        $user->onboarding_completed_at = null;
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'onboarding_completed_at' => null,
         ]);
     }
     

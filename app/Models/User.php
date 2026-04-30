@@ -40,6 +40,7 @@ class User extends Authenticatable
         'telegram_username',
         'telegram_avatar_url',
         'telegram_linked_at',
+        'onboarding_completed_at',
     ];
 
     /**
@@ -64,6 +65,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'must_change_password' => 'boolean',
             'telegram_linked_at' => 'datetime',
+            'onboarding_completed_at' => 'datetime',
         ];
     }
 

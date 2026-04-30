@@ -13,6 +13,7 @@
       <div class="intro-actions">
         <router-link class="action-btn primary" to="/profile">Открыть профиль</router-link>
         <a class="action-btn" href="/create-shop">Открыть create-shop</a>
+        <button class="action-btn" type="button" @click="restartOnboarding">Запустить onboarding снова</button>
       </div>
     </article>
 
@@ -51,7 +52,27 @@
   </section>
 </template>
 
-<script setup></script>
+<script setup>
+import axios from 'axios'
+import { useAuth } from '../../composables/useAuth'
+
+const { user } = useAuth()
+
+const restartOnboarding = async () => {
+  try {
+    await axios.post('/api/profile/onboarding/reset')
+  } catch (error) {
+    console.warn('Failed to reset onboarding on server:', error)
+  }
+
+  const userId = user.value?.id ? String(user.value.id) : 'guest'
+  if (userId) {
+    localStorage.removeItem(`dashboard_onboarding_done_${userId}`)
+  }
+
+  window.dispatchEvent(new Event('dashboard:open-onboarding'))
+}
+</script>
 
 <style scoped>
 .page {
