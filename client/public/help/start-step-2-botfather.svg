@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f6f7ff"/>
+      <stop offset="100%" stop-color="#e8eeff"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="700" fill="url(#bg2)"/>
+  <rect x="95" y="58" width="1010" height="584" rx="26" fill="#fff" stroke="#c8d8f6" stroke-width="3"/>
+  <rect x="140" y="110" width="430" height="478" rx="20" fill="#0d1c35"/>
+  <text x="170" y="160" font-size="30" font-family="Arial, sans-serif" fill="#8ac1ff">@BotFather</text>
+  <rect x="165" y="190" width="370" height="72" rx="12" fill="#1c3157"/>
+  <text x="190" y="236" font-size="24" font-family="Arial, sans-serif" fill="#dce9ff">/newbot</text>
+  <rect x="165" y="285" width="370" height="90" rx="12" fill="#1d5dd8"/>
+  <text x="190" y="338" font-size="22" font-family="Arial, sans-serif" fill="#fff">Send me the bot name</text>
+  <rect x="165" y="395" width="370" height="150" rx="12" fill="#1c3157"/>
+  <text x="190" y="438" font-size="20" font-family="Arial, sans-serif" fill="#cde0ff">Done! Use this token:</text>
+  <text x="190" y="474" font-size="20" font-family="Arial, sans-serif" fill="#8ee7ff">123456:ABCDEF_token_here</text>
+  <rect x="620" y="120" width="430" height="470" rx="20" fill="#f4f8ff" stroke="#d2e1fb"/>
+  <text x="650" y="175" font-size="34" font-family="Arial, sans-serif" fill="#204273" font-weight="700">Шаги в BotFather</text>
+  <text x="650" y="235" font-size="24" font-family="Arial, sans-serif" fill="#335b92">1. Откройте @BotFather</text>
+  <text x="650" y="280" font-size="24" font-family="Arial, sans-serif" fill="#335b92">2. Отправьте /newbot</text>
+  <text x="650" y="325" font-size="24" font-family="Arial, sans-serif" fill="#335b92">3. Укажите имя и username</text>
+  <text x="650" y="370" font-size="24" font-family="Arial, sans-serif" fill="#335b92">4. Скопируйте токен бота</text>
+  <rect x="650" y="420" width="350" height="120" rx="14" fill="#e6f1ff" stroke="#c4daf9"/>
+  <text x="675" y="470" font-size="20" font-family="Arial, sans-serif" fill="#2b4f84">Токен понадобится на</text>
+  <text x="675" y="500" font-size="20" font-family="Arial, sans-serif" fill="#2b4f84">этапе настройки магазина.</text>
+</svg>
+

@@ -1,5 +1,5 @@
 <template>
-  <div class="webapp-container">
+  <div class="webapp-container" :style="themeStyleVars">
     <div class="bg-grid"></div>
 
     <div v-if="currentView === 'catalog'" class="content panel-shell">
@@ -465,6 +465,26 @@ export default {
       if (ownerTelegramUsername.value && ownerName === ownerTelegramUsername.value) return "";
       return ownerName;
     });
+    const themeStyleVars = computed(() => {
+      const theme = shop.value?.theme_settings || {};
+      const fallback = {
+        background_start: "#070B18",
+        background_end: "#0D1326",
+        text_color: "#EFF6FF",
+        dots_color: "#38E8FF",
+      };
+      const pick = (key) => {
+        const value = String(theme?.[key] || "").trim().toUpperCase();
+        return /^#([A-F0-9]{6})$/.test(value) ? value : fallback[key];
+      };
+
+      return {
+        "--bg-0": pick("background_start"),
+        "--bg-1": pick("background_end"),
+        "--ink-0": pick("text_color"),
+        "--hero-dot-active": pick("dots_color"),
+      };
+    });
     const favoriteTotalItems = computed(() => favoriteItems.value.length);
     const cartTotalItems = computed(() => cartItems.value.reduce((sum, item) => sum + item.quantity, 0));
     const cartSubtotal = computed(() => cartItems.value.reduce((sum, item) => sum + ((parseFloat(item.price) || 0) * item.quantity), 0));
@@ -735,6 +755,7 @@ export default {
       loading,
       error,
       shop,
+      themeStyleVars,
       categories,
       selectedCategory,
       selectedCategoryLabel,
@@ -808,6 +829,7 @@ export default {
   --surface-soft: rgba(17, 29, 55, 0.72);
   --accent: #38e8ff;
   --accent-2: #41ffbf;
+  --hero-dot-active: #38e8ff;
   --bottom-nav-height: 72px;
 }
 
@@ -965,7 +987,7 @@ export default {
 .hero-slide-overlay p { margin: 4px 0 0; color: var(--accent-2); font-weight: 700; }
 .hero-dots { display: flex; justify-content: center; gap: 6px; margin-top: 8px; }
 .hero-dot { width: 8px; height: 8px; border-radius: 50%; border: 0; background: rgba(255,255,255,.3); }
-.hero-dot.active { background: var(--accent); }
+.hero-dot.active { background: var(--hero-dot-active); }
 
 .products-list { display: flex; flex-direction: column; gap: 10px; padding: 0 10px 12px; width: 100%; margin-bottom: 50px; }
 .product-card { width: 100%; max-width: none; margin: 0 auto; border-radius: 10px; background: #050b1d; border: 1px solid rgba(215, 229, 255, 0.65); padding: 12px; box-sizing: border-box; position: relative; animation: cardIn .3s ease both; animation-delay: var(--delay); }

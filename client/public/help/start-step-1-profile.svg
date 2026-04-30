@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#eef4ff"/>
+      <stop offset="100%" stop-color="#dfeaff"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="700" fill="url(#bg)"/>
+  <rect x="140" y="70" width="920" height="560" rx="28" fill="#ffffff" stroke="#bfd2f3" stroke-width="3"/>
+  <text x="190" y="140" font-size="42" font-family="Arial, sans-serif" fill="#1f3d6a" font-weight="700">Профиль пользователя</text>
+  <circle cx="230" cy="235" r="42" fill="#cfe0ff"/>
+  <rect x="300" y="210" width="310" height="22" rx="11" fill="#d9e6ff"/>
+  <rect x="300" y="245" width="240" height="20" rx="10" fill="#e5eeff"/>
+  <rect x="190" y="310" width="420" height="78" rx="14" fill="#f6f9ff" stroke="#d6e3ff"/>
+  <text x="215" y="350" font-size="28" font-family="Arial, sans-serif" fill="#2f4e7d">Telegram не привязан</text>
+  <rect x="190" y="428" width="420" height="92" rx="14" fill="#2563eb"/>
+  <text x="250" y="485" font-size="34" font-family="Arial, sans-serif" fill="#ffffff" font-weight="700">Привязать Telegram</text>
+  <rect x="680" y="188" width="310" height="300" rx="16" fill="#f3f8ff" stroke="#cfddf5"/>
+  <text x="715" y="240" font-size="30" font-family="Arial, sans-serif" fill="#2d4f84" font-weight="700">Что сделать</text>
+  <text x="715" y="290" font-size="24" font-family="Arial, sans-serif" fill="#3b5f95">1. Нажмите кнопку</text>
+  <text x="715" y="330" font-size="24" font-family="Arial, sans-serif" fill="#3b5f95">2. Откройте Telegram</text>
+  <text x="715" y="370" font-size="24" font-family="Arial, sans-serif" fill="#3b5f95">3. Подтвердите связь</text>
+  <text x="715" y="455" font-size="20" font-family="Arial, sans-serif" fill="#6686b7">После этого бот можно</text>
+  <text x="715" y="485" font-size="20" font-family="Arial, sans-serif" fill="#6686b7">привязывать к магазину</text>
+</svg>
+

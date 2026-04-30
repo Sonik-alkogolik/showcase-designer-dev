@@ -19,10 +19,12 @@ class Shop extends Model
         'delivery_name',
         'delivery_price',
         'webhook_url',
+        'theme_settings',
     ];
 
     protected $casts = [
         'delivery_price' => 'decimal:2',
+        'theme_settings' => 'array',
     ];
 
     protected static function booted(): void

@@ -56,6 +56,11 @@ class ShopController extends Controller
             'delivery_name' => 'required|string|max:255',
             'delivery_price' => 'required|numeric|min:0',
             'webhook_url' => 'nullable|url|max:2048',
+            'theme_settings' => 'nullable|array',
+            'theme_settings.background_start' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.background_end' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.text_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.dots_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
         ]);
 
         if ($validator->fails()) {
@@ -86,6 +91,7 @@ class ShopController extends Controller
             'delivery_name' => $request->delivery_name,
             'delivery_price' => $request->delivery_price,
             'webhook_url' => $request->webhook_url,
+            'theme_settings' => $this->normalizeThemeSettings($request->input('theme_settings')),
         ]);
 
         return response()->json([
@@ -110,6 +116,7 @@ class ShopController extends Controller
         // Не показываем токен в ответе
         $shopData = $shop->toArray();
         $shopData['has_bot_token'] = ! empty($shop->getRawOriginal('bot_token'));
+        $shopData['theme_settings'] = $this->normalizeThemeSettings($shop->theme_settings);
         unset($shopData['bot_token']);
 
         return response()->json([
@@ -149,6 +156,11 @@ class ShopController extends Controller
             'delivery_name' => 'sometimes|string|max:255',
             'delivery_price' => 'sometimes|numeric|min:0',
             'webhook_url' => 'nullable|url|max:2048',
+            'theme_settings' => 'nullable|array',
+            'theme_settings.background_start' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.background_end' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.text_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.dots_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
         ]);
 
         if ($validator->fails()) {
@@ -176,6 +188,10 @@ class ShopController extends Controller
                     ], 422);
                 }
             }
+        }
+
+        if (array_key_exists('theme_settings', $payload)) {
+            $payload['theme_settings'] = $this->normalizeThemeSettings($payload['theme_settings']);
         }
 
         $shop->update($payload);
@@ -281,6 +297,7 @@ class ShopController extends Controller
                 'delivery_price' => $shop->delivery_price,
                 'manager_telegram_username' => $managerUsername,
                 'manager_telegram_url' => $managerUsername ? 'https://t.me/' . $managerUsername : null,
+                'theme_settings' => $this->normalizeThemeSettings($shop->theme_settings),
                 'owner_profile' => [
                     'name' => $owner?->name,
                     'email' => $owner?->email,
@@ -290,5 +307,29 @@ class ShopController extends Controller
                 ],
             ]
         ]);
+    }
+
+    private function normalizeThemeSettings(mixed $themeSettings): array
+    {
+        $defaults = [
+            'background_start' => '#070B18',
+            'background_end' => '#0D1326',
+            'text_color' => '#EFF6FF',
+            'dots_color' => '#38E8FF',
+        ];
+
+        if (! is_array($themeSettings)) {
+            return $defaults;
+        }
+
+        $normalized = $defaults;
+        foreach ($defaults as $key => $defaultValue) {
+            $candidate = strtoupper(trim((string) ($themeSettings[$key] ?? '')));
+            if (preg_match('/^#([A-F0-9]{6})$/', $candidate) === 1) {
+                $normalized[$key] = $candidate;
+            }
+        }
+
+        return $normalized;
     }
 }

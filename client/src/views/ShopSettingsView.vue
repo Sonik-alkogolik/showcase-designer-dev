@@ -141,6 +141,32 @@
         <span v-if="errors.webhook_url" class="error-message">{{ errors.webhook_url }}</span>
       </div>
 
+      <div class="theme-card">
+        <div class="theme-card-head">
+          <h3>Тема mini-app</h3>
+          <button type="button" class="btn-secondary" @click="resetTheme">Сбросить по умолчанию</button>
+        </div>
+        <p class="theme-note">Настройте фон главного контейнера, цвет текста и dots слайдера.</p>
+        <div class="theme-grid">
+          <label class="color-field">
+            <span>Фон (начало)</span>
+            <input v-model="form.theme_settings.background_start" type="color">
+          </label>
+          <label class="color-field">
+            <span>Фон (конец)</span>
+            <input v-model="form.theme_settings.background_end" type="color">
+          </label>
+          <label class="color-field">
+            <span>Текст</span>
+            <input v-model="form.theme_settings.text_color" type="color">
+          </label>
+          <label class="color-field">
+            <span>Dots слайдера</span>
+            <input v-model="form.theme_settings.dots_color" type="color">
+          </label>
+        </div>
+      </div>
+
       <div class="form-actions">
         <button type="submit" class="btn-primary" :disabled="loading || !isFormValid">
           {{ loading ? 'Сохранение...' : 'Сохранить' }}
@@ -164,6 +190,12 @@ import { useRoute } from 'vue-router'
 import axios from 'axios'
 
 const BOT_TOKEN_MASK = '********'
+const DEFAULT_THEME = {
+  background_start: '#070B18',
+  background_end: '#0D1326',
+  text_color: '#EFF6FF',
+  dots_color: '#38E8FF',
+}
 
 export default {
   name: 'ShopSettingsView',
@@ -186,7 +218,8 @@ export default {
       delivery_price: 0,
       notification_chat_id: '',
       notification_username: '',
-      webhook_url: ''
+      webhook_url: '',
+      theme_settings: { ...DEFAULT_THEME },
     })
 
     const errors = reactive({
@@ -288,6 +321,10 @@ export default {
         form.notification_chat_id = shop.notification_chat_id || ''
         form.notification_username = shop.notification_username || ''
         form.webhook_url = shop.webhook_url || ''
+        form.theme_settings = {
+          ...DEFAULT_THEME,
+          ...(shop.theme_settings || {}),
+        }
         hasBotToken.value = Boolean(shop.has_bot_token)
         savedBotToken.value = ''
         form.bot_token = hasBotToken.value ? BOT_TOKEN_MASK : ''
@@ -382,6 +419,7 @@ export default {
 
       try {
         const payload = { ...form }
+        payload.theme_settings = { ...form.theme_settings }
         if (!form.bot_token || form.bot_token === BOT_TOKEN_MASK) {
           delete payload.bot_token
         }
@@ -411,6 +449,10 @@ export default {
       }
     }
 
+    const resetTheme = () => {
+      form.theme_settings = { ...DEFAULT_THEME }
+    }
+
     onMounted(loadShop)
 
     return {
@@ -428,6 +470,7 @@ export default {
       loadBotStatus,
       manualSetupSteps,
       copyWebAppUrl,
+      resetTheme,
       isFormValid,
       validateField,
       handleSubmit
@@ -579,6 +622,55 @@ input.error {
   gap: 0.55rem;
 }
 
+.theme-card {
+  margin-top: 0.4rem;
+  border: 1px solid rgba(173, 186, 255, 0.28);
+  border-radius: 12px;
+  padding: 0.9rem;
+  background: rgba(11, 18, 38, 0.38);
+}
+
+.theme-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.theme-card-head h3 {
+  margin: 0;
+  color: #deebff;
+  font-size: 1rem;
+}
+
+.theme-note {
+  margin: 0.45rem 0 0.7rem;
+  color: #c3d2ff;
+  font-size: 0.9rem;
+}
+
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.color-field {
+  display: grid;
+  gap: 0.35rem;
+  color: #deebff;
+  font-size: 0.9rem;
+}
+
+.color-field input[type="color"] {
+  width: 100%;
+  height: 40px;
+  border: 1px solid rgba(173, 186, 255, 0.35);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.2rem;
+}
+
 .form-actions {
   display: flex;
   gap: 0.8rem;
@@ -630,6 +722,10 @@ input.error {
 
 @media (max-width: 720px) {
   .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .theme-grid {
     grid-template-columns: 1fr;
   }
 }
