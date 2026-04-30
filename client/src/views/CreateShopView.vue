@@ -10,6 +10,13 @@
       <p v-if="limits.remaining === 0" class="text-danger">
         Вы достигли лимита магазинов для вашего тарифа
       </p>
+      <div v-if="limits.remaining === 0" class="limit-actions">
+        <router-link class="btn-primary" to="/plans">Выбрать тариф</router-link>
+        <router-link class="btn-secondary" to="/shops">Вернуться к магазинам</router-link>
+      </div>
+      <p v-if="limits.remaining === 0" class="redirect-hint">
+        Сейчас перенаправим на страницу тарифов...
+      </p>
     </div>
 
     <form @submit.prevent="handleSubmit" class="shop-form" v-if="limits?.remaining > 0">
@@ -169,6 +176,7 @@ export default {
     const error = ref('')
     const limits = ref(null)
     const botSetup = ref(null)
+    const limitRedirected = ref(false)
 
     const form = reactive({
       name: '',
@@ -221,6 +229,13 @@ export default {
             total: 0,
             remaining: 0
           }
+        }
+
+        if (limits.value?.remaining === 0 && !limitRedirected.value) {
+          limitRedirected.value = true
+          setTimeout(() => {
+            router.replace('/plans')
+          }, 1200)
         }
       } catch (err) {
         console.error('Ошибка загрузки лимитов:', err)
@@ -408,6 +423,27 @@ h1 {
   color: #ff98a5;
   font-weight: 600;
   margin-top: 0.5rem;
+}
+
+.limit-actions {
+  margin-top: 0.75rem;
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.limit-actions .btn-primary,
+.limit-actions .btn-secondary {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.redirect-hint {
+  margin: 0.55rem 0 0;
+  color: #ffd7b0;
+  font-size: 0.9rem;
 }
 
 .shop-form {
