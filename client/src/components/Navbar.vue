@@ -25,6 +25,10 @@
         <router-link to="/profile" class="nav-link" v-if="isAuthenticated">
           Профиль
         </router-link>
+
+        <router-link to="/dashboard/help" class="nav-link" v-if="isAuthenticated">
+          Как начать?
+        </router-link>
         
         <div class="auth-buttons" v-if="!isAuthenticated">
           <router-link to="/login" class="btn btn-outline">
