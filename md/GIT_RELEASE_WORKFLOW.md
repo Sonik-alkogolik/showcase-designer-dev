@@ -28,25 +28,53 @@
 
 ## Обновление production сервера
 
-После `git push prod main` на сервере в директории проекта выполнить:
+После `git push prod main` выполните на сервере полный цикл ниже (строго по шагам):
 
 ```bash
+# 0) перейти в проект и проверить текущую ветку/состояние
+cd /var/www/showcase-designer
+pwd
+git status --short --branch
+
+# 1) подтянуть изменения (fast-forward only)
 cd /var/www/showcase-designer
 git pull --ff-only origin main
 
+# 2) установить/обновить backend зависимости (если менялся composer.lock)
+cd /var/www/showcase-designer
+composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader
+
+# 3) применить миграции (обязательно, если в релизе есть database/migrations)
+cd /var/www/showcase-designer
+php artisan migrate --force
+
+# 4) собрать frontend
 cd /var/www/showcase-designer/client
+npm ci
 npm run build
 
+# 5) опубликовать собранный frontend в public
 cd /var/www/showcase-designer
 rm -f public/index.html
 rm -rf public/assets
 cp client/dist/index.html public/
 cp -r client/dist/assets public/
+
+# 6) очистить кэши Laravel и прогреть рабочие
+cd /var/www/showcase-designer
+php artisan optimize:clear
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+
+# 7) быстрые проверки после релиза
+cd /var/www/showcase-designer
+php artisan about
+php artisan queue:restart
 ```
 
-Дополнительно по необходимости:
-- `php artisan migrate --force` (если есть миграции)
-- `php artisan optimize:clear`
+Если `npm ci` недоступен из-за lock-файла/окружения, используйте:
+- `cd /var/www/showcase-designer/client && npm install && npm run build`
 
 ## Минимальные проверки перед `git push prod main`
 
