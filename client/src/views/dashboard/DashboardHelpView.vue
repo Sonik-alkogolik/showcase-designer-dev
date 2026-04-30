@@ -23,7 +23,7 @@
           <h3>Привяжите Telegram в профиле</h3>
         </div>
         <p>Откройте профиль, нажмите «Привязать Telegram» и подтвердите связь аккаунта.</p>
-        <img src="/help/start-step-1-profile.svg" alt="Привязка Telegram в профиле" loading="lazy">
+        <img src="/help/start-step-1-profile.jpg" alt="Привязка Telegram в профиле" loading="lazy">
       </article>
 
       <article class="step-card">
@@ -32,7 +32,7 @@
           <h3>Создайте бота через BotFather</h3>
         </div>
         <p>В BotFather выполните <code>/newbot</code>, задайте имя и получите токен формата <code>123:ABC</code>.</p>
-        <img src="/help/start-step-2-botfather.svg" alt="Создание бота в BotFather" loading="lazy">
+        <img src="/help/start-step-2-botfather.jpg" alt="Создание бота в BotFather" loading="lazy">
       </article>
 
       <article class="step-card">
@@ -41,7 +41,7 @@
           <h3>Создайте магазин и подключите бота</h3>
         </div>
         <p>Перейдите на <code>https://e-tgo.ru/create-shop</code>, создайте магазин и вставьте токен в настройки магазина.</p>
-        <img src="/help/start-step-3-shop.svg" alt="Создание магазина и подключение бота" loading="lazy">
+        <img src="/help/start-step-3-shop.jpg" alt="Создание магазина и подключение бота" loading="lazy">
       </article>
     </div>
   </section>
@@ -159,3 +159,4 @@
   }
 }
 </style>
+
