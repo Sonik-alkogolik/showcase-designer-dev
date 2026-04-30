@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#eef4ff"/>
+      <stop offset="100%" stop-color="#dfe9ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="720" fill="url(#bg)"/>
+  <rect x="95" y="52" width="1010" height="616" rx="24" fill="#ffffff" stroke="#c8d8f6" stroke-width="3"/>
+  <rect x="95" y="52" width="1010" height="62" rx="24" fill="#f5f8ff"/>
+  <text x="140" y="92" font-size="28" font-family="Arial, sans-serif" fill="#33578c" font-weight="700">Профиль</text>
+
+  <circle cx="210" cy="198" r="48" fill="#d6e4ff"/>
+  <rect x="285" y="168" width="320" height="24" rx="12" fill="#d8e5ff"/>
+  <rect x="285" y="204" width="250" height="18" rx="9" fill="#e5eeff"/>
+
+  <rect x="145" y="272" width="500" height="96" rx="14" fill="#f8fbff" stroke="#d4e2f9"/>
+  <text x="175" y="328" font-size="28" font-family="Arial, sans-serif" fill="#2f4f83">Telegram не привязан</text>
+
+  <rect x="145" y="400" width="500" height="104" rx="14" fill="#2b64e5"/>
+  <text x="228" y="463" font-size="35" font-family="Arial, sans-serif" fill="#ffffff" font-weight="700">Привязать Telegram</text>
+
+  <rect x="700" y="152" width="360" height="392" rx="16" fill="#f4f8ff" stroke="#d4e2fb"/>
+  <text x="735" y="210" font-size="32" font-family="Arial, sans-serif" fill="#2e4d80" font-weight="700">Что сделать</text>
+  <text x="735" y="272" font-size="24" font-family="Arial, sans-serif" fill="#3f6298">1. Нажать кнопку</text>
+  <text x="735" y="316" font-size="24" font-family="Arial, sans-serif" fill="#3f6298">2. Открыть Telegram</text>
+  <text x="735" y="360" font-size="24" font-family="Arial, sans-serif" fill="#3f6298">3. Подтвердить привязку</text>
+  <rect x="735" y="408" width="285" height="106" rx="12" fill="#e8f0ff" stroke="#c8dbf9"/>
+  <text x="754" y="456" font-size="20" font-family="Arial, sans-serif" fill="#3f6298">После этого можно</text>
+  <text x="754" y="486" font-size="20" font-family="Arial, sans-serif" fill="#3f6298">подключать бота</text>
+</svg>
+

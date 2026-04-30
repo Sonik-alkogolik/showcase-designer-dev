@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f2f6ff"/>
+      <stop offset="100%" stop-color="#e5edff"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="720" fill="url(#bg2)"/>
+  <rect x="90" y="52" width="1020" height="616" rx="24" fill="#fff" stroke="#c7d8f6" stroke-width="3"/>
+
+  <rect x="132" y="106" width="455" height="520" rx="22" fill="#0d1b35"/>
+  <rect x="132" y="106" width="455" height="62" rx="22" fill="#13284c"/>
+  <text x="168" y="146" font-size="28" font-family="Arial, sans-serif" fill="#97c7ff">@BotFather</text>
+
+  <rect x="162" y="188" width="395" height="72" rx="12" fill="#1a3158"/>
+  <text x="188" y="235" font-size="27" font-family="Arial, sans-serif" fill="#dbe8ff">/newbot</text>
+
+  <rect x="162" y="280" width="395" height="86" rx="12" fill="#1d5fdb"/>
+  <text x="188" y="328" font-size="22" font-family="Arial, sans-serif" fill="#fff">Send me the bot name</text>
+
+  <rect x="162" y="385" width="395" height="98" rx="12" fill="#1a3158"/>
+  <text x="188" y="430" font-size="22" font-family="Arial, sans-serif" fill="#d6e5ff">Now send username:</text>
+  <text x="188" y="463" font-size="22" font-family="Arial, sans-serif" fill="#96bdff">my_shop_test_bot</text>
+
+  <rect x="162" y="500" width="395" height="108" rx="12" fill="#1d5fdb"/>
+  <text x="188" y="545" font-size="20" font-family="Arial, sans-serif" fill="#fff">Use this token:</text>
+  <text x="188" y="577" font-size="20" font-family="Arial, sans-serif" fill="#b8f3ff">123456789:AA....</text>
+
+  <rect x="635" y="106" width="430" height="520" rx="22" fill="#f5f9ff" stroke="#d4e3fb"/>
+  <text x="666" y="170" font-size="33" font-family="Arial, sans-serif" fill="#23497f" font-weight="700">Пошагово</text>
+  <text x="666" y="238" font-size="24" font-family="Arial, sans-serif" fill="#395f97">1. Откройте @BotFather</text>
+  <text x="666" y="282" font-size="24" font-family="Arial, sans-serif" fill="#395f97">2. Нажмите /start</text>
+  <text x="666" y="326" font-size="24" font-family="Arial, sans-serif" fill="#395f97">3. Выполните /newbot</text>
+  <text x="666" y="370" font-size="24" font-family="Arial, sans-serif" fill="#395f97">4. Укажите имя и username</text>
+  <text x="666" y="414" font-size="24" font-family="Arial, sans-serif" fill="#395f97">5. Скопируйте API token</text>
+  <rect x="666" y="456" width="350" height="118" rx="14" fill="#e8f1ff" stroke="#c8dcfa"/>
+  <text x="690" y="506" font-size="20" font-family="Arial, sans-serif" fill="#2e5389">Токен понадобится на шаге</text>
+  <text x="690" y="536" font-size="20" font-family="Arial, sans-serif" fill="#2e5389">создания магазина</text>
+</svg>
+
