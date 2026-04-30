@@ -31,7 +31,9 @@
           <span class="step-badge">Шаг 2</span>
           <h3>Создайте бота через BotFather</h3>
         </div>
-        <p>В BotFather выполните <code>/newbot</code>, задайте имя и получите токен формата <code>123:ABC</code>.</p>
+        <p>Откройте Telegram и найдите <code>@BotFather</code>. Нажмите <code>/start</code>, затем выполните <code>/newbot</code>.</p>
+        <p>BotFather попросит 2 значения: имя бота (например, <code>My Shop Bot</code>) и username бота (должен заканчиваться на <code>bot</code>, например <code>my_shop_test_bot</code>).</p>
+        <p>После создания BotFather отправит <strong>HTTP API token</strong> вида <code>123456789:AA...</code>. Скопируйте этот токен и никому его не передавайте.</p>
         <img src="/help/start-step-2-botfather.jpg" alt="Создание бота в BotFather" loading="lazy">
       </article>
 
@@ -40,7 +42,9 @@
           <span class="step-badge">Шаг 3</span>
           <h3>Создайте магазин и подключите бота</h3>
         </div>
-        <p>Перейдите на <code>https://e-tgo.ru/create-shop</code>, создайте магазин и вставьте токен в настройки магазина.</p>
+        <p>Перейдите на <code>https://e-tgo.ru/create-shop</code>, заполните поля магазина и вставьте токен в поле <code>Токен Telegram бота</code>.</p>
+        <p>После сохранения откройте настройки магазина и нажмите <strong>Подключить бота</strong>. Статус должен стать <strong>Бот готов</strong>.</p>
+        <p>Если токен неверный, подключение не пройдет: вернитесь в <code>@BotFather</code>, откройте <code>/mybots</code> и проверьте токен через <code>API Token</code>.</p>
         <img src="/help/start-step-3-shop.jpg" alt="Создание магазина и подключение бота" loading="lazy">
       </article>
     </div>
