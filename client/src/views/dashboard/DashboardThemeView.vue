@@ -34,6 +34,26 @@
             <span>Dots слайдера</span>
             <input v-model="theme.dots_color" type="color">
           </label>
+          <label>
+            <span>Название магазина</span>
+            <input v-model="theme.shop_name_color" type="color">
+          </label>
+          <label>
+            <span>Поиск</span>
+            <input v-model="theme.search_color" type="color">
+          </label>
+          <label>
+            <span>Категории</span>
+            <input v-model="theme.categories_color" type="color">
+          </label>
+          <label>
+            <span>Футер (текст)</span>
+            <input v-model="theme.footer_text_color" type="color">
+          </label>
+          <label>
+            <span>Футер (фон)</span>
+            <input v-model="theme.footer_bg_color" type="color">
+          </label>
         </div>
 
         <div class="preview" :style="previewStyle">
@@ -50,6 +70,9 @@
         <div class="actions">
           <button class="btn-primary" type="submit" :disabled="saving">
             {{ saving ? 'Сохраняю...' : 'Сохранить тему' }}
+          </button>
+          <button class="btn-reset" type="button" :disabled="saving" @click="resetAndSaveTheme">
+            Сбросить тему
           </button>
         </div>
         <p v-if="message" class="message">{{ message }}</p>
@@ -70,12 +93,17 @@ const DEFAULT_THEME = {
   background_end: '#0D1326',
   text_color: '#EFF6FF',
   dots_color: '#38E8FF',
+  shop_name_color: '#EFF6FF',
+  search_color: '#EFF6FF',
+  categories_color: '#FFFFFF',
+  footer_text_color: '#9FB0D3',
+  footer_bg_color: '#0A0F1E',
 }
 
 const PRESETS = {
-  ocean: { background_start: '#070B18', background_end: '#0D3A66', text_color: '#EAF6FF', dots_color: '#46D8FF' },
-  forest: { background_start: '#0D1A12', background_end: '#1E4528', text_color: '#ECFFF0', dots_color: '#6DFF92' },
-  sunset: { background_start: '#2A0E15', background_end: '#7A2E2E', text_color: '#FFF2E8', dots_color: '#FFB067' },
+  ocean: { background_start: '#070B18', background_end: '#0D3A66', text_color: '#EAF6FF', dots_color: '#46D8FF', shop_name_color: '#EAF6FF', search_color: '#EAF6FF', categories_color: '#F1F8FF', footer_text_color: '#BBD7F6', footer_bg_color: '#0A1633' },
+  forest: { background_start: '#0D1A12', background_end: '#1E4528', text_color: '#ECFFF0', dots_color: '#6DFF92', shop_name_color: '#ECFFF0', search_color: '#ECFFF0', categories_color: '#E8FFE9', footer_text_color: '#B3DAB8', footer_bg_color: '#0D1F16' },
+  sunset: { background_start: '#2A0E15', background_end: '#7A2E2E', text_color: '#FFF2E8', dots_color: '#FFB067', shop_name_color: '#FFF2E8', search_color: '#FFF2E8', categories_color: '#FFEBDD', footer_text_color: '#F0C6AF', footer_bg_color: '#35151D' },
 }
 
 const loading = ref(false)
@@ -103,6 +131,10 @@ const loadTheme = async () => {
 
 const applyPreset = (key) => fillTheme(PRESETS[key] || DEFAULT_THEME)
 const resetTheme = () => fillTheme(DEFAULT_THEME)
+const resetAndSaveTheme = async () => {
+  fillTheme(DEFAULT_THEME)
+  await saveTheme()
+}
 
 const saveTheme = async () => {
   if (!selectedShopId.value) return
@@ -126,6 +158,11 @@ const previewStyle = computed(() => ({
   '--bg-end': theme.background_end,
   '--text-color': theme.text_color,
   '--dot-color': theme.dots_color,
+  '--shop-name-color': theme.shop_name_color,
+  '--search-color': theme.search_color,
+  '--categories-color': theme.categories_color,
+  '--footer-text-color': theme.footer_text_color,
+  '--footer-bg-color': theme.footer_bg_color,
 }))
 
 watch(selectedShopId, loadTheme, { immediate: true })
@@ -149,10 +186,12 @@ watch(selectedShopId, loadTheme, { immediate: true })
 .card { margin-top: 0.45rem; padding: 0.45rem; border-radius: 8px; background: rgba(255,255,255,.1); }
 .title,.price { margin: 0; }
 .price { margin-top: 0.22rem; font-weight: 700; }
+.actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .btn-primary { border: 0; border-radius: 10px; padding: 0.55rem 0.75rem; background: #2563eb; color: #fff; cursor: pointer; }
+.btn-reset { border: 1px solid #f2c5cb; border-radius: 10px; padding: 0.55rem 0.75rem; background: #fff4f5; color: #a03545; cursor: pointer; }
 .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-reset:disabled { opacity: 0.6; cursor: not-allowed; }
 .message { margin: 0; color: #166534; }
 .empty-box { border: 1px dashed #c8d3ea; border-radius: 12px; background: #fff; padding: 1rem; color: #546480; }
 @media (max-width: 760px) { .theme-grid { grid-template-columns: 1fr; } }
 </style>
-

@@ -472,6 +472,11 @@ export default {
         background_end: "#0D1326",
         text_color: "#EFF6FF",
         dots_color: "#38E8FF",
+        shop_name_color: "#EFF6FF",
+        search_color: "#EFF6FF",
+        categories_color: "#FFFFFF",
+        footer_text_color: "#9FB0D3",
+        footer_bg_color: "#0A0F1E",
       };
       const pick = (key) => {
         const value = String(theme?.[key] || "").trim().toUpperCase();
@@ -483,6 +488,11 @@ export default {
         "--bg-1": pick("background_end"),
         "--ink-0": pick("text_color"),
         "--hero-dot-active": pick("dots_color"),
+        "--shop-name-color": pick("shop_name_color"),
+        "--search-color": pick("search_color"),
+        "--categories-color": pick("categories_color"),
+        "--footer-text-color": pick("footer_text_color"),
+        "--footer-bg-color": pick("footer_bg_color"),
       };
     });
     const favoriteTotalItems = computed(() => favoriteItems.value.length);
@@ -872,8 +882,8 @@ export default {
 .shop-header-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 10px 4px; }
 .shop-title-line { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
 .brand-kicker { font-size: 0.72rem; color: var(--accent); letter-spacing: 0.09em; text-transform: uppercase; white-space: nowrap; }
-.shop-name { font-size: 1rem; font-weight: 700; color: var(--ink-0); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.search-toggle { border: 1px solid var(--line); background: rgba(255,255,255,.08); color:#fff; border-radius: 12px; width: 40px; height: 40px; font-size: 1rem; cursor: pointer; flex-shrink: 0; }
+.shop-name { font-size: 1rem; font-weight: 700; color: var(--shop-name-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.search-toggle { border: 1px solid var(--line); background: rgba(255,255,255,.08); color: var(--search-color); border-radius: 12px; width: 40px; height: 40px; font-size: 1rem; cursor: pointer; flex-shrink: 0; }
 .category-select-wrap {
   padding: 8px 10px 12px;
   position: relative;
@@ -885,7 +895,7 @@ export default {
   border-radius: 12px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  color: var(--categories-color);
   padding: 0 12px;
   display: flex;
   align-items: center;
@@ -912,7 +922,7 @@ export default {
   border: 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   background: transparent;
-  color: #fff;
+  color: var(--categories-color);
   text-align: left;
   padding: 10px 12px;
   cursor: pointer;
@@ -925,7 +935,7 @@ export default {
 
 .category-option.active {
   background: rgba(56, 232, 255, 0.15);
-  color: var(--accent);
+  color: var(--categories-color);
 }
 
 .category-sheet-backdrop {
@@ -1057,9 +1067,9 @@ export default {
 .profile-list { display: grid; gap: 8px; padding: 0 10px 12px; }
 .profile-item { width: 100%; padding: 12px; background: rgba(255,255,255,.12); color: #fff; border: 1px solid var(--line); }
 
-.bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; height: var(--bottom-nav-height); display: grid; grid-template-columns: repeat(2,1fr); align-items: center; gap: 4px; padding: 8px 10px; background: rgba(10,15,30,.96); border-top: 1px solid var(--line); backdrop-filter: blur(12px); z-index: 999; box-sizing: border-box; }
-.tab-btn { border: 0; background: none; color: #9fb0d3; font-size: .78rem; line-height: 1.2; padding: 4px; position: relative; cursor: pointer; }
-.tab-btn.active { color: var(--accent); }
+.bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; height: var(--bottom-nav-height); display: grid; grid-template-columns: repeat(2,1fr); align-items: center; gap: 4px; padding: 8px 10px; background: var(--footer-bg-color); border-top: 1px solid var(--line); backdrop-filter: blur(12px); z-index: 999; box-sizing: border-box; }
+.tab-btn { border: 0; background: none; color: var(--footer-text-color); font-size: .78rem; line-height: 1.2; padding: 4px; position: relative; cursor: pointer; }
+.tab-btn.active { color: var(--footer-text-color); font-weight: 700; }
 .tab-avatar { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
 .tab-favorites,
 .tab-cart { display: none; }
