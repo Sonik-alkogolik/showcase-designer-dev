@@ -56,6 +56,26 @@
                 <span>Футер (фон)</span>
                 <input v-model="theme.footer_bg_color" type="color">
               </label>
+              <label>
+                <span>Карточка (фон)</span>
+                <input v-model="theme.card_bg_color" type="color">
+              </label>
+              <label>
+                <span>Карточка (заголовок)</span>
+                <input v-model="theme.card_title_color" type="color">
+              </label>
+              <label>
+                <span>Карточка (цена)</span>
+                <input v-model="theme.card_price_color" type="color">
+              </label>
+              <label>
+                <span>Кнопка (фон)</span>
+                <input v-model="theme.card_button_bg_color" type="color">
+              </label>
+              <label>
+                <span>Кнопка (текст)</span>
+                <input v-model="theme.card_button_text_color" type="color">
+              </label>
             </div>
           </div>
 
@@ -90,6 +110,7 @@
             <div class="card">
               <p class="title">Карточка товара</p>
               <p class="price">1 290 ₽</p>
+              <button type="button" class="preview-add-btn">В корзину</button>
             </div>
 
             <div class="preview-footer">
@@ -130,12 +151,17 @@ const DEFAULT_THEME = {
   categories_color: '#FFFFFF',
   footer_text_color: '#9FB0D3',
   footer_bg_color: '#0A0F1E',
+  card_bg_color: '#050B1D',
+  card_title_color: '#EEF4FF',
+  card_price_color: '#4CAF50',
+  card_button_bg_color: '#38E8FF',
+  card_button_text_color: '#00151A',
 }
 
 const PRESETS = {
-  ocean: { background_start: '#070B18', background_end: '#0D3A66', text_color: '#EAF6FF', dots_color: '#46D8FF', shop_name_color: '#EAF6FF', search_color: '#EAF6FF', categories_color: '#F1F8FF', footer_text_color: '#BBD7F6', footer_bg_color: '#0A1633' },
-  forest: { background_start: '#0D1A12', background_end: '#1E4528', text_color: '#ECFFF0', dots_color: '#6DFF92', shop_name_color: '#ECFFF0', search_color: '#ECFFF0', categories_color: '#E8FFE9', footer_text_color: '#B3DAB8', footer_bg_color: '#0D1F16' },
-  sunset: { background_start: '#2A0E15', background_end: '#7A2E2E', text_color: '#FFF2E8', dots_color: '#FFB067', shop_name_color: '#FFF2E8', search_color: '#FFF2E8', categories_color: '#FFEBDD', footer_text_color: '#F0C6AF', footer_bg_color: '#35151D' },
+  ocean: { background_start: '#070B18', background_end: '#0D3A66', text_color: '#EAF6FF', dots_color: '#46D8FF', shop_name_color: '#EAF6FF', search_color: '#EAF6FF', categories_color: '#F1F8FF', footer_text_color: '#BBD7F6', footer_bg_color: '#0A1633', card_bg_color: '#071225', card_title_color: '#EAF6FF', card_price_color: '#67E8F9', card_button_bg_color: '#46D8FF', card_button_text_color: '#041320' },
+  forest: { background_start: '#0D1A12', background_end: '#1E4528', text_color: '#ECFFF0', dots_color: '#6DFF92', shop_name_color: '#ECFFF0', search_color: '#ECFFF0', categories_color: '#E8FFE9', footer_text_color: '#B3DAB8', footer_bg_color: '#0D1F16', card_bg_color: '#102418', card_title_color: '#ECFFF0', card_price_color: '#7BFFA6', card_button_bg_color: '#6DFF92', card_button_text_color: '#0A1B11' },
+  sunset: { background_start: '#2A0E15', background_end: '#7A2E2E', text_color: '#FFF2E8', dots_color: '#FFB067', shop_name_color: '#FFF2E8', search_color: '#FFF2E8', categories_color: '#FFEBDD', footer_text_color: '#F0C6AF', footer_bg_color: '#35151D', card_bg_color: '#3A1A22', card_title_color: '#FFF2E8', card_price_color: '#FFC08A', card_button_bg_color: '#FFB067', card_button_text_color: '#2D120B' },
 }
 
 const loading = ref(false)
@@ -195,6 +221,11 @@ const previewStyle = computed(() => ({
   '--categories-color': theme.categories_color,
   '--footer-text-color': theme.footer_text_color,
   '--footer-bg-color': theme.footer_bg_color,
+  '--card-bg-color': theme.card_bg_color,
+  '--card-title-color': theme.card_title_color,
+  '--card-price-color': theme.card_price_color,
+  '--card-button-bg-color': theme.card_button_bg_color,
+  '--card-button-text-color': theme.card_button_text_color,
 }))
 
 watch(selectedShopId, loadTheme, { immediate: true })
@@ -228,9 +259,11 @@ watch(selectedShopId, loadTheme, { immediate: true })
 .preview-dots { display: flex; justify-content: center; gap: 0.3rem; margin-top: 0.45rem; }
 .preview-dot { width: 8px; height: 8px; border-radius: 999px; background: rgba(255,255,255,.3); }
 .preview-dot.active { background: var(--dot-color); }
-.card { margin-top: 0.5rem; padding: 0.45rem; border-radius: 8px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.1); }
+.card { margin-top: 0.5rem; padding: 0.45rem; border-radius: 8px; background: var(--card-bg-color); border: 1px solid rgba(255,255,255,.1); }
 .title,.price { margin: 0; }
-.price { margin-top: 0.22rem; font-weight: 700; }
+.title { color: var(--card-title-color); }
+.price { margin-top: 0.22rem; font-weight: 700; color: var(--card-price-color); }
+.preview-add-btn { margin-top: 0.45rem; width: 100%; border: 0; border-radius: 8px; min-height: 32px; background: var(--card-button-bg-color); color: var(--card-button-text-color); font-weight: 700; }
 .preview-footer { margin-top: 0.55rem; border-top: 1px solid rgba(255,255,255,.14); background: var(--footer-bg-color); color: var(--footer-text-color); border-radius: 8px; height: 34px; display: flex; align-items: center; justify-content: space-around; font-size: 0.76rem; font-weight: 600; }
 .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .btn-primary { border: 0; border-radius: 10px; padding: 0.55rem 0.75rem; background: #2563eb; color: #fff; cursor: pointer; }

@@ -477,6 +477,11 @@ export default {
         categories_color: "#FFFFFF",
         footer_text_color: "#9FB0D3",
         footer_bg_color: "#0A0F1E",
+        card_bg_color: "#050B1D",
+        card_title_color: "#EEF4FF",
+        card_price_color: "#4CAF50",
+        card_button_bg_color: "#38E8FF",
+        card_button_text_color: "#00151A",
       };
       const pick = (key) => {
         const value = String(theme?.[key] || "").trim().toUpperCase();
@@ -493,6 +498,11 @@ export default {
         "--categories-color": pick("categories_color"),
         "--footer-text-color": pick("footer_text_color"),
         "--footer-bg-color": pick("footer_bg_color"),
+        "--card-bg-color": pick("card_bg_color"),
+        "--card-title-color": pick("card_title_color"),
+        "--card-price-color": pick("card_price_color"),
+        "--card-button-bg-color": pick("card_button_bg_color"),
+        "--card-button-text-color": pick("card_button_text_color"),
       };
     });
     const favoriteTotalItems = computed(() => favoriteItems.value.length);
@@ -1000,15 +1010,15 @@ export default {
 .hero-dot.active { background: var(--hero-dot-active); }
 
 .products-list { display: flex; flex-direction: column; gap: 10px; padding: 0 10px 12px; width: 100%; margin-bottom: 50px; }
-.product-card { width: 100%; max-width: none; margin: 0 auto; border-radius: 10px; background: #050b1d; border: 1px solid rgba(215, 229, 255, 0.65); padding: 12px; box-sizing: border-box; position: relative; animation: cardIn .3s ease both; animation-delay: var(--delay); }
+.product-card { width: 100%; max-width: none; margin: 0 auto; border-radius: 10px; background: var(--card-bg-color); border: 1px solid rgba(215, 229, 255, 0.65); padding: 12px; box-sizing: border-box; position: relative; animation: cardIn .3s ease both; animation-delay: var(--delay); }
 @keyframes cardIn { from { opacity:0; transform: translateY(6px);} to { opacity:1; transform: translateY(0);} }
 .fav-btn { position: absolute; top: 8px; right: 8px; border: 0; background: rgba(255,255,255,.88); border-radius: 8px; width: 30px; height: 30px; cursor: pointer; }
 .fav-btn.active { color: #ff4d6d; }
 .product-image { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 8px; }
 .product-image img { width: 100%; height: 180px; object-fit: cover; display:block; }
 .product-info { display: flex; flex-direction: column; gap: 6px; }
-.product-info h3 { margin: 0 0 4px; padding-right: 38px; font-size: 1.14rem; line-height: 1.3; color: #eef4ff; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-word; overflow-wrap: anywhere; }
-.price { margin: 0 0 6px; font-size: 2rem; color: #4CAF50; font-weight: 700; }
+.product-info h3 { margin: 0 0 4px; padding-right: 38px; font-size: 1.14rem; line-height: 1.3; color: var(--card-title-color); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-word; overflow-wrap: anywhere; }
+.price { margin: 0 0 6px; font-size: 2rem; color: var(--card-price-color); font-weight: 700; }
 .product-description-wrapper { margin-bottom: 8px; }
 .description { margin: 0; color: #c7d7ef; font-size: .96rem; line-height: 1.45; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; word-break: break-word; }
 .description.expanded { display: block; overflow: visible; }
@@ -1022,7 +1032,7 @@ export default {
 .continue-shopping,
 .submit-order,
 .profile-item { border: 0; border-radius: 12px; cursor: pointer; }
-.add-to-cart { width: 100%; min-height: 42px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 10px; background: linear-gradient(120deg, #38e8ff, #41ffbf); color: #00151a; font-weight: 700; }
+.add-to-cart { width: 100%; min-height: 42px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 10px; background: var(--card-button-bg-color); color: var(--card-button-text-color); font-weight: 700; }
 .add-to-cart:disabled { background: rgba(255,255,255,.2); color: rgba(255,255,255,.6); }
 .show-more { width: 100%; padding: 12px; margin-top: 2px; margin-bottom: calc(var(--bottom-nav-height) + 8px); background: #f7f9fc; color: #2c3e50; border: 1px solid #d7e3f3; font-weight: 700; }
 
