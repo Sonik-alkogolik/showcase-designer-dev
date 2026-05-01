@@ -57,13 +57,41 @@
         </div>
 
         <div class="preview" :style="previewStyle">
-          <div class="preview-top">
-            <span>mini-app preview</span>
-            <div class="dot" />
+          <div class="preview-header">
+            <div class="preview-title-wrap">
+              <span class="preview-kicker">T-GO SHOP</span>
+              <span class="preview-shop-name">Название магазина</span>
+            </div>
+            <button type="button" class="preview-search">🔍</button>
           </div>
+
+          <div class="preview-category">
+            <span>Весь магазин</span>
+            <span>⌄</span>
+          </div>
+
+          <div class="preview-hero">
+            <div class="preview-hero-overlay">
+              <p class="preview-hero-name">Слайдер товара</p>
+              <p class="preview-hero-price">12 000 ₽</p>
+            </div>
+          </div>
+
+          <div class="preview-dots">
+            <span class="preview-dot" />
+            <span class="preview-dot active" />
+            <span class="preview-dot" />
+            <span class="preview-dot" />
+          </div>
+
           <div class="card">
             <p class="title">Карточка товара</p>
             <p class="price">1 290 ₽</p>
+          </div>
+
+          <div class="preview-footer">
+            <span>Главная</span>
+            <span>Профиль</span>
           </div>
         </div>
 
@@ -181,11 +209,23 @@ watch(selectedShopId, loadTheme, { immediate: true })
 .theme-grid span { color: #33517f; font-size: 0.86rem; }
 .theme-grid input[type='color'] { width: 100%; height: 36px; border: 1px solid #c8d7f2; border-radius: 8px; padding: 0.1rem; background: #fff; }
 .preview { border-radius: 10px; padding: 0.55rem; background: linear-gradient(140deg, var(--bg-start), var(--bg-end)); color: var(--text-color); border: 1px solid #d2dff6; }
-.preview-top { display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; }
-.dot { width: 11px; height: 11px; border-radius: 999px; background: var(--dot-color); }
-.card { margin-top: 0.45rem; padding: 0.45rem; border-radius: 8px; background: rgba(255,255,255,.1); }
+.preview-header { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.5rem; }
+.preview-title-wrap { min-width: 0; display: grid; gap: 0.1rem; }
+.preview-kicker { font-size: 0.63rem; letter-spacing: 0.08em; color: #7ed7ff; text-transform: uppercase; }
+.preview-shop-name { font-size: 0.95rem; font-weight: 700; color: var(--shop-name-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.preview-search { width: 34px; height: 34px; border-radius: 10px; border: 1px solid rgba(255,255,255,.25); background: rgba(255,255,255,.08); color: var(--search-color); cursor: default; }
+.preview-category { height: 36px; border-radius: 10px; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.08); color: var(--categories-color); display: flex; align-items: center; justify-content: space-between; padding: 0 0.55rem; font-size: 0.84rem; }
+.preview-hero { margin-top: 0.5rem; border-radius: 10px; min-height: 110px; border: 1px solid rgba(255,255,255,.16); background: linear-gradient(145deg, rgba(255,255,255,.22), rgba(255,255,255,.05)); position: relative; overflow: hidden; }
+.preview-hero-overlay { position: absolute; inset: auto 0 0; padding: 0.5rem; background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.55)); }
+.preview-hero-name { margin: 0; font-size: 0.83rem; font-weight: 700; }
+.preview-hero-price { margin: 0.1rem 0 0; font-size: 0.86rem; font-weight: 700; color: #8dffb4; }
+.preview-dots { display: flex; justify-content: center; gap: 0.3rem; margin-top: 0.45rem; }
+.preview-dot { width: 8px; height: 8px; border-radius: 999px; background: rgba(255,255,255,.3); }
+.preview-dot.active { background: var(--dot-color); }
+.card { margin-top: 0.5rem; padding: 0.45rem; border-radius: 8px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.1); }
 .title,.price { margin: 0; }
 .price { margin-top: 0.22rem; font-weight: 700; }
+.preview-footer { margin-top: 0.55rem; border-top: 1px solid rgba(255,255,255,.14); background: var(--footer-bg-color); color: var(--footer-text-color); border-radius: 8px; height: 34px; display: flex; align-items: center; justify-content: space-around; font-size: 0.76rem; font-weight: 600; }
 .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .btn-primary { border: 0; border-radius: 10px; padding: 0.55rem 0.75rem; background: #2563eb; color: #fff; cursor: pointer; }
 .btn-reset { border: 1px solid #f2c5cb; border-radius: 10px; padding: 0.55rem 0.75rem; background: #fff4f5; color: #a03545; cursor: pointer; }
