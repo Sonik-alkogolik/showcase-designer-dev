@@ -5,36 +5,48 @@
         <h1>t-go</h1>
       </router-link>
       
-      <div class="navbar-menu">
-        <router-link to="/shops" class="nav-link" v-if="isAuthenticated">
+      <button
+        class="burger-btn"
+        type="button"
+        :aria-expanded="isMenuOpen ? 'true' : 'false'"
+        aria-label="Открыть меню"
+        @click="toggleMenu"
+      >
+        <span />
+        <span />
+        <span />
+      </button>
+
+      <div class="navbar-menu" :class="{ open: isMenuOpen }">
+        <router-link to="/shops" class="nav-link" v-if="isAuthenticated" @click="closeMenu">
           Главная
         </router-link>
 
-        <router-link to="/dashboard" class="nav-link" v-if="isAuthenticated">
+        <router-link to="/dashboard" class="nav-link" v-if="isAuthenticated" @click="closeMenu">
           Панель
         </router-link>
 
-        <router-link to="/create-shop" class="nav-link" v-if="isAuthenticated">
+        <router-link to="/create-shop" class="nav-link" v-if="isAuthenticated" @click="closeMenu">
           Новый магазин
         </router-link>
         
-        <router-link to="/plans" class="nav-link" v-if="isAuthenticated">
+        <router-link to="/plans" class="nav-link" v-if="isAuthenticated" @click="closeMenu">
           Тарифы
         </router-link>
         
-        <router-link to="/profile" class="nav-link" v-if="isAuthenticated">
+        <router-link to="/profile" class="nav-link" v-if="isAuthenticated" @click="closeMenu">
           Профиль
         </router-link>
 
-        <router-link to="/dashboard/help" class="nav-link" v-if="isAuthenticated">
+        <router-link to="/dashboard/help" class="nav-link" v-if="isAuthenticated" @click="closeMenu">
           Как начать?
         </router-link>
         
         <div class="auth-buttons" v-if="!isAuthenticated">
-          <router-link to="/login" class="btn btn-outline">
+          <router-link to="/login" class="btn btn-outline" @click="closeMenu">
             Войти
           </router-link>
-          <router-link to="/register" class="btn btn-primary">
+          <router-link to="/register" class="btn btn-primary" @click="closeMenu">
             Регистрация
           </router-link>
         </div>
@@ -49,21 +61,30 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 
 const { token, logout } = useAuth()
 const router = useRouter()
+const route = useRoute()
+const isMenuOpen = ref(false)
 
 const isAuthenticated = computed(() => !!token.value)
+const toggleMenu = () => { isMenuOpen.value = !isMenuOpen.value }
+const closeMenu = () => { isMenuOpen.value = false }
 
 const handleLogout = async () => {
   if (confirm('Вы уверены, что хотите выйти?')) {
+    closeMenu()
     await logout()
     router.push('/login')
   }
 }
+
+watch(() => route.fullPath, () => {
+  closeMenu()
+})
 </script>
 
 <style scoped>
@@ -118,6 +139,27 @@ const handleLogout = async () => {
   display: flex;
   align-items: center;
   gap: 0.65rem;
+}
+
+.burger-btn {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(196, 204, 255, 0.34);
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex-direction: column;
+}
+
+.burger-btn span {
+  width: 16px;
+  height: 2px;
+  background: #dee3ff;
+  border-radius: 999px;
 }
 
 .nav-link {
@@ -181,17 +223,43 @@ const handleLogout = async () => {
 @media (max-width: 820px) {
   .navbar-container {
     width: calc(100% - 1rem);
+    position: relative;
+  }
+
+  .burger-btn {
+    display: inline-flex;
   }
 
   .navbar-menu {
-    gap: 0.4rem;
-    flex-wrap: wrap;
-    justify-content: flex-end;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: min(280px, calc(100vw - 1rem));
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.45rem;
+    padding: 0.6rem;
+    border: 1px solid rgba(171, 183, 255, 0.2);
+    border-radius: 12px;
+    background: rgba(9, 12, 22, 0.96);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(8px);
   }
 
-  .nav-link {
-    font-size: 0.9rem;
-    padding: 0.44rem 0.68rem;
+  .navbar-menu.open {
+    display: flex;
+  }
+
+  .nav-link,
+  .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .auth-buttons {
+    display: grid;
+    gap: 0.45rem;
   }
 }
 
