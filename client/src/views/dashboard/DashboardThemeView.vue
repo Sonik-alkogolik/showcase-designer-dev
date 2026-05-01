@@ -17,81 +17,85 @@
           <button type="button" class="preset-btn reset" @click="resetTheme">Сброс</button>
         </div>
 
-        <div class="theme-grid">
-          <label>
-            <span>Фон (начало)</span>
-            <input v-model="theme.background_start" type="color">
-          </label>
-          <label>
-            <span>Фон (конец)</span>
-            <input v-model="theme.background_end" type="color">
-          </label>
-          <label>
-            <span>Текст</span>
-            <input v-model="theme.text_color" type="color">
-          </label>
-          <label>
-            <span>Dots слайдера</span>
-            <input v-model="theme.dots_color" type="color">
-          </label>
-          <label>
-            <span>Название магазина</span>
-            <input v-model="theme.shop_name_color" type="color">
-          </label>
-          <label>
-            <span>Поиск</span>
-            <input v-model="theme.search_color" type="color">
-          </label>
-          <label>
-            <span>Категории</span>
-            <input v-model="theme.categories_color" type="color">
-          </label>
-          <label>
-            <span>Футер (текст)</span>
-            <input v-model="theme.footer_text_color" type="color">
-          </label>
-          <label>
-            <span>Футер (фон)</span>
-            <input v-model="theme.footer_bg_color" type="color">
-          </label>
-        </div>
-
-        <div class="preview" :style="previewStyle">
-          <div class="preview-header">
-            <div class="preview-title-wrap">
-              <span class="preview-kicker">T-GO SHOP</span>
-              <span class="preview-shop-name">Название магазина</span>
-            </div>
-            <button type="button" class="preview-search">🔍</button>
-          </div>
-
-          <div class="preview-category">
-            <span>Весь магазин</span>
-            <span>⌄</span>
-          </div>
-
-          <div class="preview-hero">
-            <div class="preview-hero-overlay">
-              <p class="preview-hero-name">Слайдер товара</p>
-              <p class="preview-hero-price">12 000 ₽</p>
+        <div class="theme-layout">
+          <div class="theme-controls">
+            <div class="theme-grid">
+              <label>
+                <span>Фон (начало)</span>
+                <input v-model="theme.background_start" type="color">
+              </label>
+              <label>
+                <span>Фон (конец)</span>
+                <input v-model="theme.background_end" type="color">
+              </label>
+              <label>
+                <span>Текст</span>
+                <input v-model="theme.text_color" type="color">
+              </label>
+              <label>
+                <span>Dots слайдера</span>
+                <input v-model="theme.dots_color" type="color">
+              </label>
+              <label>
+                <span>Название магазина</span>
+                <input v-model="theme.shop_name_color" type="color">
+              </label>
+              <label>
+                <span>Поиск</span>
+                <input v-model="theme.search_color" type="color">
+              </label>
+              <label>
+                <span>Категории</span>
+                <input v-model="theme.categories_color" type="color">
+              </label>
+              <label>
+                <span>Футер (текст)</span>
+                <input v-model="theme.footer_text_color" type="color">
+              </label>
+              <label>
+                <span>Футер (фон)</span>
+                <input v-model="theme.footer_bg_color" type="color">
+              </label>
             </div>
           </div>
 
-          <div class="preview-dots">
-            <span class="preview-dot" />
-            <span class="preview-dot active" />
-            <span class="preview-dot" />
-            <span class="preview-dot" />
-          </div>
+          <div class="preview" :style="previewStyle">
+            <div class="preview-header">
+              <div class="preview-title-wrap">
+                <span class="preview-kicker">T-GO SHOP</span>
+                <span class="preview-shop-name">Название магазина</span>
+              </div>
+              <button type="button" class="preview-search">🔍</button>
+            </div>
 
-          <div class="card">
-            <p class="title">Карточка товара</p>
-            <p class="price">1 290 ₽</p>
-          </div>
+            <div class="preview-category">
+              <span>Весь магазин</span>
+              <span>⌄</span>
+            </div>
 
-          <div class="preview-footer">
-            <span>Главная</span>
-            <span>Профиль</span>
+            <div class="preview-hero">
+              <div class="preview-hero-overlay">
+                <p class="preview-hero-name">Слайдер товара</p>
+                <p class="preview-hero-price">12 000 ₽</p>
+              </div>
+            </div>
+
+            <div class="preview-dots">
+              <span class="preview-dot" />
+              <span class="preview-dot active" />
+              <span class="preview-dot" />
+              <span class="preview-dot" />
+            </div>
+
+            <div class="card">
+              <p class="title">Карточка товара</p>
+              <p class="price">1 290 ₽</p>
+            </div>
+
+            <div class="preview-footer">
+              <span>Главная</span>
+              <span>Профиль</span>
+            </div>
           </div>
         </div>
 
@@ -204,6 +208,8 @@ watch(selectedShopId, loadTheme, { immediate: true })
 .preset-row { display: flex; gap: 0.45rem; flex-wrap: wrap; }
 .preset-btn { border: 1px solid #c7d7f2; background: #f2f7ff; color: #2f4f83; border-radius: 8px; padding: 0.28rem 0.58rem; cursor: pointer; }
 .preset-btn.reset { background: #fff5f5; border-color: #f4c7cc; color: #a23644; }
+.theme-layout { display: grid; grid-template-columns: 1fr 320px; gap: 0.8rem; align-items: start; }
+.theme-controls { min-width: 0; }
 .theme-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
 .theme-grid label { display: grid; gap: 0.2rem; }
 .theme-grid span { color: #33517f; font-size: 0.86rem; }
@@ -233,5 +239,8 @@ watch(selectedShopId, loadTheme, { immediate: true })
 .btn-reset:disabled { opacity: 0.6; cursor: not-allowed; }
 .message { margin: 0; color: #166534; }
 .empty-box { border: 1px dashed #c8d3ea; border-radius: 12px; background: #fff; padding: 1rem; color: #546480; }
+@media (max-width: 980px) {
+  .theme-layout { grid-template-columns: 1fr; }
+}
 @media (max-width: 760px) { .theme-grid { grid-template-columns: 1fr; } }
 </style>
