@@ -31,6 +31,11 @@
         <button type="button" class="reset-btn" @click="resetTheme">Сброс</button>
       </div>
       <p class="theme-hint">Фон, текст и dots для выбранного магазина.</p>
+      <div class="preset-row">
+        <button type="button" class="preset-btn" @click="applyPreset('ocean')">Ocean</button>
+        <button type="button" class="preset-btn" @click="applyPreset('forest')">Forest</button>
+        <button type="button" class="preset-btn" @click="applyPreset('sunset')">Sunset</button>
+      </div>
       <div class="theme-grid">
         <label>
           <span>Фон (начало)</span>
@@ -48,6 +53,16 @@
           <span>Dots</span>
           <input v-model="theme.dots_color" type="color">
         </label>
+      </div>
+      <div class="theme-preview" :style="previewStyle">
+        <div class="preview-top">
+          <span>mini-app preview</span>
+          <div class="preview-dot" />
+        </div>
+        <div class="preview-card">
+          <p class="preview-title">Карточка товара</p>
+          <p class="preview-price">1 290 ₽</p>
+        </div>
       </div>
       <button class="save-btn" type="button" :disabled="savingTheme" @click="saveTheme">
         {{ savingTheme ? 'Сохраняю...' : 'Сохранить тему' }}
@@ -88,9 +103,32 @@ defineEmits(['toggle-collapse'])
 const theme = reactive({ ...DEFAULT_THEME })
 const savingTheme = ref(false)
 const themeMessage = ref('')
+const previewStyle = ref({})
+
+const PRESETS = {
+  ocean: {
+    background_start: '#070B18',
+    background_end: '#0D3A66',
+    text_color: '#EAF6FF',
+    dots_color: '#46D8FF',
+  },
+  forest: {
+    background_start: '#0D1A12',
+    background_end: '#1E4528',
+    text_color: '#ECFFF0',
+    dots_color: '#6DFF92',
+  },
+  sunset: {
+    background_start: '#2A0E15',
+    background_end: '#7A2E2E',
+    text_color: '#FFF2E8',
+    dots_color: '#FFB067',
+  },
+}
 
 const fillTheme = (themeSettings) => {
   Object.assign(theme, DEFAULT_THEME, themeSettings || {})
+  syncPreview()
 }
 
 const loadTheme = async (shopId) => {
@@ -130,6 +168,19 @@ const resetTheme = () => {
   fillTheme(DEFAULT_THEME)
 }
 
+const applyPreset = (presetKey) => {
+  fillTheme(PRESETS[presetKey] || DEFAULT_THEME)
+}
+
+const syncPreview = () => {
+  previewStyle.value = {
+    '--preview-bg-start': theme.background_start,
+    '--preview-bg-end': theme.background_end,
+    '--preview-text': theme.text_color,
+    '--preview-dot': theme.dots_color,
+  }
+}
+
 watch(
   () => props.selectedShopId,
   (shopId) => {
@@ -138,6 +189,12 @@ watch(
     }
   },
   { immediate: true }
+)
+
+watch(
+  () => ({ ...theme }),
+  () => syncPreview(),
+  { deep: true }
 )
 </script>
 
@@ -214,6 +271,22 @@ watch(
   font-size: 0.78rem;
 }
 
+.preset-row {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.preset-btn {
+  border: 1px solid #c7d7f2;
+  background: #f2f7ff;
+  color: #2f4f83;
+  border-radius: 8px;
+  padding: 0.22rem 0.45rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
 .theme-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -237,6 +310,48 @@ watch(
   border-radius: 8px;
   padding: 0.1rem;
   background: #fff;
+}
+
+.theme-preview {
+  margin-top: 0.55rem;
+  border-radius: 10px;
+  padding: 0.5rem;
+  background: linear-gradient(140deg, var(--preview-bg-start, #070b18), var(--preview-bg-end, #0d1326));
+  color: var(--preview-text, #eff6ff);
+  border: 1px solid rgba(203, 218, 245, 0.48);
+}
+
+.preview-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  opacity: 0.92;
+}
+
+.preview-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--preview-dot, #38e8ff);
+}
+
+.preview-card {
+  margin-top: 0.42rem;
+  padding: 0.45rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.preview-title {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.preview-price {
+  margin: 0.22rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .save-btn {

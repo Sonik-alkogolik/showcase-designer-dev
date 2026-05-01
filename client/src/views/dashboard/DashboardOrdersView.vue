@@ -134,10 +134,11 @@ td {
   text-align: left;
   padding: 0.65rem 0.7rem;
   border-bottom: 1px solid #e5ecf8;
+  color: #1f2f47;
 }
 
 th {
-  color: #1f3150;
+  color: #132848;
   font-weight: 700;
 }
 
