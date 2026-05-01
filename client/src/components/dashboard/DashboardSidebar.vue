@@ -24,66 +24,11 @@
         </router-link>
       </section>
     </nav>
-
-    <section v-if="!collapsed && selectedShopId" class="theme-box">
-      <div class="theme-box-head">
-        <h4>Тема mini-app</h4>
-        <button type="button" class="reset-btn" @click="resetTheme">Сброс</button>
-      </div>
-      <p class="theme-hint">Фон, текст и dots для выбранного магазина.</p>
-      <div class="preset-row">
-        <button type="button" class="preset-btn" @click="applyPreset('ocean')">Ocean</button>
-        <button type="button" class="preset-btn" @click="applyPreset('forest')">Forest</button>
-        <button type="button" class="preset-btn" @click="applyPreset('sunset')">Sunset</button>
-      </div>
-      <div class="theme-grid">
-        <label>
-          <span>Фон (начало)</span>
-          <input v-model="theme.background_start" type="color">
-        </label>
-        <label>
-          <span>Фон (конец)</span>
-          <input v-model="theme.background_end" type="color">
-        </label>
-        <label>
-          <span>Текст</span>
-          <input v-model="theme.text_color" type="color">
-        </label>
-        <label>
-          <span>Dots</span>
-          <input v-model="theme.dots_color" type="color">
-        </label>
-      </div>
-      <div class="theme-preview" :style="previewStyle">
-        <div class="preview-top">
-          <span>mini-app preview</span>
-          <div class="preview-dot" />
-        </div>
-        <div class="preview-card">
-          <p class="preview-title">Карточка товара</p>
-          <p class="preview-price">1 290 ₽</p>
-        </div>
-      </div>
-      <button class="save-btn" type="button" :disabled="savingTheme" @click="saveTheme">
-        {{ savingTheme ? 'Сохраняю...' : 'Сохранить тему' }}
-      </button>
-      <p v-if="themeMessage" class="theme-message">{{ themeMessage }}</p>
-    </section>
   </aside>
 </template>
 
 <script setup>
-import { reactive, ref, watch } from 'vue'
-import axios from 'axios'
-
-const DEFAULT_THEME = {
-  background_start: '#070B18',
-  background_end: '#0D1326',
-  text_color: '#EFF6FF',
-  dots_color: '#38E8FF',
-}
-
-const props = defineProps({
+defineProps({
   groups: {
     type: Array,
     default: () => [],
@@ -92,110 +37,9 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
-  selectedShopId: {
-    type: [String, Number],
-    default: '',
-  },
 })
 
 defineEmits(['toggle-collapse'])
-
-const theme = reactive({ ...DEFAULT_THEME })
-const savingTheme = ref(false)
-const themeMessage = ref('')
-const previewStyle = ref({})
-
-const PRESETS = {
-  ocean: {
-    background_start: '#070B18',
-    background_end: '#0D3A66',
-    text_color: '#EAF6FF',
-    dots_color: '#46D8FF',
-  },
-  forest: {
-    background_start: '#0D1A12',
-    background_end: '#1E4528',
-    text_color: '#ECFFF0',
-    dots_color: '#6DFF92',
-  },
-  sunset: {
-    background_start: '#2A0E15',
-    background_end: '#7A2E2E',
-    text_color: '#FFF2E8',
-    dots_color: '#FFB067',
-  },
-}
-
-const fillTheme = (themeSettings) => {
-  Object.assign(theme, DEFAULT_THEME, themeSettings || {})
-  syncPreview()
-}
-
-const loadTheme = async (shopId) => {
-  if (!shopId) return
-  themeMessage.value = ''
-  try {
-    const response = await axios.get(`/api/shops/${shopId}`)
-    fillTheme(response.data?.shop?.theme_settings)
-  } catch (error) {
-    console.error('Failed to load shop theme in sidebar:', error)
-  }
-}
-
-const saveTheme = async () => {
-  if (!props.selectedShopId) return
-  savingTheme.value = true
-  themeMessage.value = ''
-  try {
-    await axios.patch(`/api/shops/${props.selectedShopId}`, {
-      theme_settings: {
-        background_start: theme.background_start,
-        background_end: theme.background_end,
-        text_color: theme.text_color,
-        dots_color: theme.dots_color,
-      },
-    })
-    themeMessage.value = 'Тема сохранена'
-  } catch (error) {
-    console.error('Failed to save shop theme in sidebar:', error)
-    themeMessage.value = 'Ошибка сохранения темы'
-  } finally {
-    savingTheme.value = false
-  }
-}
-
-const resetTheme = () => {
-  fillTheme(DEFAULT_THEME)
-}
-
-const applyPreset = (presetKey) => {
-  fillTheme(PRESETS[presetKey] || DEFAULT_THEME)
-}
-
-const syncPreview = () => {
-  previewStyle.value = {
-    '--preview-bg-start': theme.background_start,
-    '--preview-bg-end': theme.background_end,
-    '--preview-text': theme.text_color,
-    '--preview-dot': theme.dots_color,
-  }
-}
-
-watch(
-  () => props.selectedShopId,
-  (shopId) => {
-    if (shopId) {
-      loadTheme(shopId)
-    }
-  },
-  { immediate: true }
-)
-
-watch(
-  () => ({ ...theme }),
-  () => syncPreview(),
-  { deep: true }
-)
 </script>
 
 <style scoped>
@@ -234,148 +78,6 @@ watch(
   gap: 0.7rem;
 }
 
-.theme-box {
-  margin-top: 0.9rem;
-  border: 1px solid #d1ddf3;
-  border-radius: 12px;
-  background: #fff;
-  padding: 0.62rem;
-}
-
-.theme-box-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.4rem;
-}
-
-.theme-box-head h4 {
-  margin: 0;
-  color: #1f3e71;
-  font-size: 0.92rem;
-}
-
-.reset-btn {
-  border: 1px solid #c9d8f2;
-  border-radius: 8px;
-  background: #f2f7ff;
-  color: #2f4f83;
-  padding: 0.24rem 0.5rem;
-  cursor: pointer;
-  font-size: 0.8rem;
-}
-
-.theme-hint {
-  margin: 0.45rem 0;
-  color: #5c7193;
-  font-size: 0.78rem;
-}
-
-.preset-row {
-  display: flex;
-  gap: 0.35rem;
-  margin-bottom: 0.5rem;
-}
-
-.preset-btn {
-  border: 1px solid #c7d7f2;
-  background: #f2f7ff;
-  color: #2f4f83;
-  border-radius: 8px;
-  padding: 0.22rem 0.45rem;
-  cursor: pointer;
-  font-size: 0.75rem;
-}
-
-.theme-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.45rem;
-}
-
-.theme-grid label {
-  display: grid;
-  gap: 0.2rem;
-}
-
-.theme-grid span {
-  color: #33517f;
-  font-size: 0.76rem;
-}
-
-.theme-grid input[type='color'] {
-  width: 100%;
-  height: 30px;
-  border: 1px solid #c8d7f2;
-  border-radius: 8px;
-  padding: 0.1rem;
-  background: #fff;
-}
-
-.theme-preview {
-  margin-top: 0.55rem;
-  border-radius: 10px;
-  padding: 0.5rem;
-  background: linear-gradient(140deg, var(--preview-bg-start, #070b18), var(--preview-bg-end, #0d1326));
-  color: var(--preview-text, #eff6ff);
-  border: 1px solid rgba(203, 218, 245, 0.48);
-}
-
-.preview-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.72rem;
-  opacity: 0.92;
-}
-
-.preview-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: var(--preview-dot, #38e8ff);
-}
-
-.preview-card {
-  margin-top: 0.42rem;
-  padding: 0.45rem;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.preview-title {
-  margin: 0;
-  font-size: 0.8rem;
-}
-
-.preview-price {
-  margin: 0.22rem 0 0;
-  font-size: 0.78rem;
-  font-weight: 700;
-}
-
-.save-btn {
-  margin-top: 0.55rem;
-  width: 100%;
-  border: 0;
-  border-radius: 9px;
-  background: #2563eb;
-  color: #fff;
-  padding: 0.48rem 0.6rem;
-  cursor: pointer;
-  font-size: 0.84rem;
-}
-
-.save-btn:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-}
-
-.theme-message {
-  margin: 0.4rem 0 0;
-  color: #356a2f;
-  font-size: 0.78rem;
-}
 
 .menu-group {
   display: grid;
@@ -442,10 +144,6 @@ watch(
   .menu {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.45rem;
-  }
-
-  .theme-box {
-    display: none;
   }
 
   .menu-group {

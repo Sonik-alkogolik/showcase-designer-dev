@@ -3,7 +3,6 @@
     <DashboardSidebar
       :groups="dashboardMenuGroups"
       :collapsed="sidebarCollapsed"
-      :selected-shop-id="selectedShopId"
       @toggle-collapse="sidebarCollapsed = !sidebarCollapsed"
     />
 

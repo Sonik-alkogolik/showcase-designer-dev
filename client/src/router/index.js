@@ -60,6 +60,12 @@ const routes = [
         meta: { requiresAuth: true },
       },
       {
+        path: 'theme',
+        name: 'DashboardTheme',
+        component: () => import('../views/dashboard/DashboardThemeView.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
         path: 'help',
         name: 'DashboardHelp',
         component: () => import('../views/dashboard/DashboardHelpView.vue'),
