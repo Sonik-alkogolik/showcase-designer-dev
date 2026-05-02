@@ -13,13 +13,13 @@ use Illuminate\Validation\ValidationException;
 
 class ProductController extends Controller
 {
-    private function imageFieldRules(): array
+    private function imageFieldRules(?int $shopId = null): array
     {
         return [
             'nullable',
             'string',
             'max:2048',
-            function (string $attribute, mixed $value, \Closure $fail): void {
+            function (string $attribute, mixed $value, \Closure $fail) use ($shopId): void {
                 if ($value === null || $value === '') {
                     return;
                 }
@@ -29,11 +29,15 @@ class ProductController extends Controller
                     return;
                 }
 
-                if (str_starts_with($image, '/storage/')) {
+                if ($shopId !== null && str_starts_with($image, '/storage/products/shop-' . $shopId . '/')) {
                     return;
                 }
 
-                $fail('Поле image должно быть корректным URL или путём вида /storage/...');
+                if ($shopId !== null && str_starts_with($image, '/demo-images/shop-' . $shopId . '/')) {
+                    return;
+                }
+
+                $fail('Поле image должно быть корректным URL или путём вашего магазина: /storage/products/shop-{shopId}/... или /demo-images/shop-{shopId}/...');
             },
         ];
     }
@@ -61,13 +65,13 @@ class ProductController extends Controller
         }
     }
 
-    private function handleProductImageUpload(Request $request, ?string $existingImage = null): ?string
+    private function handleProductImageUpload(Request $request, int $shopId, ?string $existingImage = null): ?string
     {
         if (! $request->hasFile('image_file')) {
             return null;
         }
 
-        $path = $request->file('image_file')->store('products', 'public');
+        $path = $request->file('image_file')->store('products/shop-' . $shopId, 'public');
 
         if ($existingImage && str_starts_with($existingImage, '/storage/')) {
             $oldPath = ltrim(str_replace('/storage/', '', $existingImage), '/');
@@ -262,7 +266,7 @@ class ProductController extends Controller
             'category' => 'nullable|string|max:100', // Для обратной совместимости
             'in_stock' => 'boolean',
             'show_in_slider' => 'boolean',
-            'image' => $this->imageFieldRules(),
+            'image' => $this->imageFieldRules((int) $shop->id),
             'image_file' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:10240',
             'attributes' => 'nullable|array',
         ]);
@@ -288,7 +292,7 @@ class ProductController extends Controller
             'attributes' => $request->attributes,
         ];
 
-        $uploadedImageUrl = $this->handleProductImageUpload($request);
+        $uploadedImageUrl = $this->handleProductImageUpload($request, (int) $shop->id);
         if ($uploadedImageUrl) {
             $data['image'] = $uploadedImageUrl;
         }
@@ -349,7 +353,7 @@ class ProductController extends Controller
             'category' => 'nullable|string|max:100',
             'in_stock' => 'boolean',
             'show_in_slider' => 'boolean',
-            'image' => $this->imageFieldRules(),
+            'image' => $this->imageFieldRules((int) $shop->id),
             'image_file' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:10240',
             'attributes' => 'nullable|array',
         ]);
@@ -381,7 +385,7 @@ class ProductController extends Controller
             ]);
         }
 
-        $uploadedImageUrl = $this->handleProductImageUpload($request, $product->image);
+        $uploadedImageUrl = $this->handleProductImageUpload($request, (int) $shop->id, $product->image);
         if ($uploadedImageUrl) {
             $data['image'] = $uploadedImageUrl;
         }
