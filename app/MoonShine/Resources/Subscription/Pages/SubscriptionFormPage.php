@@ -13,6 +13,8 @@ use MoonShine\UI\Fields\Number;
 use MoonShine\UI\Fields\Date;
 use MoonShine\UI\Fields\Switcher;
 use MoonShine\UI\Fields\Text;
+use MoonShine\UI\Fields\File;
+use MoonShine\UI\Fields\Textarea;
 use MoonShine\UI\Components\Layout\Box;
 
 class SubscriptionFormPage extends FormPage
@@ -91,6 +93,19 @@ class SubscriptionFormPage extends FormPage
                 ->nullable(),
 
             Text::make('ID платежа YooKassa', 'yookassa_payment_id')
+                ->nullable(),
+
+            Date::make('Дата оплаты', 'payment_received_at')
+                ->withTime()
+                ->nullable(),
+
+            File::make('Чек оплаты (img/pdf)', 'payment_receipt_file')
+                ->disk(moonshineConfig()->getDisk())
+                ->dir('subscription-receipts')
+                ->allowedExtensions(['jpg', 'jpeg', 'png', 'webp', 'pdf'])
+                ->nullable(),
+
+            Textarea::make('Комментарий по оплате', 'payment_note')
                 ->nullable(),
         ]);
 

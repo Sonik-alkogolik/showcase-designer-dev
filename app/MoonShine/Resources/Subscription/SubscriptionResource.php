@@ -18,6 +18,8 @@ use MoonShine\UI\Fields\Select;
 use MoonShine\UI\Fields\Number;
 use MoonShine\UI\Fields\Date;
 use MoonShine\UI\Fields\Switcher;
+use MoonShine\UI\Fields\File;
+use MoonShine\UI\Fields\Textarea;
 use MoonShine\Laravel\Fields\Relationships\BelongsTo;
 
 /**
@@ -86,6 +88,21 @@ class SubscriptionResource extends ModelResource
             Text::make('ID платежа YooKassa', 'yookassa_payment_id')
                 ->hideOnIndex(),
 
+            Date::make('Дата оплаты', 'payment_received_at')
+                ->withTime()
+                ->nullable()
+                ->hideOnIndex(),
+
+            File::make('Чек оплаты', 'payment_receipt_file')
+                ->disk(moonshineConfig()->getDisk())
+                ->dir('subscription-receipts')
+                ->allowedExtensions(['jpg', 'jpeg', 'png', 'webp', 'pdf'])
+                ->hideOnIndex(),
+
+            Textarea::make('Комментарий по оплате', 'payment_note')
+                ->nullable()
+                ->hideOnIndex(),
+
             Date::make('Создано', 'created_at')->withTime()->hideOnForm()->hideOnIndex(),
             Date::make('Обновлено', 'updated_at')->withTime()->hideOnForm()->hideOnIndex(),
         ];
@@ -133,6 +150,9 @@ class SubscriptionResource extends ModelResource
             'expires_at' => 'required|date',
             'auto_renew' => 'boolean',
             'price' => 'required|numeric|min:0',
+            'payment_received_at' => 'nullable|date',
+            'payment_receipt_file' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:8192',
+            'payment_note' => 'nullable|string|max:2000',
         ];
     }
     protected function indexFields(): array

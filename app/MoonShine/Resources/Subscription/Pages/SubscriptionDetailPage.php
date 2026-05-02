@@ -16,6 +16,8 @@ use MoonShine\UI\Fields\Date;
 use MoonShine\UI\Fields\Number;
 use MoonShine\UI\Fields\Text;
 use MoonShine\UI\Fields\Switcher;
+use MoonShine\UI\Fields\File;
+use MoonShine\UI\Fields\Textarea;
 use MoonShine\Laravel\Fields\Relationships\BelongsTo;
 use Throwable;
 
@@ -48,6 +50,9 @@ class SubscriptionDetailPage extends DetailPage
             Number::make('Цена', 'price'),
             Text::make('Метод оплаты', 'payment_method'),
             Text::make('ID платежа YooKassa', 'yookassa_payment_id'),
+            Date::make('Дата оплаты', 'payment_received_at')->withTime(),
+            File::make('Чек оплаты', 'payment_receipt_file'),
+            Textarea::make('Комментарий по оплате', 'payment_note'),
             Date::make('Создано', 'created_at')->withTime(),
             Date::make('Обновлено', 'updated_at')->withTime(),
         ];

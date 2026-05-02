@@ -15,13 +15,17 @@ class Subscription extends Model
         'auto_renew',
         'price',
         'payment_method',
-        'yookassa_payment_id'
+        'yookassa_payment_id',
+        'payment_received_at',
+        'payment_receipt_file',
+        'payment_note',
     ];
 
     protected $casts = [
         'expires_at' => 'datetime',
         'auto_renew' => 'boolean',
-        'price' => 'decimal:2'
+        'price' => 'decimal:2',
+        'payment_received_at' => 'datetime',
     ];
 
     /**
