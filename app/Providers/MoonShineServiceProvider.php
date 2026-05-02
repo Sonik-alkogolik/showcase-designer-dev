@@ -16,6 +16,7 @@ use App\MoonShine\Resources\Shop\ShopResource;
 use App\MoonShine\Resources\Category\CategoryResource;
 use App\MoonShine\Resources\Product\ProductResource;
 use App\MoonShine\Resources\Order\OrderResource;
+use App\MoonShine\Resources\SubscriptionPayment\SubscriptionPaymentResource;
 
 class MoonShineServiceProvider extends ServiceProvider
 {
@@ -34,6 +35,7 @@ class MoonShineServiceProvider extends ServiceProvider
                 CategoryResource::class,
                 ProductResource::class,
                 OrderResource::class,
+                SubscriptionPaymentResource::class,
             ])
             ->pages([
                 ...$core->getConfig()->getPages(),

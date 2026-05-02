@@ -57,6 +57,7 @@ class UserResource extends ModelResource
             Date::make('Создан', 'created_at')->withTime()->hideOnForm(),
             Date::make('Обновлен', 'updated_at')->withTime()->hideOnForm()->hideOnIndex(),
             HasMany::make('Подписки', 'subscriptions', resource: \App\MoonShine\Resources\Subscription\SubscriptionResource::class),
+            HasMany::make('Оплаты', 'subscriptionPayments', resource: \App\MoonShine\Resources\SubscriptionPayment\SubscriptionPaymentResource::class),
             HasMany::make('Магазины', 'shops', resource: \App\MoonShine\Resources\Shop\ShopResource::class),
         ];
     }

@@ -17,6 +17,7 @@ class User extends Authenticatable
             // Защитная очистка, чтобы удаление из MoonShine гарантированно
             // убирало все связанные доменные данные пользователя.
             $user->importRuns()->delete();
+            $user->subscriptionPayments()->delete();
             $user->subscriptions()->delete();
             $user->tokens()->delete();
 
@@ -114,6 +115,11 @@ class User extends Authenticatable
     public function subscriptions()
     {
         return $this->hasMany(Subscription::class);
+    }
+
+    public function subscriptionPayments()
+    {
+        return $this->hasMany(SubscriptionPayment::class);
     }
 
     /**

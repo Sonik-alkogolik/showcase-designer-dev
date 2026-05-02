@@ -15,6 +15,7 @@ use App\MoonShine\Resources\User\UserResource;
 use App\MoonShine\Resources\Shop\ShopResource;
 use App\MoonShine\Resources\Category\CategoryResource;
 use App\MoonShine\Resources\Order\OrderResource;
+use App\MoonShine\Resources\SubscriptionPayment\SubscriptionPaymentResource;
 
 final class MoonShineLayout extends AppLayout
 {
@@ -38,7 +39,8 @@ final class MoonShineLayout extends AppLayout
             MenuItem::make(SubscriptionResource::class, 'Подписки'),
             MenuItem::make(ShopResource::class, 'Магазины'),
             MenuItem::make(CategoryResource::class, 'Категории'),
-            MenuItem::make(OrderResource::class, 'Заказы'),
+            MenuItem::make(SubscriptionPaymentResource::class, 'Оплаты'),
+            MenuItem::make(OrderResource::class, 'Заказы клиентов'),
         ];
     }
 

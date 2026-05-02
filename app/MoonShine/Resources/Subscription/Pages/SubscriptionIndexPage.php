@@ -12,7 +12,6 @@ use MoonShine\UI\Fields\Select;
 use MoonShine\UI\Fields\Number;
 use MoonShine\UI\Fields\Date;
 use MoonShine\UI\Fields\Switcher;
-use MoonShine\UI\Fields\File;
 use MoonShine\Laravel\Fields\Relationships\BelongsTo;
 use App\MoonShine\Resources\User\UserResource;
 
@@ -62,12 +61,6 @@ class SubscriptionIndexPage extends IndexPage
             
                 Number::make('Цена', 'price')
                 ->sortable(),
-
-            Date::make('Дата оплаты', 'payment_received_at')
-                ->format('d.m.Y H:i')
-                ->sortable(),
-
-            File::make('Чек', 'payment_receipt_file'),
         ];
     }
 
