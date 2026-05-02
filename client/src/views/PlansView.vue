@@ -1,6 +1,11 @@
 <template>
   <div class="plans-container">
     <h1>Выберите тариф</h1>
+
+    <div v-if="!telegramLinked" class="telegram-warning">
+      Перед выбором тарифа нужно привязать Telegram в профиле.
+      <button type="button" class="link-btn" @click="goToProfile">Открыть профиль</button>
+    </div>
     
     <div v-if="loading" class="loading">
       Загрузка...
@@ -67,7 +72,9 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import axios from 'axios'
+import { useAuth } from '../composables/useAuth'
 
 const loading = ref(true)
 const subscribeLoading = ref(false)
@@ -76,21 +83,36 @@ const selectedPlan = ref(null)
 const autoRenew = ref(false)
 const offerAccepted = ref(false)
 const privacyAccepted = ref(false)
+const router = useRouter()
+const { user } = useAuth()
+const telegramLinked = computed(() => Boolean(user.value?.telegram_linked))
 
 const canSubscribe = computed(() => {
-  return selectedPlan.value && offerAccepted.value && privacyAccepted.value
+  return telegramLinked.value && selectedPlan.value && offerAccepted.value && privacyAccepted.value
 })
 
 const canSelectPlan = (plan) => plan?.self_service !== false
 
 const handlePlanClick = (key, plan) => {
+  if (!telegramLinked.value) {
+    alert('Сначала привяжите Telegram в профиле')
+    return
+  }
   if (!canSelectPlan(plan)) return
   selectedPlan.value = key
 }
 
 const contactManager = (plan) => {
+  if (!telegramLinked.value) {
+    alert('Сначала привяжите Telegram в профиле')
+    return
+  }
   const url = plan?.contact_url || 'https://t.me/vveb_front'
   window.open(url, '_blank', 'noopener,noreferrer')
+}
+
+const goToProfile = () => {
+  router.push('/profile')
 }
 
 onMounted(async () => {
@@ -106,6 +128,10 @@ onMounted(async () => {
 
 const subscribe = async () => {
   if (!canSubscribe.value) return
+  if (!telegramLinked.value) {
+    alert('Сначала привяжите Telegram в профиле')
+    return
+  }
   if (selectedPlan.value !== 'starter') {
     alert('Переход на платный тариф выполняется через менеджера')
     return
@@ -145,6 +171,30 @@ h1 {
   text-align: center;
   margin-bottom: 2rem;
   color: var(--color-heading);
+}
+
+.telegram-warning {
+  max-width: 720px;
+  margin: 0 auto 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 199, 116, 0.5);
+  background: rgba(255, 199, 116, 0.12);
+  color: #ffe8c4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.link-btn {
+  border: 1px solid rgba(255, 225, 179, 0.8);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff1d6;
+  border-radius: 8px;
+  padding: 0.45rem 0.65rem;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
 .plans-grid {
