@@ -5,7 +5,11 @@ declare(strict_types=1);
 namespace App\MoonShine\Resources\SubscriptionPayment;
 
 use App\Models\SubscriptionPayment;
+use App\MoonShine\Resources\SubscriptionPayment\Pages\SubscriptionPaymentDetailPage;
+use App\MoonShine\Resources\SubscriptionPayment\Pages\SubscriptionPaymentFormPage;
+use App\MoonShine\Resources\SubscriptionPayment\Pages\SubscriptionPaymentIndexPage;
 use Illuminate\Contracts\Database\Eloquent\Builder;
+use MoonShine\Contracts\Core\PageContract;
 use MoonShine\Laravel\Fields\Relationships\BelongsTo;
 use MoonShine\Laravel\Resources\ModelResource;
 use MoonShine\UI\Fields\Date;
@@ -25,6 +29,18 @@ class SubscriptionPaymentResource extends ModelResource
     protected string $column = 'id';
 
     protected array $with = ['user', 'subscription'];
+
+    /**
+     * @return list<class-string<PageContract>>
+     */
+    protected function pages(): array
+    {
+        return [
+            SubscriptionPaymentIndexPage::class,
+            SubscriptionPaymentFormPage::class,
+            SubscriptionPaymentDetailPage::class,
+        ];
+    }
 
     protected function fields(): iterable
     {
@@ -109,4 +125,3 @@ class SubscriptionPaymentResource extends ModelResource
         ];
     }
 }
-
