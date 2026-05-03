@@ -766,10 +766,19 @@ export default {
       showManagerPopup.value = false;
     };
 
-    const openManagerLink = () => {
-      if (!shop.value?.manager_telegram_url) return;
-      if (window.Telegram?.WebApp?.openLink) window.Telegram.WebApp.openLink(shop.value.manager_telegram_url);
-      else window.open(shop.value.manager_telegram_url, "_blank");
+    const openManagerLink = (prefillText = "") => {
+      const baseUrl = String(shop.value?.manager_telegram_url || "").trim();
+      if (!baseUrl) return;
+
+      let url = baseUrl;
+      const text = String(prefillText || "").trim();
+      if (text) {
+        const delimiter = baseUrl.includes("?") ? "&" : "?";
+        url = `${baseUrl}${delimiter}text=${encodeURIComponent(text)}`;
+      }
+
+      if (window.Telegram?.WebApp?.openLink) window.Telegram.WebApp.openLink(url);
+      else window.open(url, "_blank");
     };
 
     const sendToManager = async () => {
@@ -791,12 +800,12 @@ export default {
         if (response.data?.success) {
           showManagerPopup.value = false;
           showBottomNotice("Сообщение отправлено менеджеру");
-          openManagerLink();
+          openManagerLink(managerDraftMessage.value || buildManagerMessage());
         }
       } catch (err) {
         const msg = err?.response?.data?.message || "Не удалось отправить сообщение через API. Открываем чат менеджера.";
         if (window.Telegram?.WebApp?.showAlert) window.Telegram.WebApp.showAlert(msg);
-        openManagerLink();
+        openManagerLink(managerDraftMessage.value || buildManagerMessage());
       }
     };
 
@@ -812,7 +821,7 @@ export default {
         showManagerPopup.value = true;
         return;
       }
-      openManagerLink();
+      openManagerLink(String(shop.value?.manager_message_template || "").trim() || getDefaultManagerTemplate());
     };
 
     const submitOrder = async () => {
