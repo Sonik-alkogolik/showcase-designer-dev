@@ -294,9 +294,11 @@ class ShopController extends Controller
     {
         $shop = Shop::with('user')->findOrFail($id);
         $owner = $shop->user;
-        $managerUsername = $shop->notification_username
-            ? ltrim((string) $shop->notification_username, '@')
-            : ($owner?->telegram_username ? ltrim((string) $owner->telegram_username, '@') : null);
+        // В публичной витрине менеджерский контакт берём из привязанного Telegram-профиля владельца.
+        // Это исключает ситуацию, когда в notification_username сохранён username бота.
+        $managerUsername = $owner?->telegram_username
+            ? ltrim((string) $owner->telegram_username, '@')
+            : null;
         if ($owner) {
             app(TelegramAvatarService::class)->ensureUserAvatar($owner);
         }
