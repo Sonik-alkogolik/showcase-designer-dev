@@ -20,7 +20,7 @@
 
       <div v-if="sliderProducts.length" class="hero-slider">
         <div class="hero-slider-head">
-          <span class="hero-slider-kicker">{{ sliderTitle }}</span>
+          <span class="hero-slider-kicker">Хит продаж</span>
         </div>
         <div class="hero-slide" @click="addToCart(sliderProducts[currentSlideIndex])">
           <img
@@ -424,12 +424,9 @@ export default {
 
     const cartItems = computed(() => Object.values(cart.value));
     const favoriteItems = computed(() => Object.values(favorites.value));
-    const hasExplicitSliderProducts = computed(() => products.value.some((item) => item.show_in_slider));
     const sliderProducts = computed(() => {
-      const preferred = products.value.filter((item) => item.show_in_slider);
-      return preferred.length > 0 ? preferred : products.value.slice(0, 5);
+      return products.value.filter((item) => item.show_in_slider);
     });
-    const sliderTitle = computed(() => (hasExplicitSliderProducts.value ? "Хит продаж" : "Новые товары"));
 
     const visibleProducts = computed(() => products.value.slice(0, visibleCount.value));
     const hasMoreProducts = computed(() => products.value.length > visibleCount.value);
@@ -800,7 +797,6 @@ export default {
       showMoreProducts,
       currentView,
       sliderProducts,
-      sliderTitle,
       currentSlideIndex,
       favoriteItems,
       showBottomNav,
@@ -1020,7 +1016,7 @@ export default {
 .products-list { display: flex; flex-direction: column; gap: 10px; padding: 0 10px 12px; width: 100%; margin-bottom: 50px; }
 .product-card { width: 100%; max-width: none; margin: 0 auto; border-radius: 10px; background: var(--card-bg-color); border: 1px solid rgba(215, 229, 255, 0.65); padding: 12px; box-sizing: border-box; position: relative; animation: cardIn .3s ease both; animation-delay: var(--delay); }
 @keyframes cardIn { from { opacity:0; transform: translateY(6px);} to { opacity:1; transform: translateY(0);} }
-.fav-btn { position: absolute; top: 8px; right: 8px; border: 0; background: rgba(255,255,255,.88); border-radius: 8px; width: 30px; height: 30px; cursor: pointer; }
+.fav-btn { position: absolute; top: 12px; right: 12px; border: 0; background: rgba(255,255,255,.88); border-radius: 8px; width: 30px; height: 30px; cursor: pointer; }
 .fav-btn.active { color: #ff4d6d; }
 .product-image { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 8px; }
 .product-image img { width: 100%; height: 180px; object-fit: cover; display:block; }
@@ -1089,8 +1085,6 @@ export default {
 .tab-btn { border: 0; background: none; color: var(--footer-text-color); font-size: .78rem; line-height: 1.2; padding: 4px; position: relative; cursor: pointer; }
 .tab-btn.active { color: var(--footer-text-color); font-weight: 700; }
 .tab-avatar { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
-.tab-favorites,
-.tab-cart { display: none; }
 .bottom-notice { position: fixed; left: 10px; right: 10px; bottom: calc(var(--bottom-nav-height) + 52px); z-index: 1000; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(65,255,191,.45); background: rgba(6, 26, 24, .93); color: #dafff0; font-size: .86rem; text-align: center; font-weight: 700; backdrop-filter: blur(8px); }
 
 .search-overlay { position: fixed; inset: 0; background: rgba(6,10,18,.96); z-index: 1200; padding: 10px; box-sizing: border-box; display: flex; }
