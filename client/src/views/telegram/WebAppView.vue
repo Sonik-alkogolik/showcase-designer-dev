@@ -494,6 +494,7 @@ export default {
         card_price_color: "#4CAF50",
         card_button_bg_color: "#38E8FF",
         card_button_text_color: "#00151A",
+        manager_send_button_text_color: "#FFFFFF",
       };
       const pick = (key) => {
         const value = String(theme?.[key] || "").trim().toUpperCase();
@@ -515,6 +516,7 @@ export default {
         "--card-price-color": pick("card_price_color"),
         "--card-button-bg-color": pick("card_button_bg_color"),
         "--card-button-text-color": pick("card_button_text_color"),
+        "--manager-send-button-text-color": pick("manager_send_button_text_color"),
       };
     });
     const favoriteTotalItems = computed(() => favoriteItems.value.length);
@@ -522,15 +524,7 @@ export default {
     const cartSubtotal = computed(() => cartItems.value.reduce((sum, item) => sum + ((parseFloat(item.price) || 0) * item.quantity), 0));
     const cartTotal = computed(() => cartSubtotal.value + (parseFloat(shop.value?.delivery_price) || 0));
 
-    const managerUsername = computed(() => {
-      const directManager = String(shop.value?.manager_telegram_username || "").trim().replace(/^@+/, "");
-      if (directManager) return directManager;
-
-      const ownerTelegram = String(shop.value?.owner_profile?.telegram_username || "").trim().replace(/^@+/, "");
-      return ownerTelegram;
-    });
-    const hasManagerContact = computed(() => Boolean(managerUsername.value));
-    const managerBaseUrl = computed(() => (hasManagerContact.value ? `https://t.me/${managerUsername.value}` : ""));
+    const hasManagerContact = computed(() => Boolean(shop.value?.manager_contact_ready));
 
     const resolveCategoryName = (category) => {
       if (!category) return null;
@@ -758,11 +752,9 @@ export default {
     };
 
     const openManagerContact = () => {
-      if (!managerBaseUrl.value) return;
-      const text = encodeURIComponent(`Здравствуйте! Заказ #${orderNumber.value}\nМагазин: ${shop.value?.name}\nСумма: ${orderTotalForManager.value} ₽`);
-      const url = `${managerBaseUrl.value}?text=${text}`;
-      if (window.Telegram?.WebApp?.openLink) window.Telegram.WebApp.openLink(url);
-      else window.open(url, "_blank");
+      if (!hasManagerContact.value) return;
+      managerDraftMessage.value = `Здравствуйте! Заказ #${orderNumber.value}\nМагазин: ${shop.value?.name}\nСумма: ${orderTotalForManager.value} ₽`;
+      showManagerPopup.value = true;
     };
 
     const openManagerCartPopup = () => {
@@ -774,25 +766,40 @@ export default {
       showManagerPopup.value = false;
     };
 
-    const sendToManager = () => {
-      if (!managerBaseUrl.value) return;
-      const text = encodeURIComponent(managerDraftMessage.value || buildManagerMessage());
-      const url = `${managerBaseUrl.value}?text=${text}`;
-      if (window.Telegram?.WebApp?.openLink) window.Telegram.WebApp.openLink(url);
-      else window.open(url, "_blank");
-      showManagerPopup.value = false;
+    const sendToManager = async () => {
+      if (!hasManagerContact.value) return;
+
+      try {
+        const text = managerDraftMessage.value || buildManagerMessage();
+        const response = await axios.post(`/api/shops/${shopId}/manager-message`, {
+          message: text,
+        }, {
+          headers: { "X-Telegram-Init-Data": window.Telegram?.WebApp?.initData || "" },
+        });
+
+        if (response.data?.success) {
+          showManagerPopup.value = false;
+          showBottomNotice("Сообщение отправлено менеджеру");
+        }
+      } catch (err) {
+        const msg = err?.response?.data?.message || "Не удалось отправить сообщение";
+        if (window.Telegram?.WebApp?.showAlert) {
+          window.Telegram.WebApp.showAlert(msg);
+        } else {
+          console.error(msg);
+        }
+      }
     };
 
     const openSupportChat = () => {
-      if (!managerBaseUrl.value) {
+      if (!hasManagerContact.value) {
         if (window.Telegram?.WebApp?.showAlert) {
           window.Telegram.WebApp.showAlert("Контакт менеджера не настроен");
         }
         return;
       }
-      const url = managerBaseUrl.value;
-      if (window.Telegram?.WebApp?.openLink) window.Telegram.WebApp.openLink(url);
-      else window.open(url, "_blank");
+      managerDraftMessage.value = String(shop.value?.manager_message_template || "").trim() || getDefaultManagerTemplate();
+      showManagerPopup.value = true;
     };
 
     const submitOrder = async () => {
@@ -1153,7 +1160,7 @@ export default {
 .manager-popup-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .btn-ghost-light, .btn-primary-light { border-radius: 10px; min-height: 38px; padding: 0 12px; cursor: pointer; }
 .btn-ghost-light { border: 1px solid var(--line); background: transparent; color: #dbe8ff; }
-.btn-primary-light { border: 0; background: var(--accent); color: #00141c; font-weight: 700; }
+.btn-primary-light { border: 0; background: var(--accent); color: var(--manager-send-button-text-color); font-weight: 700; }
 .bottom-notice { position: fixed; left: 10px; right: 10px; bottom: calc(var(--bottom-nav-height) + 52px); z-index: 1000; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(65,255,191,.45); background: rgba(6, 26, 24, .93); color: #dafff0; font-size: .86rem; text-align: center; font-weight: 700; backdrop-filter: blur(8px); }
 
 .search-overlay { position: fixed; inset: 0; background: rgba(6,10,18,.96); z-index: 1200; padding: 10px; box-sizing: border-box; display: flex; }

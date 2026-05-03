@@ -26,6 +26,8 @@ Route::post('/forgot-password/telegram', [PasswordRecoveryController::class, 'se
 Route::post('/reset-password/telegram', [PasswordRecoveryController::class, 'resetWithTelegramToken'])->middleware('throttle:6,1');
 Route::get('/shops/{shop}/products/public', [App\Http\Controllers\ProductController::class, 'publicIndex']);
 Route::get('/shops/{shop}/public', [App\Http\Controllers\ShopController::class, 'publicShow']);
+Route::post('/shops/{shop}/manager-message', [App\Http\Controllers\ShopController::class, 'publicSendManagerMessage'])
+    ->middleware('verify.telegram.webapp');
 // Тестовый маршрут для CORS
 Route::get('/test-cors', function () {
     return response()->json(['message' => 'CORS работает!']);

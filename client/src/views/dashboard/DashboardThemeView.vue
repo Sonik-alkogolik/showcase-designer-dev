@@ -76,6 +76,10 @@
                 <span>Кнопка (текст)</span>
                 <input v-model="theme.card_button_text_color" type="color">
               </label>
+              <label>
+                <span>Popup: Отправить (текст)</span>
+                <input v-model="theme.manager_send_button_text_color" type="color">
+              </label>
             </div>
           </div>
 
@@ -112,6 +116,8 @@
               <p class="price">1 290 ₽</p>
               <button type="button" class="preview-add-btn">В корзину</button>
             </div>
+
+            <button type="button" class="preview-send-btn">Отправить</button>
 
             <div class="preview-footer">
               <span>Главная</span>
@@ -156,6 +162,7 @@ const DEFAULT_THEME = {
   card_price_color: '#4CAF50',
   card_button_bg_color: '#38E8FF',
   card_button_text_color: '#00151A',
+  manager_send_button_text_color: '#FFFFFF',
 }
 
 const PRESETS = {
@@ -226,6 +233,7 @@ const previewStyle = computed(() => ({
   '--card-price-color': theme.card_price_color,
   '--card-button-bg-color': theme.card_button_bg_color,
   '--card-button-text-color': theme.card_button_text_color,
+  '--manager-send-button-text-color': theme.manager_send_button_text_color,
 }))
 
 watch(selectedShopId, loadTheme, { immediate: true })
@@ -264,6 +272,7 @@ watch(selectedShopId, loadTheme, { immediate: true })
 .title { color: var(--card-title-color); }
 .price { margin-top: 0.22rem; font-weight: 700; color: var(--card-price-color); }
 .preview-add-btn { margin-top: 0.45rem; width: 100%; border: 0; border-radius: 8px; min-height: 32px; background: var(--card-button-bg-color); color: var(--card-button-text-color); font-weight: 700; }
+.preview-send-btn { margin-top: 0.45rem; width: 100%; border: 0; border-radius: 8px; min-height: 32px; background: var(--card-button-bg-color); color: var(--manager-send-button-text-color); font-weight: 700; }
 .preview-footer { margin-top: 0.55rem; border-top: 1px solid rgba(255,255,255,.14); background: var(--footer-bg-color); color: var(--footer-text-color); border-radius: 8px; height: 34px; display: flex; align-items: center; justify-content: space-around; font-size: 0.76rem; font-weight: 600; }
 .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .btn-primary { border: 0; border-radius: 10px; padding: 0.55rem 0.75rem; background: #2563eb; color: #fff; cursor: pointer; }

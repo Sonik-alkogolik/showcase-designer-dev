@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Shop;
 use App\Services\TelegramBotOnboardingService;
 use App\Services\TelegramAvatarService;
+use App\Support\TelegramHttp;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -62,6 +64,17 @@ class ShopController extends Controller
             'theme_settings.background_end' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
             'theme_settings.text_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
             'theme_settings.dots_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.shop_name_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.search_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.categories_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.footer_text_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.footer_bg_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.card_bg_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.card_title_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.card_price_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.card_button_bg_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.card_button_text_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.manager_send_button_text_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
         ]);
 
         if ($validator->fails()) {
@@ -164,6 +177,17 @@ class ShopController extends Controller
             'theme_settings.background_end' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
             'theme_settings.text_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
             'theme_settings.dots_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.shop_name_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.search_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.categories_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.footer_text_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.footer_bg_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.card_bg_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.card_title_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.card_price_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.card_button_bg_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.card_button_text_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'theme_settings.manager_send_button_text_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
         ]);
 
         if ($validator->fails()) {
@@ -298,6 +322,7 @@ class ShopController extends Controller
                 'name' => $shop->name,
                 'delivery_name' => $shop->delivery_name,
                 'delivery_price' => $shop->delivery_price,
+                'manager_contact_ready' => ! blank($shop->notification_chat_id) && ! empty($shop->getRawOriginal('bot_token')),
                 'manager_telegram_username' => $managerUsername,
                 'manager_telegram_url' => $managerUsername ? 'https://t.me/' . $managerUsername : null,
                 'manager_message_template' => $shop->manager_message_template,
@@ -313,6 +338,72 @@ class ShopController extends Controller
         ]);
     }
 
+    /**
+     * Публичная отправка сообщения менеджеру из Telegram WebApp:
+     * отправляем текст в notification_chat_id через bot_token магазина.
+     */
+    public function publicSendManagerMessage(Request $request, $id)
+    {
+        $shop = Shop::findOrFail($id);
+
+        $validator = Validator::make($request->all(), [
+            'message' => 'required|string|max:5000',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        if (blank($shop->bot_token) || blank($shop->notification_chat_id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Контакт менеджера не настроен (bot token/chat id).',
+            ], 422);
+        }
+
+        try {
+            $response = TelegramHttp::client()
+                ->timeout(12)
+                ->post(TelegramHttp::botMethodUrl((string) $shop->bot_token, 'sendMessage'), [
+                    'chat_id' => (string) $shop->notification_chat_id,
+                    'text' => (string) $request->input('message'),
+                    'disable_web_page_preview' => true,
+                ]);
+
+            $ok = (bool) data_get($response->json(), 'ok', false);
+            if (! $response->ok() || ! $ok) {
+                Log::warning('WebApp manager message send failed', [
+                    'shop_id' => $shop->id,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Не удалось отправить сообщение менеджеру.',
+                ], 502);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Сообщение отправлено менеджеру.',
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('WebApp manager message exception', [
+                'shop_id' => $shop->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка отправки сообщения менеджеру.',
+            ], 500);
+        }
+    }
+
     private function normalizeThemeSettings(mixed $themeSettings): array
     {
         $defaults = [
@@ -320,6 +411,17 @@ class ShopController extends Controller
             'background_end' => '#0D1326',
             'text_color' => '#EFF6FF',
             'dots_color' => '#38E8FF',
+            'shop_name_color' => '#EFF6FF',
+            'search_color' => '#EFF6FF',
+            'categories_color' => '#FFFFFF',
+            'footer_text_color' => '#9FB0D3',
+            'footer_bg_color' => '#0A0F1E',
+            'card_bg_color' => '#050B1D',
+            'card_title_color' => '#EEF4FF',
+            'card_price_color' => '#4CAF50',
+            'card_button_bg_color' => '#38E8FF',
+            'card_button_text_color' => '#00151A',
+            'manager_send_button_text_color' => '#FFFFFF',
         ];
 
         if (! is_array($themeSettings)) {
