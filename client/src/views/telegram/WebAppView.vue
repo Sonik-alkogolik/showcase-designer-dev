@@ -808,10 +808,20 @@ export default {
       try {
         managerSendPending.value = true;
         const text = managerDraftMessage.value || buildManagerMessage();
+        const initData = window.Telegram?.WebApp?.initData || "";
+
+        // If WebApp initData is unavailable (opened outside Telegram context),
+        // fall back to opening manager chat with prefilled message.
+        if (!String(initData).trim()) {
+          managerSendError.value = "Telegram init data is missing. Открываем чат менеджера.";
+          openManagerLink(text);
+          return;
+        }
+
         const response = await axios.post(`/api/shops/${shopId}/manager-message`, {
           message: text,
         }, {
-          headers: { "X-Telegram-Init-Data": window.Telegram?.WebApp?.initData || "" },
+          headers: { "X-Telegram-Init-Data": initData },
         });
 
         if (response.data?.success) {
