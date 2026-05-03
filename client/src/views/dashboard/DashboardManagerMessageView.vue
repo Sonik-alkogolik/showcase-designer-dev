@@ -1,7 +1,7 @@
 <template>
   <section class="page">
     <header class="page-head">
-      <h1>Сообщение менеджеру</h1>
+      <h1>Сообщение менеджера</h1>
       <p>Настройка шаблона сообщения из mini-app. Можно использовать маркер <code>{items}</code> для списка товаров.</p>
     </header>
 
@@ -94,4 +94,3 @@ textarea { border: 1px solid #cbd7ee; border-radius: 9px; padding: 0.52rem 0.6re
 .message { margin: 0; color: #166534; }
 .empty-box { border: 1px dashed #c8d3ea; border-radius: 12px; background: #fff; padding: 1rem; color: #546480; }
 </style>
-

@@ -173,7 +173,7 @@
           </div>
         </div>
 
-        <button class="checkout-btn" @click="goToCheckout">Оформить заказ</button>
+        <button class="checkout-btn" @click="goToCheckout">Оформить покупку</button>
         <button v-if="hasManagerContact" class="continue-shopping" @click="openManagerCartPopup">Купить через менеджера</button>
       </div>
 
@@ -199,7 +199,7 @@
 
       <div class="profile-list">
         <button class="profile-item" @click="setView('catalog')">Вернуться к покупкам</button>
-        <button class="profile-item" @click="openSupportChat">Связаться с продавцом</button>
+        <button class="profile-item" @click="openSupportChat">Связаться с менеджером</button>
       </div>
     </div>
     <div v-else-if="currentView === 'checkout'" class="content panel-shell checkout-view">
@@ -287,7 +287,7 @@
 
     <div v-if="showManagerPopup" class="manager-popup-overlay" @click.self="closeManagerPopup">
       <div class="manager-popup">
-        <h3>Сообщение менеджеру</h3>
+        <h3>Сообщение менеджера</h3>
         <textarea v-model="managerDraftMessage" rows="10" />
         <div class="manager-popup-actions">
           <button class="btn-ghost-light" type="button" @click="closeManagerPopup">Отмена</button>
@@ -523,7 +523,13 @@ export default {
     const cartSubtotal = computed(() => cartItems.value.reduce((sum, item) => sum + ((parseFloat(item.price) || 0) * item.quantity), 0));
     const cartTotal = computed(() => cartSubtotal.value + (parseFloat(shop.value?.delivery_price) || 0));
 
-    const managerUsername = computed(() => String(shop.value?.manager_telegram_username || "").trim().replace(/^@+/, ""));
+    const managerUsername = computed(() => {
+      const directManager = String(shop.value?.manager_telegram_username || "").trim().replace(/^@+/, "");
+      if (directManager) return directManager;
+
+      const ownerTelegram = String(shop.value?.owner_profile?.telegram_username || "").trim().replace(/^@+/, "");
+      return ownerTelegram;
+    });
     const hasManagerContact = computed(() => Boolean(managerUsername.value));
     const managerBaseUrl = computed(() => (hasManagerContact.value ? `https://t.me/${managerUsername.value}` : ""));
 
@@ -779,7 +785,13 @@ export default {
     };
 
     const openSupportChat = () => {
-      const url = managerBaseUrl.value || "https://t.me/tgshopCLO_bot";
+      if (!managerBaseUrl.value) {
+        if (window.Telegram?.WebApp?.showAlert) {
+          window.Telegram.WebApp.showAlert("Контакт менеджера не настроен");
+        }
+        return;
+      }
+      const url = managerBaseUrl.value;
       if (window.Telegram?.WebApp?.openLink) window.Telegram.WebApp.openLink(url);
       else window.open(url, "_blank");
     };
@@ -1113,7 +1125,7 @@ export default {
 .grand-total { font-weight: 700; color: var(--accent-2); }
 .checkout-btn,
 .submit-order,
-.continue-shopping { width: 100%; padding: 12px; font-weight: 700; background: linear-gradient(90deg, var(--accent), var(--accent-2)); color: #021018; margin-top: 8px; }
+.continue-shopping { width: 100%; padding: 12px; font-weight: 700; background: linear-gradient(90deg, var(--accent), var(--accent-2)); color: #021018; margin-top: 8px; border: 1px solid rgba(255,255,255,.35); box-shadow: 0 8px 20px rgba(56,232,255,.25); }
 .form-group { margin-bottom: 10px; }
 .form-group label { display: block; font-size: .85rem; margin-bottom: 4px; }
 .form-group input { width: 100%; box-sizing: border-box; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,.08); color: #fff; height: 40px; padding: 0 10px; }
