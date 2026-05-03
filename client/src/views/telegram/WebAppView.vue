@@ -288,9 +288,13 @@
       <div class="manager-popup">
         <h3>Сообщение менеджеру</h3>
         <textarea v-model="managerDraftMessage" rows="10" />
+        <p v-if="managerSendError" class="manager-send-error">{{ managerSendError }}</p>
+        <p v-if="managerSendSuccess" class="manager-send-success">{{ managerSendSuccess }}</p>
         <div class="manager-popup-actions">
           <button class="btn-ghost-light" type="button" @click="closeManagerPopup">Отмена</button>
-          <button class="btn-primary-light" type="button" @click="sendToManager">Отправить</button>
+          <button class="btn-primary-light" type="button" :disabled="managerSendPending" @click="sendToManager">
+            {{ managerSendPending ? "Отправка..." : "Отправить" }}
+          </button>
         </div>
       </div>
     </div>
@@ -430,6 +434,9 @@ export default {
     const previewImageAlt = ref("");
     const showManagerPopup = ref(false);
     const managerDraftMessage = ref("");
+    const managerSendPending = ref(false);
+    const managerSendError = ref("");
+    const managerSendSuccess = ref("");
     let bottomNoticeTimer = null;
 
     const cartItems = computed(() => Object.values(cart.value));
@@ -754,16 +761,21 @@ export default {
     const openManagerContact = () => {
       if (!hasManagerContact.value) return;
       managerDraftMessage.value = `Здравствуйте! Заказ #${orderNumber.value}\nМагазин: ${shop.value?.name}\nСумма: ${orderTotalForManager.value} ₽`;
+      managerSendError.value = "";
+      managerSendSuccess.value = "";
       showManagerPopup.value = true;
     };
 
     const openManagerCartPopup = () => {
       managerDraftMessage.value = buildManagerMessage();
+      managerSendError.value = "";
+      managerSendSuccess.value = "";
       showManagerPopup.value = true;
     };
 
     const closeManagerPopup = () => {
       showManagerPopup.value = false;
+      managerSendPending.value = false;
     };
 
     const openManagerLink = (prefillText = "") => {
@@ -782,7 +794,11 @@ export default {
     };
 
     const sendToManager = async () => {
+      managerSendError.value = "";
+      managerSendSuccess.value = "";
+
       if (!hasManagerContact.value) {
+        managerSendError.value = "Контакт менеджера не настроен";
         if (window.Telegram?.WebApp?.showAlert) {
           window.Telegram.WebApp.showAlert("Контакт менеджера не настроен");
         }
@@ -790,6 +806,7 @@ export default {
       }
 
       try {
+        managerSendPending.value = true;
         const text = managerDraftMessage.value || buildManagerMessage();
         const response = await axios.post(`/api/shops/${shopId}/manager-message`, {
           message: text,
@@ -798,12 +815,18 @@ export default {
         });
 
         if (response.data?.success) {
-          showManagerPopup.value = false;
+          managerSendSuccess.value = "Сообщение отправлено менеджеру";
           showBottomNotice("Сообщение отправлено менеджеру");
+          setTimeout(() => {
+            showManagerPopup.value = false;
+          }, 500);
         }
       } catch (err) {
         const msg = err?.response?.data?.message || "Не удалось отправить сообщение менеджеру.";
+        managerSendError.value = msg;
         if (window.Telegram?.WebApp?.showAlert) window.Telegram.WebApp.showAlert(msg);
+      } finally {
+        managerSendPending.value = false;
       }
     };
 
@@ -902,6 +925,9 @@ export default {
       bottomNoticeVisible,
       showManagerPopup,
       managerDraftMessage,
+      managerSendPending,
+      managerSendError,
+      managerSendSuccess,
       previewImageUrl,
       previewImageAlt,
       hasManagerContact,
@@ -1177,8 +1203,11 @@ export default {
 .manager-popup { width: min(720px, 100%); border-radius: 14px; border: 1px solid var(--line); background: #0f1b33; padding: 12px; display: grid; gap: 10px; }
 .manager-popup h3 { margin: 0; font-size: 1rem; }
 .manager-popup textarea { width: 100%; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.08); color: #fff; padding: 10px; box-sizing: border-box; resize: vertical; }
+.manager-send-error { margin: 0; color: #ffd4d4; font-size: 0.9rem; }
+.manager-send-success { margin: 0; color: #d2ffe8; font-size: 0.9rem; }
 .manager-popup-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .btn-ghost-light, .btn-primary-light { border-radius: 10px; min-height: 38px; padding: 0 12px; cursor: pointer; }
+.btn-primary-light:disabled { opacity: .7; cursor: progress; }
 .btn-ghost-light { border: 1px solid var(--line); background: transparent; color: #dbe8ff; }
 .btn-primary-light { border: 0; background: var(--accent); color: var(--manager-send-button-text-color); font-weight: 700; }
 .bottom-notice { position: fixed; left: 10px; right: 10px; bottom: calc(var(--bottom-nav-height) + 52px); z-index: 1000; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(65,255,191,.45); background: rgba(6, 26, 24, .93); color: #dafff0; font-size: .86rem; text-align: center; font-weight: 700; backdrop-filter: blur(8px); }
