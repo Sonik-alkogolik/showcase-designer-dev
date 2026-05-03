@@ -800,12 +800,10 @@ export default {
         if (response.data?.success) {
           showManagerPopup.value = false;
           showBottomNotice("Сообщение отправлено менеджеру");
-          openManagerLink(managerDraftMessage.value || buildManagerMessage());
         }
       } catch (err) {
-        const msg = err?.response?.data?.message || "Не удалось отправить сообщение через API. Открываем чат менеджера.";
+        const msg = err?.response?.data?.message || "Не удалось отправить сообщение менеджеру.";
         if (window.Telegram?.WebApp?.showAlert) window.Telegram.WebApp.showAlert(msg);
-        openManagerLink(managerDraftMessage.value || buildManagerMessage());
       }
     };
 
