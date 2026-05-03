@@ -173,8 +173,7 @@
           </div>
         </div>
 
-        <button class="checkout-btn" @click="goToCheckout">Оформить покупку</button>
-        <button v-if="hasManagerContact" class="continue-shopping" @click="openManagerCartPopup">Купить через менеджера</button>
+        <button class="checkout-btn" @click="openManagerCartPopup">Оформить покупку</button>
       </div>
 
       <div v-else class="empty-state">
@@ -1125,7 +1124,7 @@ export default {
 .grand-total { font-weight: 700; color: var(--accent-2); }
 .checkout-btn,
 .submit-order,
-.continue-shopping { width: 100%; padding: 12px; font-weight: 700; background: linear-gradient(90deg, var(--accent), var(--accent-2)); color: #021018; margin-top: 8px; border: 1px solid rgba(255,255,255,.35); box-shadow: 0 8px 20px rgba(56,232,255,.25); }
+.continue-shopping { width: 100%; padding: 12px; font-weight: 700; background: linear-gradient(90deg, rgba(18, 50, 110, 0.95), rgba(26, 84, 176, 0.95)); color: #ffffff; margin-top: 8px; border: 1px solid rgba(140, 188, 255, 0.65); box-shadow: 0 8px 20px rgba(22, 90, 210, 0.35); text-shadow: 0 1px 1px rgba(0,0,0,.35); }
 .form-group { margin-bottom: 10px; }
 .form-group label { display: block; font-size: .85rem; margin-bottom: 4px; }
 .form-group input { width: 100%; box-sizing: border-box; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,.08); color: #fff; height: 40px; padding: 0 10px; }
