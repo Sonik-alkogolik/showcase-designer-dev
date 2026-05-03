@@ -286,7 +286,7 @@
 
     <div v-if="showManagerPopup" class="manager-popup-overlay" @click.self="closeManagerPopup">
       <div class="manager-popup">
-        <h3>Сообщение менеджера</h3>
+        <h3>Сообщение менеджеру</h3>
         <textarea v-model="managerDraftMessage" rows="10" />
         <div class="manager-popup-actions">
           <button class="btn-ghost-light" type="button" @click="closeManagerPopup">Отмена</button>
