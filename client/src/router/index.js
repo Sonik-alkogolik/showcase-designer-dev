@@ -66,6 +66,12 @@ const routes = [
         meta: { requiresAuth: true },
       },
       {
+        path: 'manager-message',
+        name: 'DashboardManagerMessage',
+        component: () => import('../views/dashboard/DashboardManagerMessageView.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
         path: 'help',
         name: 'DashboardHelp',
         component: () => import('../views/dashboard/DashboardHelpView.vue'),

@@ -20,6 +20,7 @@ class Shop extends Model
         'delivery_price',
         'webhook_url',
         'theme_settings',
+        'manager_message_template',
     ];
 
     protected $casts = [

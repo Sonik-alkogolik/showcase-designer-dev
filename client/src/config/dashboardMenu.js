@@ -20,6 +20,7 @@ export const dashboardMenuGroups = [
     title: 'Система',
     items: [
       { key: 'theme', label: 'Тема mini-app', to: '/dashboard/theme', icon: '🎨' },
+      { key: 'manager-message', label: 'Сообщение менеджеру', to: '/dashboard/manager-message', icon: '💬' },
       { key: 'settings', label: 'Настройки', to: '/dashboard/settings', icon: '⚙️' },
       { key: 'help', label: 'Помощь', to: '/dashboard/help', icon: '❔' },
       { key: 'language', label: 'Язык', to: '/dashboard/language', icon: '🌐' },

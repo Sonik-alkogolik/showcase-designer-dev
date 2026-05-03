@@ -19,9 +19,6 @@
       </div>
 
       <div v-if="sliderProducts.length" class="hero-slider">
-        <div class="hero-slider-head">
-          <span class="hero-slider-kicker">Хит продаж</span>
-        </div>
         <div class="hero-slide" @click="addToCart(sliderProducts[currentSlideIndex])">
           <img
             v-if="sliderProducts[currentSlideIndex]?.image"
@@ -177,6 +174,7 @@
         </div>
 
         <button class="checkout-btn" @click="goToCheckout">Оформить заказ</button>
+        <button v-if="hasManagerContact" class="continue-shopping" @click="openManagerCartPopup">Купить через менеджера</button>
       </div>
 
       <div v-else class="empty-state">
@@ -285,6 +283,17 @@
 
     <div v-if="bottomNoticeVisible" class="bottom-notice">
       {{ bottomNotice }}
+    </div>
+
+    <div v-if="showManagerPopup" class="manager-popup-overlay" @click.self="closeManagerPopup">
+      <div class="manager-popup">
+        <h3>Сообщение менеджеру</h3>
+        <textarea v-model="managerDraftMessage" rows="10" />
+        <div class="manager-popup-actions">
+          <button class="btn-ghost-light" type="button" @click="closeManagerPopup">Отмена</button>
+          <button class="btn-primary-light" type="button" @click="sendToManager">Отправить</button>
+        </div>
+      </div>
     </div>
 
     <div v-if="previewImageUrl" class="image-preview-overlay" @click="closeImagePreview">
@@ -420,6 +429,8 @@ export default {
     const bottomNoticeVisible = ref(false);
     const previewImageUrl = ref("");
     const previewImageAlt = ref("");
+    const showManagerPopup = ref(false);
+    const managerDraftMessage = ref("");
     let bottomNoticeTimer = null;
 
     const cartItems = computed(() => Object.values(cart.value));
@@ -723,12 +734,48 @@ export default {
       currentView.value = "checkout";
     };
 
+    const getDefaultManagerTemplate = () => "Добрый день! Хотел бы приобрести товар или товары";
+
+    const buildCartItemsText = () => {
+      if (cartItems.value.length === 0) return "- Корзина пока пустая";
+      return cartItems.value
+        .map((item) => `- ${item.name} x${item.quantity} (${item.price} ₽)`)
+        .join("\n");
+    };
+
+    const buildManagerMessage = () => {
+      const rawTemplate = String(shop.value?.manager_message_template || "").trim() || getDefaultManagerTemplate();
+      const itemsText = buildCartItemsText();
+      if (rawTemplate.includes("{items}")) {
+        return rawTemplate.replaceAll("{items}", itemsText);
+      }
+      return `${rawTemplate}\n\nСостав корзины:\n${itemsText}`;
+    };
+
     const openManagerContact = () => {
       if (!managerBaseUrl.value) return;
       const text = encodeURIComponent(`Здравствуйте! Заказ #${orderNumber.value}\nМагазин: ${shop.value?.name}\nСумма: ${orderTotalForManager.value} ₽`);
       const url = `${managerBaseUrl.value}?text=${text}`;
       if (window.Telegram?.WebApp?.openLink) window.Telegram.WebApp.openLink(url);
       else window.open(url, "_blank");
+    };
+
+    const openManagerCartPopup = () => {
+      managerDraftMessage.value = buildManagerMessage();
+      showManagerPopup.value = true;
+    };
+
+    const closeManagerPopup = () => {
+      showManagerPopup.value = false;
+    };
+
+    const sendToManager = () => {
+      if (!managerBaseUrl.value) return;
+      const text = encodeURIComponent(managerDraftMessage.value || buildManagerMessage());
+      const url = `${managerBaseUrl.value}?text=${text}`;
+      if (window.Telegram?.WebApp?.openLink) window.Telegram.WebApp.openLink(url);
+      else window.open(url, "_blank");
+      showManagerPopup.value = false;
     };
 
     const openSupportChat = () => {
@@ -815,6 +862,8 @@ export default {
       orderError,
       bottomNotice,
       bottomNoticeVisible,
+      showManagerPopup,
+      managerDraftMessage,
       previewImageUrl,
       previewImageAlt,
       hasManagerContact,
@@ -830,6 +879,9 @@ export default {
       openSupportChat,
       goToCheckout,
       openManagerContact,
+      openManagerCartPopup,
+      closeManagerPopup,
+      sendToManager,
       submitOrder,
       resetOrder,
       isDescriptionExpanded,
@@ -1002,8 +1054,6 @@ export default {
 }
 
 .hero-slider { margin: 0 10px 12px; }
-.hero-slider-head { display: flex; align-items: center; margin-bottom: 6px; }
-.hero-slider-kicker { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
 .hero-slide { position: relative; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); min-height: 180px; cursor: pointer; }
 .hero-slide img { width: 100%; height: 180px; object-fit: cover; }
 .hero-slide-overlay { position: absolute; inset: auto 0 0; background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.78) 100%); padding: 14px; }
@@ -1081,10 +1131,18 @@ export default {
 .profile-list { display: grid; gap: 8px; padding: 0 10px 12px; }
 .profile-item { width: 100%; padding: 12px; background: rgba(255,255,255,.12); color: #fff; border: 1px solid var(--line); }
 
-.bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; height: var(--bottom-nav-height); display: grid; grid-template-columns: repeat(2,1fr); align-items: center; gap: 4px; padding: 8px 10px; background: var(--footer-bg-color); border-top: 1px solid var(--line); backdrop-filter: blur(12px); z-index: 999; box-sizing: border-box; }
+.bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; height: var(--bottom-nav-height); display: grid; grid-template-columns: repeat(4,1fr); align-items: center; gap: 4px; padding: 8px 10px; background: var(--footer-bg-color); border-top: 1px solid var(--line); backdrop-filter: blur(12px); z-index: 999; box-sizing: border-box; }
 .tab-btn { border: 0; background: none; color: var(--footer-text-color); font-size: .78rem; line-height: 1.2; padding: 4px; position: relative; cursor: pointer; }
 .tab-btn.active { color: var(--footer-text-color); font-weight: 700; }
 .tab-avatar { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
+.manager-popup-overlay { position: fixed; inset: 0; z-index: 1500; background: rgba(3, 9, 19, 0.8); display: grid; place-items: center; padding: 12px; }
+.manager-popup { width: min(720px, 100%); border-radius: 14px; border: 1px solid var(--line); background: #0f1b33; padding: 12px; display: grid; gap: 10px; }
+.manager-popup h3 { margin: 0; font-size: 1rem; }
+.manager-popup textarea { width: 100%; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.08); color: #fff; padding: 10px; box-sizing: border-box; resize: vertical; }
+.manager-popup-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.btn-ghost-light, .btn-primary-light { border-radius: 10px; min-height: 38px; padding: 0 12px; cursor: pointer; }
+.btn-ghost-light { border: 1px solid var(--line); background: transparent; color: #dbe8ff; }
+.btn-primary-light { border: 0; background: var(--accent); color: #00141c; font-weight: 700; }
 .bottom-notice { position: fixed; left: 10px; right: 10px; bottom: calc(var(--bottom-nav-height) + 52px); z-index: 1000; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(65,255,191,.45); background: rgba(6, 26, 24, .93); color: #dafff0; font-size: .86rem; text-align: center; font-weight: 700; backdrop-filter: blur(8px); }
 
 .search-overlay { position: fixed; inset: 0; background: rgba(6,10,18,.96); z-index: 1200; padding: 10px; box-sizing: border-box; display: flex; }

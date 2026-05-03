@@ -57,6 +57,7 @@ class ShopController extends Controller
             'delivery_price' => 'required|numeric|min:0',
             'webhook_url' => 'nullable|url|max:2048',
             'theme_settings' => 'nullable|array',
+            'manager_message_template' => 'nullable|string|max:5000',
             'theme_settings.background_start' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
             'theme_settings.background_end' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
             'theme_settings.text_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
@@ -92,6 +93,7 @@ class ShopController extends Controller
             'delivery_price' => $request->delivery_price,
             'webhook_url' => $request->webhook_url,
             'theme_settings' => $this->normalizeThemeSettings($request->input('theme_settings')),
+            'manager_message_template' => $request->input('manager_message_template'),
         ]);
 
         return response()->json([
@@ -157,6 +159,7 @@ class ShopController extends Controller
             'delivery_price' => 'sometimes|numeric|min:0',
             'webhook_url' => 'nullable|url|max:2048',
             'theme_settings' => 'nullable|array',
+            'manager_message_template' => 'nullable|string|max:5000',
             'theme_settings.background_start' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
             'theme_settings.background_end' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
             'theme_settings.text_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6})$/'],
@@ -297,6 +300,7 @@ class ShopController extends Controller
                 'delivery_price' => $shop->delivery_price,
                 'manager_telegram_username' => $managerUsername,
                 'manager_telegram_url' => $managerUsername ? 'https://t.me/' . $managerUsername : null,
+                'manager_message_template' => $shop->manager_message_template,
                 'theme_settings' => $this->normalizeThemeSettings($shop->theme_settings),
                 'owner_profile' => [
                     'name' => $owner?->name,
