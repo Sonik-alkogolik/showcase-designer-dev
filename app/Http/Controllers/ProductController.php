@@ -211,6 +211,7 @@ class ProductController extends Controller
                 return $query->where('name', 'like', "%{$search}%");
             })
             ->orderBy($request->sort ?? 'created_at', $request->order ?? 'desc')
+            ->orderByDesc('id')
             ->paginate($request->per_page ?? 20);
 
         $categories = $shop->categories()
@@ -438,7 +439,8 @@ class ProductController extends Controller
             ->when($request->search, function ($query, $search) {
                 return $query->where('name', 'like', "%{$search}%");
             })
-            ->orderBy('name')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->get();
         
         // Получаем активные категории для фильтрации

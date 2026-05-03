@@ -19,6 +19,9 @@
       </div>
 
       <div v-if="sliderProducts.length" class="hero-slider">
+        <div class="hero-slider-head">
+          <span class="hero-slider-kicker">{{ sliderTitle }}</span>
+        </div>
         <div class="hero-slide" @click="addToCart(sliderProducts[currentSlideIndex])">
           <img
             v-if="sliderProducts[currentSlideIndex]?.image"
@@ -421,10 +424,12 @@ export default {
 
     const cartItems = computed(() => Object.values(cart.value));
     const favoriteItems = computed(() => Object.values(favorites.value));
+    const hasExplicitSliderProducts = computed(() => products.value.some((item) => item.show_in_slider));
     const sliderProducts = computed(() => {
       const preferred = products.value.filter((item) => item.show_in_slider);
       return preferred.length > 0 ? preferred : products.value.slice(0, 5);
     });
+    const sliderTitle = computed(() => (hasExplicitSliderProducts.value ? "Хит продаж" : "Новые товары"));
 
     const visibleProducts = computed(() => products.value.slice(0, visibleCount.value));
     const hasMoreProducts = computed(() => products.value.length > visibleCount.value);
@@ -795,6 +800,7 @@ export default {
       showMoreProducts,
       currentView,
       sliderProducts,
+      sliderTitle,
       currentSlideIndex,
       favoriteItems,
       showBottomNav,
@@ -1000,6 +1006,8 @@ export default {
 }
 
 .hero-slider { margin: 0 10px 12px; }
+.hero-slider-head { display: flex; align-items: center; margin-bottom: 6px; }
+.hero-slider-kicker { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
 .hero-slide { position: relative; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); min-height: 180px; cursor: pointer; }
 .hero-slide img { width: 100%; height: 180px; object-fit: cover; }
 .hero-slide-overlay { position: absolute; inset: auto 0 0; background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.78) 100%); padding: 14px; }
