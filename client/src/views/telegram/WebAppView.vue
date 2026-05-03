@@ -524,7 +524,7 @@ export default {
     const cartSubtotal = computed(() => cartItems.value.reduce((sum, item) => sum + ((parseFloat(item.price) || 0) * item.quantity), 0));
     const cartTotal = computed(() => cartSubtotal.value + (parseFloat(shop.value?.delivery_price) || 0));
 
-    const hasManagerContact = computed(() => Boolean(shop.value?.manager_contact_ready));
+    const hasManagerContact = computed(() => Boolean(shop.value?.manager_contact_ready || shop.value?.manager_telegram_url));
 
     const resolveCategoryName = (category) => {
       if (!category) return null;
@@ -766,6 +766,12 @@ export default {
       showManagerPopup.value = false;
     };
 
+    const openManagerLink = () => {
+      if (!shop.value?.manager_telegram_url) return;
+      if (window.Telegram?.WebApp?.openLink) window.Telegram.WebApp.openLink(shop.value.manager_telegram_url);
+      else window.open(shop.value.manager_telegram_url, "_blank");
+    };
+
     const sendToManager = async () => {
       if (!hasManagerContact.value) {
         if (window.Telegram?.WebApp?.showAlert) {
@@ -785,18 +791,12 @@ export default {
         if (response.data?.success) {
           showManagerPopup.value = false;
           showBottomNotice("Сообщение отправлено менеджеру");
-          if (shop.value?.manager_telegram_url) {
-            if (window.Telegram?.WebApp?.openLink) window.Telegram.WebApp.openLink(shop.value.manager_telegram_url);
-            else window.open(shop.value.manager_telegram_url, "_blank");
-          }
+          openManagerLink();
         }
       } catch (err) {
-        const msg = err?.response?.data?.message || "Не удалось отправить сообщение";
-        if (window.Telegram?.WebApp?.showAlert) {
-          window.Telegram.WebApp.showAlert(msg);
-        } else {
-          console.error(msg);
-        }
+        const msg = err?.response?.data?.message || "Не удалось отправить сообщение через API. Открываем чат менеджера.";
+        if (window.Telegram?.WebApp?.showAlert) window.Telegram.WebApp.showAlert(msg);
+        openManagerLink();
       }
     };
 
@@ -807,8 +807,12 @@ export default {
         }
         return;
       }
-      managerDraftMessage.value = String(shop.value?.manager_message_template || "").trim() || getDefaultManagerTemplate();
-      showManagerPopup.value = true;
+      if (shop.value?.manager_contact_ready) {
+        managerDraftMessage.value = String(shop.value?.manager_message_template || "").trim() || getDefaultManagerTemplate();
+        showManagerPopup.value = true;
+        return;
+      }
+      openManagerLink();
     };
 
     const submitOrder = async () => {
