@@ -767,7 +767,12 @@ export default {
     };
 
     const sendToManager = async () => {
-      if (!hasManagerContact.value) return;
+      if (!hasManagerContact.value) {
+        if (window.Telegram?.WebApp?.showAlert) {
+          window.Telegram.WebApp.showAlert("Контакт менеджера не настроен");
+        }
+        return;
+      }
 
       try {
         const text = managerDraftMessage.value || buildManagerMessage();
@@ -780,6 +785,10 @@ export default {
         if (response.data?.success) {
           showManagerPopup.value = false;
           showBottomNotice("Сообщение отправлено менеджеру");
+          if (shop.value?.manager_telegram_url) {
+            if (window.Telegram?.WebApp?.openLink) window.Telegram.WebApp.openLink(shop.value.manager_telegram_url);
+            else window.open(shop.value.manager_telegram_url, "_blank");
+          }
         }
       } catch (err) {
         const msg = err?.response?.data?.message || "Не удалось отправить сообщение";

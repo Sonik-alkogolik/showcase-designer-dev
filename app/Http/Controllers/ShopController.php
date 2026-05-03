@@ -293,10 +293,10 @@ class ShopController extends Controller
     public function publicShow($id)
     {
         $shop = Shop::with('user')->findOrFail($id);
+        $owner = $shop->user;
         $managerUsername = $shop->notification_username
             ? ltrim((string) $shop->notification_username, '@')
-            : null;
-        $owner = $shop->user;
+            : ($owner?->telegram_username ? ltrim((string) $owner->telegram_username, '@') : null);
         if ($owner) {
             app(TelegramAvatarService::class)->ensureUserAvatar($owner);
         }
@@ -322,7 +322,7 @@ class ShopController extends Controller
                 'name' => $shop->name,
                 'delivery_name' => $shop->delivery_name,
                 'delivery_price' => $shop->delivery_price,
-                'manager_contact_ready' => ! blank($shop->notification_chat_id) && ! empty($shop->getRawOriginal('bot_token')),
+                'manager_contact_ready' => (! blank($shop->notification_chat_id) || ! blank($owner?->telegram_id)) && ! empty($shop->getRawOriginal('bot_token')),
                 'manager_telegram_username' => $managerUsername,
                 'manager_telegram_url' => $managerUsername ? 'https://t.me/' . $managerUsername : null,
                 'manager_message_template' => $shop->manager_message_template,
@@ -344,7 +344,7 @@ class ShopController extends Controller
      */
     public function publicSendManagerMessage(Request $request, $id)
     {
-        $shop = Shop::findOrFail($id);
+        $shop = Shop::with('user')->findOrFail($id);
 
         $validator = Validator::make($request->all(), [
             'message' => 'required|string|max:5000',
@@ -357,7 +357,9 @@ class ShopController extends Controller
             ], 422);
         }
 
-        if (blank($shop->bot_token) || blank($shop->notification_chat_id)) {
+        $targetChatId = (string) ($shop->notification_chat_id ?: ($shop->user?->telegram_id ?? ''));
+
+        if (blank($shop->bot_token) || blank($targetChatId)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Контакт менеджера не настроен (bot token/chat id).',
@@ -368,7 +370,7 @@ class ShopController extends Controller
             $response = TelegramHttp::client()
                 ->timeout(12)
                 ->post(TelegramHttp::botMethodUrl((string) $shop->bot_token, 'sendMessage'), [
-                    'chat_id' => (string) $shop->notification_chat_id,
+                    'chat_id' => $targetChatId,
                     'text' => (string) $request->input('message'),
                     'disable_web_page_preview' => true,
                 ]);
