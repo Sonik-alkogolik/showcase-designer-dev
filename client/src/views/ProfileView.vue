@@ -136,13 +136,6 @@
           <button class="btn-copy" @click="copyTelegramId">Копировать chat_id</button>
         </div>
         
-        <button 
-          @click="unlinkTelegram" 
-          :disabled="unlinking"
-          class="btn-danger"
-        >
-          {{ unlinking ? 'Отвязываю...' : 'Отвязать Telegram' }}
-        </button>
       </div>
     </div>
   </div>
@@ -154,10 +147,9 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 
 const router = useRouter()
-const { user, loadProfile, generateTelegramLinkToken, unlinkTelegram: unlinkApi, deleteAccount } = useAuth()
+const { user, loadProfile, generateTelegramLinkToken, deleteAccount } = useAuth()
 const generatingToken = ref(false)
 const checkingLink = ref(false)
-const unlinking = ref(false)
 const deletingAccount = ref(false)
 const botLink = ref(null)
 const tokenExpiry = ref(0)
@@ -299,35 +291,6 @@ const generateLinkToken = async () => {
     alert('Не удалось сгенерировать ссылку. Попробуйте позже.')
   } finally {
     generatingToken.value = false
-  }
-}
-
-// Отвязка Telegram
-const unlinkTelegram = async () => {
-  if (!confirm('Вы уверены, что хотите отвязать Telegram аккаунт?')) {
-    return
-  }
-  
-  unlinking.value = true
-  
-  try {
-    const result = await unlinkApi()
-    
-    if (result.success) {
-      // Очищаем ссылку
-      botLink.value = null
-      tokenExpiry.value = 0
-      stopAutoCheck()
-      
-      alert('Telegram аккаунт успешно отвязан')
-    } else {
-      alert('Не удалось отвязать Telegram аккаунт')
-    }
-  } catch (error) {
-    console.error('Ошибка отвязки:', error)
-    alert('Не удалось отвязать Telegram аккаунт')
-  } finally {
-    unlinking.value = false
   }
 }
 

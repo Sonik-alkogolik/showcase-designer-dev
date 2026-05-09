@@ -755,7 +755,7 @@ export default {
       if (rawTemplate.includes("{items}")) {
         return rawTemplate.replaceAll("{items}", itemsText);
       }
-      return `${rawTemplate}\n\nСостав корзины:\n${itemsText}`;
+      return `${rawTemplate}\n\nКорзина:\n${itemsText}`;
     };
 
     const openManagerContact = () => {
