@@ -13,26 +13,31 @@ class TelegramAvatarService
     {
         try {
             $existing = trim((string) ($user->telegram_avatar_url ?? ''));
-            if ($existing !== '') {
-                return $existing;
-            }
-
             if (! $user->isTelegramLinked() || ! $user->telegram_id) {
-                return null;
+                return $existing !== '' ? $existing : null;
             }
 
             $cooldownKey = "telegram_avatar_sync_cooldown_{$user->id}";
             if (Cache::has($cooldownKey)) {
-                return null;
+                return $existing !== '' ? $existing : null;
+            }
+
+            $refreshTtlKey = "telegram_avatar_refresh_ttl_{$user->id}";
+            $needsRefresh = $existing === '' || ! Cache::has($refreshTtlKey);
+            if (! $needsRefresh) {
+                return $existing;
             }
 
             $avatarUrl = $this->resolveAvatarUrlByTelegramId((int) $user->telegram_id, $updateId);
             if ($avatarUrl === null) {
                 Cache::put($cooldownKey, 1, now()->addMinutes(10));
-                return null;
+                return $existing !== '' ? $existing : null;
             }
 
-            $user->forceFill(['telegram_avatar_url' => $avatarUrl])->save();
+            if ($avatarUrl !== $existing) {
+                $user->forceFill(['telegram_avatar_url' => $avatarUrl])->save();
+            }
+            Cache::put($refreshTtlKey, 1, now()->addMinutes(30));
 
             return $avatarUrl;
         } catch (\Throwable $e) {
@@ -42,7 +47,8 @@ class TelegramAvatarService
                 'error' => $e->getMessage(),
             ]);
 
-            return null;
+            $fallback = trim((string) ($user->telegram_avatar_url ?? ''));
+            return $fallback !== '' ? $fallback : null;
         }
     }
 

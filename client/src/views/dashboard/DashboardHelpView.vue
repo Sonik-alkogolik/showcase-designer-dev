@@ -43,7 +43,7 @@
           <span class="step-badge">Шаг 3</span>
           <h3>Создайте магазин и подключите бота</h3>
         </div>
-        <p>Перейдите на <code>https://e-tgo.ru/create-shop</code>, заполните поля магазина и вставьте токен в поле <code>Токен Telegram бота</code>.</p>
+        <p>Перейдите на <a href="https://e-tgo.ru/create-shop" target="_blank" rel="noopener noreferrer">https://e-tgo.ru/create-shop</a>, заполните поля магазина и вставьте токен в поле <code>Токен Telegram бота</code>.</p>
         <p>После сохранения откройте настройки магазина и нажмите <strong>Подключить бота</strong>. Статус должен стать <strong>Бот готов</strong>.</p>
         <p>Если токен неверный, подключение не пройдет: вернитесь в <code>@BotFather</code>, откройте <code>/mybots</code> и проверьте токен через <code>API Token</code>.</p>
         <img src="/help/start-step-3-shop-ui.svg" alt="Создание магазина и подключение бота" loading="lazy">
