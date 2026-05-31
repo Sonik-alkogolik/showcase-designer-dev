@@ -22,6 +22,7 @@ export const dashboardMenuGroups = [
       { key: 'theme', label: 'Тема mini-app', to: '/dashboard/theme', icon: '🎨' },
       { key: 'manager-message', label: 'Сообщение менеджера', to: '/dashboard/manager-message', icon: '💬' },
       { key: 'settings', label: 'Настройки', to: '/dashboard/settings', icon: '⚙️' },
+      { key: 'support', label: 'Техподдержка', to: '/dashboard/support', icon: '🛟' },
       { key: 'help', label: 'Помощь', to: '/dashboard/help', icon: '❔' },
       { key: 'language', label: 'Язык', to: '/dashboard/language', icon: '🌐' },
       { key: 'profile', label: 'Профиль', to: '/dashboard/profile', icon: '👤' },

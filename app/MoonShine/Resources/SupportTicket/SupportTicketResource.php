@@ -38,7 +38,7 @@ class SupportTicketResource extends ModelResource
             Text::make('Тема', 'subject')->required()->sortable(),
             Select::make('Статус', 'status')->options(SupportTicket::STATUSES)->default('open')->required(),
             Textarea::make('Первое сообщение', 'message')->hideOnIndex()->required(),
-            Textarea::make('Ответ администратора', 'admin_response')
+            Textarea::make('Новый ответ администратора', 'admin_response')
                 ->hideOnIndex()
                 ->nullable(),
             Text::make('Текущий URL', 'current_url')->hideOnIndex()->nullable(),
@@ -86,6 +86,7 @@ class SupportTicketResource extends ModelResource
             'subject' => ['required', 'string', 'max:255'],
             'status' => ['required', 'in:' . implode(',', array_keys(SupportTicket::STATUSES))],
             'message' => ['required', 'string'],
+            'admin_response' => ['nullable', 'string'],
         ];
     }
 }

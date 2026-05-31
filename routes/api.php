@@ -53,6 +53,7 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsurePasswordChangeComp
     Route::get('/support/tickets', [SupportTicketController::class, 'index']);
     Route::post('/support/tickets', [SupportTicketController::class, 'store']);
     Route::get('/support/tickets/{ticket}', [SupportTicketController::class, 'show']);
+    Route::post('/support/tickets/{ticket}/messages', [SupportTicketController::class, 'reply']);
     
     // Совместимость: старый маршрут /user
     Route::get('/user', function (Request $request) {

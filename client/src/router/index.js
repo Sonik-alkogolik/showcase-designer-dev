@@ -78,6 +78,12 @@ const routes = [
         meta: { requiresAuth: true },
       },
       {
+        path: 'support',
+        name: 'DashboardSupport',
+        component: () => import('../views/dashboard/DashboardSupportView.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
         path: 'language',
         name: 'DashboardLanguage',
         component: () => import('../views/dashboard/DashboardLanguageView.vue'),

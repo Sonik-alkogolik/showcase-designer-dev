@@ -80,7 +80,10 @@ class SupportTicket extends Model
                 'body' => $response,
             ]);
 
-            $ticket->forceFill(['last_admin_replied_at' => now()])->saveQuietly();
+            $ticket->forceFill([
+                'last_admin_replied_at' => now(),
+                'status' => $ticket->status === 'open' ? 'in_progress' : $ticket->status,
+            ])->saveQuietly();
         });
     }
 

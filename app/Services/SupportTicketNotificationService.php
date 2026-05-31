@@ -11,11 +11,17 @@ class SupportTicketNotificationService
 {
     public function notifyCreated(SupportTicket $ticket): void
     {
-        $this->notifyEmail($ticket);
-        $this->notifyTelegram($ticket);
+        $this->notifyEmail($ticket, 'Новый тикет e-TGO');
+        $this->notifyTelegram($ticket, $this->buildText($ticket, 'Новый тикет e-TGO'));
     }
 
-    private function notifyEmail(SupportTicket $ticket): void
+    public function notifyUserReply(SupportTicket $ticket, string $reply): void
+    {
+        $this->notifyEmail($ticket, 'Новый ответ пользователя в тикете e-TGO', $reply);
+        $this->notifyTelegram($ticket, $this->buildText($ticket, 'Новый ответ пользователя в тикете e-TGO', $reply));
+    }
+
+    private function notifyEmail(SupportTicket $ticket, string $title, ?string $reply = null): void
     {
         $email = trim((string) config('services.support.admin_email', ''));
         if ($email === '') {
@@ -23,9 +29,9 @@ class SupportTicketNotificationService
         }
 
         try {
-            Mail::raw($this->buildText($ticket), function ($message) use ($email, $ticket) {
+            Mail::raw($this->buildText($ticket, $title, $reply), function ($message) use ($email, $ticket, $title) {
                 $message->to($email)
-                    ->subject('Новый тикет e-TGO #' . $ticket->id . ': ' . $ticket->subject);
+                    ->subject($title . ' #' . $ticket->id . ': ' . $ticket->subject);
             });
         } catch (\Throwable $e) {
             Log::warning('Support ticket email notification failed', [
@@ -35,22 +41,23 @@ class SupportTicketNotificationService
         }
     }
 
-    private function notifyTelegram(SupportTicket $ticket): void
+    private function notifyTelegram(SupportTicket $ticket, string $text): void
     {
         $chatId = trim((string) config('services.support.telegram_chat_id', ''));
         if ($chatId === '') {
             return;
         }
 
-        SendTelegramMessageJob::dispatch((int) $chatId, $this->buildText($ticket))->afterResponse();
+        SendTelegramMessageJob::dispatch((int) $chatId, $text)->afterResponse();
     }
 
-    private function buildText(SupportTicket $ticket): string
+    private function buildText(SupportTicket $ticket, string $title, ?string $reply = null): string
     {
         $category = SupportTicket::CATEGORIES[$ticket->category] ?? $ticket->category;
+        $body = $reply !== null ? $reply : $ticket->message;
 
         return implode("\n", [
-            "Новый тикет e-TGO #{$ticket->id}",
+            "{$title} #{$ticket->id}",
             "Тема: {$ticket->subject}",
             "Категория: {$category}",
             'Пользователь: ' . ($ticket->user_id ? "#{$ticket->user_id}" : 'guest'),
@@ -58,7 +65,7 @@ class SupportTicketNotificationService
             'URL: ' . ($ticket->current_url ?: 'не передан'),
             'Браузер: ' . ($ticket->browser ?: 'не передан'),
             '',
-            mb_substr($ticket->message, 0, 900),
+            mb_substr($body, 0, 900),
         ]);
     }
 }

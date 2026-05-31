@@ -41,6 +41,10 @@
         <router-link to="/dashboard/help" class="nav-link" v-if="isAuthenticated" @click="closeMenu">
           Как начать?
         </router-link>
+
+        <router-link to="/dashboard/support" class="nav-link" v-if="isAuthenticated" @click="closeMenu">
+          Техподдержка
+        </router-link>
         
         <div class="auth-buttons" v-if="!isAuthenticated">
           <router-link to="/login" class="btn btn-outline" @click="closeMenu">

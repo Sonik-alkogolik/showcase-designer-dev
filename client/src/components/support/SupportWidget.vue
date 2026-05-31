@@ -1,7 +1,7 @@
 <template>
   <div v-if="isAuthenticated && !isWebApp" class="support-widget">
     <button class="support-fab" type="button" aria-label="Открыть поддержку" @click="togglePanel">
-      ?
+      Помощь
     </button>
 
     <section v-if="isOpen" class="support-panel">
@@ -12,6 +12,10 @@
         </div>
         <button type="button" class="icon-btn" aria-label="Закрыть" @click="isOpen = false">×</button>
       </header>
+
+      <div class="support-page-link">
+        <router-link to="/dashboard/support" @click="isOpen = false">Открыть страницу техподдержки</router-link>
+      </div>
 
       <form class="support-form" @submit.prevent="submitTicket">
         <label>
@@ -217,16 +221,29 @@ onMounted(() => {
 }
 
 .support-fab {
-  width: 52px;
+  width: auto;
+  min-width: 76px;
   height: 52px;
+  padding: 0 1rem;
   border: 0;
-  border-radius: 50%;
+  border-radius: 999px;
   background: #2563eb;
   color: #fff;
-  font-size: 1.35rem;
+  font-size: 0.96rem;
   font-weight: 800;
   cursor: pointer;
   box-shadow: 0 14px 34px rgba(37, 99, 235, 0.35);
+}
+
+.support-page-link {
+  border-bottom: 1px solid #e0e7f3;
+  padding: 0.7rem 1rem;
+}
+
+.support-page-link a {
+  color: #2563eb;
+  font-weight: 800;
+  text-decoration: none;
 }
 
 .support-panel {

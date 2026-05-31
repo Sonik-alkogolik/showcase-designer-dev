@@ -68,4 +68,35 @@ class SupportTicketApiTest extends TestCase
         $this->getJson("/api/support/tickets/{$ticket->id}")
             ->assertForbidden();
     }
+
+    public function test_authenticated_user_can_reply_to_own_ticket(): void
+    {
+        $user = User::factory()->create();
+        $ticket = SupportTicket::query()->create([
+            'user_id' => $user->id,
+            'user_email' => $user->email,
+            'category' => 'question',
+            'subject' => 'Вопрос по магазину',
+            'message' => 'Первое сообщение',
+            'status' => 'open',
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson("/api/support/tickets/{$ticket->id}/messages", [
+            'message' => 'Дополнительная информация от пользователя',
+        ]);
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonCount(1, 'ticket.messages');
+
+        $this->assertDatabaseHas('support_ticket_messages', [
+            'support_ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'sender_type' => 'user',
+            'body' => 'Дополнительная информация от пользователя',
+        ]);
+    }
 }
