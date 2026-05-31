@@ -158,7 +158,12 @@ protected function detailFields(): iterable
         Select::make('Категория', 'category')->options(SupportTicket::CATEGORIES),
         Select::make('Статус', 'status')->options(SupportTicket::STATUSES),
         Textarea::make('Первое сообщение', 'message'),
-        HasMany::make('История тикета', 'messages', resource: SupportTicketMessageResource::class),
+        
+        // Добавляем возможность создавать сообщения прямо здесь
+        HasMany::make('История тикета', 'messages', resource: SupportTicketMessageResource::class)
+            ->creatable()  // Добавляет кнопку "Создать"
+            ->addMode('modal'),  // Открывает форму в модальном окне
+            
         Date::make('Создан', 'created_at')->withTime(),
         Date::make('Ответ админа', 'last_admin_replied_at')->withTime()->nullable(),
     ];
