@@ -45,22 +45,6 @@
         </label>
       </div>
 
-      <!-- Временно скрыто до финальной проработки политики и оферты.
-      <div class="checkbox-group">
-        <label class="checkbox">
-          <input type="checkbox" v-model="offerAccepted">
-          <span>Я ознакомлен с <a href="/offer" target="_blank">офертой</a></span>
-        </label>
-      </div>
-
-      <div class="checkbox-group">
-        <label class="checkbox">
-          <input type="checkbox" v-model="privacyAccepted">
-          <span>Я ознакомлен с <a href="/privacy" target="_blank">политикой конфиденциальности</a></span>
-        </label>
-      </div>
-      -->
-
       <button 
         class="subscribe-btn"
         :disabled="!canSubscribe"
