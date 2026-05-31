@@ -148,19 +148,25 @@ class SupportTicketResource extends ModelResource
         });
     }
 
-    protected function detailFields(): iterable
-{
-    return [
-        ID::make()->sortable(),
-        BelongsTo::make('Пользователь', 'user', resource: UserResource::class)->nullable(),
-        Text::make('Email', 'user_email')->nullable(),
-        Text::make('Тема', 'subject'),
-        Select::make('Категория', 'category')->options(SupportTicket::CATEGORIES),
-        Select::make('Статус', 'status')->options(SupportTicket::STATUSES),
-        Textarea::make('Первое сообщение', 'message'),
-        HasMany::make('История тикета', 'messages', resource: SupportTicketMessageResource::class),
-        Date::make('Создан', 'created_at')->withTime(),
-        Date::make('Ответ админа', 'last_admin_replied_at')->withTime()->nullable(),
-    ];
-}
+ protected function detailFields(): iterable
+    {
+        return [
+            ID::make()->sortable(),
+            BelongsTo::make('Пользователь', 'user', resource: UserResource::class)->nullable(),
+            Text::make('Email', 'user_email')->nullable(),
+            Text::make('Тема', 'subject'),
+            Select::make('Категория', 'category')->options(SupportTicket::CATEGORIES),
+            Select::make('Статус', 'status')->options(SupportTicket::STATUSES),
+            Textarea::make('Первое сообщение', 'message'),
+            HasMany::make('История тикета', 'messages', resource: SupportTicketMessageResource::class),
+            Date::make('Создан', 'created_at')->withTime(),
+            Date::make('Ответ админа', 'last_admin_replied_at')->withTime()->nullable(),
+            
+            // Поле для ответа
+            Textarea::make('Новый ответ', 'admin_response')
+                ->hideOnIndex()
+                ->customAttributes(['rows' => 4, 'placeholder' => 'Введите ответ администратора...']),
+        ];
+    }
+
 }
