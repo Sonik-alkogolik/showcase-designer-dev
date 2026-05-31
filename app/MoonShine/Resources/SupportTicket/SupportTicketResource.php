@@ -95,58 +95,45 @@ class SupportTicketResource extends ModelResource
         ];
     }
 
-    // ============ НОВЫЙ МЕТОД ACTIONS ============
+  
     protected function actions(): array
-    {
-        return [
-            Action::make('Ответить')
-                ->icon('heroicons.outline.chat-bubble-left-right') // Иконка для красоты
-                ->method('reply') // Указываем метод, который будет вызван
-                ->fillForm(fn(SupportTicket $item) => [
-                    'ticket_id' => $item->getKey(),
-                ])
-                ->form(fn() => [
-                    // Поле для ввода ответа
-                    FormTextarea::make('Текст сообщения', 'message')
-                        ->required()
-                        ->rows(5)
-                        ->placeholder('Введите ваш ответ...'),
-                    
-                    // Скрытое поле с ID тикета, чтобы знать, куда сохранять
-                    Text::make('ticket_id')
-                        ->type('hidden')
-                        ->hideOnIndex()
-                        ->hideOnDetail() // Скрываем везде, кроме формы
-                        ->hideOnForm(), // Скрываем в обычной форме
-                ])
-                ->successToast('Ответ успешно отправлен!'),
-        ];
-    }
+        {
+            return [
+                Action::make('Ответить')
+                    ->icon('heroicons.outline.chat-bubble-left-right')
+                    ->method('replyToTicket')
+                    ->form(fn() => [
+                        Textarea::make('Текст ответа', 'admin_reply')
+                            ->required()
+                            ->rows(5)
+                            ->placeholder('Введите ваш ответ...'),
+                    ])
+                    ->successToast('Ответ отправлен!'),
+            ];
+        }
 
-    // ============ НОВЫЙ МЕТОД ДЛЯ ОБРАБОТКИ ОТВЕТА ============
-    public function reply(MoonShineFormRequest $request, SupportTicket $item): void
-    {
-        $data = $request->validate([
-            'message' => 'required|string|min:1',
+ 
+    public function replyToTicket(MoonShineFormRequest $request, SupportTicket $item): void
+{
+    $data = $request->validate([
+        'admin_reply' => 'required|string|min:1',
+    ]);
+
+    DB::transaction(function () use ($data, $item) {
+        // Используем существующую связь messages()
+        $item->messages()->create([
+            'user_id' => $request->user()?->id,
+            'body' => $data['admin_reply'],
+            'sender_type' => 'admin',
+            'sender_name' => 'Администратор',
         ]);
 
-        DB::transaction(function () use ($data, $item) {
-            // 1. Создаем сообщение в истории тикета
-           SupportTicketMessage::query()->create([
-                'support_ticket_id' => $item->getKey(),
-                'user_id' => $request->user()?->id,
-                'body' => $data['message'],
-                'sender_type' => 'admin',  // ← вместо is_admin = true
-                'sender_name' => 'Администратор', // или имя админа
-            ]);
-
-            // 2. Обновляем время последнего ответа админа
-            $item->update([
-                'last_admin_replied_at' => now(),
-                'status' => SupportTicket::STATUS_ANSWERED, // Меняем статус на "Отвечен"
-            ]);
-        });
-    }
+        $item->update([
+            'last_admin_replied_at' => now(),
+            'status' => 'in_progress', // Замените на свою логику статуса
+        ]);
+    });
+}
 
 protected function detailFields(): iterable
 {
