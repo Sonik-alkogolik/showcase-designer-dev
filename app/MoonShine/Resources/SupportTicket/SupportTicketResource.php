@@ -148,7 +148,7 @@ class SupportTicketResource extends ModelResource
         });
     }
 
- protected function detailFields(): iterable
+protected function detailFields(): iterable
 {
     return [
         ID::make()->sortable(),
@@ -163,7 +163,8 @@ class SupportTicketResource extends ModelResource
         Date::make('Ответ админа', 'last_admin_replied_at')->withTime()->nullable(),
    
         Textarea::make('Новый ответ', 'admin_response')
-            ->customAttributes(['rows' => 4, 'placeholder' => 'Введите ответ администратора...']),
+            ->customAttributes(['rows' => 4, 'placeholder' => 'Введите ответ администратора...'])
+            ->showOnDetail(),  
     ];
 }
 
