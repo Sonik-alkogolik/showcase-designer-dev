@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\MoonShine\Resources\SupportTicket;
 
 use App\Models\SupportTicket;
+use App\Models\SupportTicketMessage; // Добавь эту модель
 use App\MoonShine\Resources\SupportTicketMessage\SupportTicketMessageResource;
 use App\MoonShine\Resources\User\UserResource;
 use Illuminate\Contracts\Database\Eloquent\Builder;
@@ -16,6 +17,11 @@ use MoonShine\UI\Fields\ID;
 use MoonShine\UI\Fields\Select;
 use MoonShine\UI\Fields\Text;
 use MoonShine\UI\Fields\Textarea;
+use MoonShine\Laravel\Actions\Action; // <-- Импортируем Action
+use MoonShine\UI\Components\ActionButton;
+use MoonShine\UI\Fields\Textarea as FormTextarea;
+use MoonShine\Laravel\Http\Requests\MoonShineFormRequest;
+use Illuminate\Support\Facades\DB;
 
 class SupportTicketResource extends ModelResource
 {
@@ -38,9 +44,8 @@ class SupportTicketResource extends ModelResource
             Text::make('Тема', 'subject')->required()->sortable(),
             Select::make('Статус', 'status')->options(SupportTicket::STATUSES)->default('open')->required(),
             Textarea::make('Первое сообщение', 'message')->hideOnIndex()->required(),
-            Textarea::make('Новый ответ администратора', 'admin_response')
-                ->hideOnIndex()
-                ->nullable(),
+            // Удаляем поле 'admin_response' - оно не нужно
+            // Textarea::make('Новый ответ администратора', 'admin_response')... 
             Text::make('Текущий URL', 'current_url')->hideOnIndex()->nullable(),
             Text::make('Браузер', 'browser')->hideOnIndex()->nullable(),
             Text::make('Скриншот', 'screenshot_path')
@@ -86,7 +91,60 @@ class SupportTicketResource extends ModelResource
             'subject' => ['required', 'string', 'max:255'],
             'status' => ['required', 'in:' . implode(',', array_keys(SupportTicket::STATUSES))],
             'message' => ['required', 'string'],
-            'admin_response' => ['nullable', 'string'],
+            // Правило для admin_response больше не нужно
         ];
+    }
+
+    // ============ НОВЫЙ МЕТОД ACTIONS ============
+    protected function actions(): array
+    {
+        return [
+            Action::make('Ответить')
+                ->icon('heroicons.outline.chat-bubble-left-right') // Иконка для красоты
+                ->method('reply') // Указываем метод, который будет вызван
+                ->fillForm(fn(SupportTicket $item) => [
+                    'ticket_id' => $item->getKey(),
+                ])
+                ->form(fn() => [
+                    // Поле для ввода ответа
+                    FormTextarea::make('Текст сообщения', 'message')
+                        ->required()
+                        ->rows(5)
+                        ->placeholder('Введите ваш ответ...'),
+                    
+                    // Скрытое поле с ID тикета, чтобы знать, куда сохранять
+                    Text::make('ticket_id')
+                        ->type('hidden')
+                        ->hideOnIndex()
+                        ->hideOnDetail() // Скрываем везде, кроме формы
+                        ->hideOnForm(), // Скрываем в обычной форме
+                ])
+                ->successToast('Ответ успешно отправлен!'),
+        ];
+    }
+
+    // ============ НОВЫЙ МЕТОД ДЛЯ ОБРАБОТКИ ОТВЕТА ============
+    public function reply(MoonShineFormRequest $request, SupportTicket $item): void
+    {
+        $data = $request->validate([
+            'message' => 'required|string|min:1',
+        ]);
+
+        DB::transaction(function () use ($data, $item) {
+            // 1. Создаем сообщение в истории тикета
+            SupportTicketMessage::query()->create([
+                'support_ticket_id' => $item->getKey(),
+                'user_id' => $request->user()?->id, // ID админа, который ответил
+                'message' => $data['message'],
+                'is_admin' => true, // <-- ВАЖНО: флаг, что ответ от администратора
+                'is_read' => false, // Пользователь еще не прочитал
+            ]);
+
+            // 2. Обновляем время последнего ответа админа
+            $item->update([
+                'last_admin_replied_at' => now(),
+                'status' => SupportTicket::STATUS_ANSWERED, // Меняем статус на "Отвечен"
+            ]);
+        });
     }
 }
