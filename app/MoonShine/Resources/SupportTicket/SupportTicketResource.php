@@ -11,13 +11,14 @@ use MoonShine\Laravel\Resources\ModelResource;
 use MoonShine\UI\Fields\ID;
 use MoonShine\UI\Fields\Text;
 use MoonShine\UI\Fields\Date;
+use MoonShine\UI\Fields\Textarea;
 
 class SupportTicketResource extends ModelResource
 {
     protected string $model = SupportTicket::class;
     protected string $title = 'Техподдержка';
 
-    // ПОЛЯ ДЛЯ СПИСКА - ЭТО САМОЕ ВАЖНОЕ СЕЙЧАС
+    // ПОЛЯ ДЛЯ СПИСКА
     protected function indexFields(): iterable
     {
         return [
@@ -28,7 +29,7 @@ class SupportTicketResource extends ModelResource
         ];
     }
 
-    // Поля для просмотра
+    // ПОЛЯ ДЛЯ ПРОСМОТРА (с формой ответа)
     protected function detailFields(): iterable
     {
         return [
@@ -36,6 +37,22 @@ class SupportTicketResource extends ModelResource
             Text::make('Тема', 'subject'),
             Text::make('Email', 'user_email'),
             HasMany::make('История тикета', 'messages', resource: SupportTicketMessageResource::class),
+            
+            // Форма для ответа администратора
+            Textarea::make('Ваш ответ', 'admin_reply')
+                ->customAttributes(['rows' => 4, 'placeholder' => 'Введите ответ администратора...']),
+        ];
+    }
+
+    // ПОЛЯ ДЛЯ ФОРМЫ (редактирование)
+    protected function fields(): iterable
+    {
+        return [
+            ID::make(),
+            Text::make('Тема', 'subject'),
+            Text::make('Email', 'user_email'),
+            Textarea::make('Ваш ответ', 'admin_reply')
+                ->customAttributes(['rows' => 4, 'placeholder' => 'Введите ответ администратора...']),
         ];
     }
 }
