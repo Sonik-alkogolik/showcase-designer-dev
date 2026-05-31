@@ -41,34 +41,63 @@ class SupportTicketController extends Controller
         ]);
     }
 
-    public function reply(Request $request, SupportTicket $ticket, SupportTicketNotificationService $notificationService): JsonResponse
-    {
-        abort_if($ticket->user_id !== $request->user()->id, 403);
-        abort_if($ticket->status === 'closed', 422, 'Тикет закрыт. Создайте новое обращение, если вопрос снова актуален.');
+    public function reply(
+    Request $request,
+    SupportTicket $ticket,
+    SupportTicketNotificationService $notificationService
+): JsonResponse
+{
+    $user = $request->user();
 
-        $validated = $request->validate([
-            'message' => ['required', 'string', 'max:5000'],
-        ]);
+    // 🚨 защита: пользователь должен быть авторизован
+    abort_if(!$user, 403);
 
-        $user = $request->user();
-        $message = $ticket->messages()->create([
-            'user_id' => $user->id,
-            'sender_type' => 'user',
-            'sender_name' => $user->name ?: $user->email,
-            'body' => $validated['message'],
-        ]);
+    // 🚨 тикет закрыт — нельзя отвечать
+    abort_if(
+        $ticket->status === 'closed',
+        422,
+        'Тикет закрыт. Создайте новое обращение, если вопрос снова актуален.'
+    );
 
-        if ($ticket->status === 'closed') {
-            $ticket->forceFill(['status' => 'open'])->save();
-        }
+    // 🚨 доступ:
+    // либо владелец тикета
+    // либо админ (MoonShine)
+    abort_if(
+        !$user->is_admin && $ticket->user_id !== $user->id,
+        403
+    );
 
-        $notificationService->notifyUserReply($ticket, $message->body);
+    // ✔ валидация
+    $validated = $request->validate([
+        'message' => ['required', 'string', 'max:5000'],
+    ]);
 
-        return response()->json([
-            'success' => true,
-            'ticket' => $this->serializeTicket($ticket->fresh()->load(['messages' => fn ($query) => $query->oldest()])),
-        ]);
+    // ✔ создаём сообщение
+    $message = $ticket->messages()->create([
+        'user_id' => $user->id,
+        'sender_type' => $user->is_admin ? 'admin' : 'user',
+        'sender_name' => $user->name ?: $user->email,
+        'body' => $validated['message'],
+    ]);
+
+    // ✔ если тикет вдруг был закрыт (на будущее)
+    if ($ticket->status === 'closed') {
+        $ticket->forceFill(['status' => 'open'])->save();
     }
+
+    // ✔ уведомления
+    $notificationService->notifyUserReply($ticket, $message->body);
+
+    // ✔ ответ
+    return response()->json([
+        'success' => true,
+        'ticket' => $this->serializeTicket(
+            $ticket->fresh()->load([
+                'messages' => fn ($query) => $query->oldest()
+            ])
+        ),
+    ]);
+}
 
     public function store(Request $request, SupportTicketNotificationService $notificationService): JsonResponse
     {
