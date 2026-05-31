@@ -132,12 +132,12 @@ class SupportTicketResource extends ModelResource
 
         DB::transaction(function () use ($data, $item) {
             // 1. Создаем сообщение в истории тикета
-            SupportTicketMessage::query()->create([
+           SupportTicketMessage::query()->create([
                 'support_ticket_id' => $item->getKey(),
-                'user_id' => $request->user()?->id, // ID админа, который ответил
-                'message' => $data['message'],
-                'is_admin' => true, // <-- ВАЖНО: флаг, что ответ от администратора
-                'is_read' => false, // Пользователь еще не прочитал
+                'user_id' => $request->user()?->id,
+                'body' => $data['message'],
+                'sender_type' => 'admin',  // ← вместо is_admin = true
+                'sender_name' => 'Администратор', // или имя админа
             ]);
 
             // 2. Обновляем время последнего ответа админа
@@ -147,4 +147,20 @@ class SupportTicketResource extends ModelResource
             ]);
         });
     }
+
+    protected function detailFields(): iterable
+{
+    return [
+        ID::make()->sortable(),
+        BelongsTo::make('Пользователь', 'user', resource: UserResource::class)->nullable(),
+        Text::make('Email', 'user_email')->nullable(),
+        Text::make('Тема', 'subject'),
+        Select::make('Категория', 'category')->options(SupportTicket::CATEGORIES),
+        Select::make('Статус', 'status')->options(SupportTicket::STATUSES),
+        Textarea::make('Первое сообщение', 'message'),
+        HasMany::make('История тикета', 'messages', resource: SupportTicketMessageResource::class),
+        Date::make('Создан', 'created_at')->withTime(),
+        Date::make('Ответ админа', 'last_admin_replied_at')->withTime()->nullable(),
+    ];
+}
 }
