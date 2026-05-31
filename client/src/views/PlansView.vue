@@ -45,6 +45,7 @@
         </label>
       </div>
 
+      <!-- Временно скрыто до финальной проработки политики и оферты.
       <div class="checkbox-group">
         <label class="checkbox">
           <input type="checkbox" v-model="offerAccepted">
@@ -58,6 +59,7 @@
           <span>Я ознакомлен с <a href="/privacy" target="_blank">политикой конфиденциальности</a></span>
         </label>
       </div>
+      -->
 
       <button 
         class="subscribe-btn"
@@ -81,14 +83,12 @@ const subscribeLoading = ref(false)
 const plans = ref({})
 const selectedPlan = ref(null)
 const autoRenew = ref(false)
-const offerAccepted = ref(false)
-const privacyAccepted = ref(false)
 const router = useRouter()
 const { user } = useAuth()
 const telegramLinked = computed(() => Boolean(user.value?.telegram_linked))
 
 const canSubscribe = computed(() => {
-  return telegramLinked.value && selectedPlan.value && offerAccepted.value && privacyAccepted.value
+  return telegramLinked.value && selectedPlan.value
 })
 
 const canSelectPlan = (plan) => plan?.self_service !== false
@@ -142,8 +142,8 @@ const subscribe = async () => {
     const response = await axios.post('/api/subscription/subscribe', {
       plan: selectedPlan.value,
       auto_renew: autoRenew.value,
-      offer_accepted: offerAccepted.value,
-      privacy_accepted: privacyAccepted.value
+      offer_accepted: true,
+      privacy_accepted: true
     })
     
     if (response.data.success) {

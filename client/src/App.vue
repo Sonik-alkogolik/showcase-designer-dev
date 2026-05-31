@@ -4,6 +4,7 @@
     <div :class="['main-content', { 'webapp-layout': hideNavbar, 'dashboard-layout': isDashboardRoute }]">
       <router-view />
     </div>
+    <SupportWidget />
   </div>
 </template>
 
@@ -11,6 +12,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import Navbar from './components/Navbar.vue'
+import SupportWidget from './components/support/SupportWidget.vue'
 
 const route = useRoute()
 

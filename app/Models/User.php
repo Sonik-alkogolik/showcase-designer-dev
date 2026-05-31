@@ -17,6 +17,9 @@ class User extends Authenticatable
             // Защитная очистка, чтобы удаление из MoonShine гарантированно
             // убирало все связанные доменные данные пользователя.
             $user->importRuns()->delete();
+            $user->supportTickets()->get()->each(function (SupportTicket $ticket) {
+                $ticket->delete();
+            });
             $user->subscriptionPayments()->delete();
             $user->subscriptions()->delete();
             $user->tokens()->delete();
@@ -233,6 +236,11 @@ class User extends Authenticatable
     public function telegramPasswordResetTokens()
     {
         return $this->hasMany(TelegramPasswordResetToken::class);
+    }
+
+    public function supportTickets()
+    {
+        return $this->hasMany(SupportTicket::class);
     }
 
     /**

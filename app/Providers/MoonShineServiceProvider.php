@@ -16,6 +16,8 @@ use App\MoonShine\Resources\Shop\ShopResource;
 use App\MoonShine\Resources\Category\CategoryResource;
 use App\MoonShine\Resources\Product\ProductResource;
 use App\MoonShine\Resources\Order\OrderResource;
+use App\MoonShine\Resources\SupportTicket\SupportTicketResource;
+use App\MoonShine\Resources\SupportTicketMessage\SupportTicketMessageResource;
 use App\MoonShine\Resources\SubscriptionPayment\SubscriptionPaymentResource;
 
 class MoonShineServiceProvider extends ServiceProvider
@@ -35,6 +37,8 @@ class MoonShineServiceProvider extends ServiceProvider
                 CategoryResource::class,
                 ProductResource::class,
                 OrderResource::class,
+                SupportTicketResource::class,
+                SupportTicketMessageResource::class,
                 SubscriptionPaymentResource::class,
             ])
             ->pages([

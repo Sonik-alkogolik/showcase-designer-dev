@@ -17,6 +17,32 @@
       </div>
     </article>
 
+    <section class="faq-section">
+      <div class="section-title">
+        <h2>FAQ и поддержка</h2>
+        <p>Короткие ответы по частым блокерам. Если не помогло, нажмите кнопку поддержки справа снизу и создайте тикет.</p>
+      </div>
+
+      <div class="faq-list">
+        <article class="faq-item">
+          <h3>Не могу авторизоваться</h3>
+          <p>Проверьте email, пароль и страницу восстановления. Если пароль временный после Telegram reset, система попросит сменить его после входа.</p>
+        </article>
+        <article class="faq-item">
+          <h3>Не получается прикрепить бота</h3>
+          <p>Убедитесь, что токен взят из BotFather без пробелов, а бот не был удалён. После сохранения откройте настройки магазина и нажмите «Подключить бота».</p>
+        </article>
+        <article class="faq-item">
+          <h3>Не получается прикрепить токен бота</h3>
+          <p>Токен должен выглядеть как длинная строка с двоеточием. Если Telegram API недоступен, попробуйте повторить позже или отправьте тикет со скриншотом.</p>
+        </article>
+        <article class="faq-item">
+          <h3>Не получается создать магазин</h3>
+          <p>Проверьте, что Telegram привязан и выбран активный тариф. На Starter доступен один магазин.</p>
+        </article>
+      </div>
+    </section>
+
     <div class="steps">
       <article class="step-card">
         <div class="step-top">
@@ -130,6 +156,47 @@ const restartOnboarding = async () => {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.faq-section {
+  display: grid;
+  gap: 0.8rem;
+  border: 1px solid #d6dff1;
+  border-radius: 12px;
+  background: #fff;
+  padding: 1rem;
+}
+
+.section-title h2 {
+  margin: 0;
+  color: #173867;
+}
+
+.section-title p {
+  margin: 0.25rem 0 0;
+  color: #536783;
+}
+
+.faq-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.faq-item {
+  border-top: 1px solid #dce5f4;
+  padding-top: 0.75rem;
+}
+
+.faq-item h3 {
+  margin: 0;
+  color: #213a62;
+  font-size: 1rem;
+}
+
+.faq-item p {
+  margin: 0.35rem 0 0;
+  color: #526783;
+}
+
 .step-card {
   border: 1px solid #d6dff1;
   border-radius: 12px;
@@ -180,6 +247,10 @@ const restartOnboarding = async () => {
 
 @media (max-width: 760px) {
   .steps {
+    grid-template-columns: 1fr;
+  }
+
+  .faq-list {
     grid-template-columns: 1fr;
   }
 }

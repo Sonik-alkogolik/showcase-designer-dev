@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\PasswordRecoveryController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\SupportTicketController;
 use App\Http\Controllers\Telegram\WebhookController;
 use App\Http\Controllers\ImportController;
 
@@ -47,6 +48,11 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsurePasswordChangeComp
     Route::delete('/profile/telegram/unlink', [ProfileController::class, 'unlinkTelegram']);
     Route::post('/profile/onboarding/complete', [ProfileController::class, 'completeOnboarding']);
     Route::post('/profile/onboarding/reset', [ProfileController::class, 'resetOnboarding']);
+
+    Route::get('/support/meta', [SupportTicketController::class, 'meta']);
+    Route::get('/support/tickets', [SupportTicketController::class, 'index']);
+    Route::post('/support/tickets', [SupportTicketController::class, 'store']);
+    Route::get('/support/tickets/{ticket}', [SupportTicketController::class, 'show']);
     
     // Совместимость: старый маршрут /user
     Route::get('/user', function (Request $request) {

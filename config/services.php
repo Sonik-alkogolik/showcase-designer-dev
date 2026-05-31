@@ -40,4 +40,9 @@ return [
         'secret_key' => env('YOOKASSA_SECRET_KEY'),
     ],
 
+    'support' => [
+        'admin_email' => env('SUPPORT_ADMIN_EMAIL'),
+        'telegram_chat_id' => env('SUPPORT_TELEGRAM_CHAT_ID'),
+    ],
+
 ];
