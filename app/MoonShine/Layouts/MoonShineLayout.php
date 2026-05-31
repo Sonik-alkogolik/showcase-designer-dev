@@ -16,7 +16,7 @@ use App\MoonShine\Resources\Shop\ShopResource;
 use App\MoonShine\Resources\Category\CategoryResource;
 use App\MoonShine\Resources\Order\OrderResource;
 use App\MoonShine\Resources\SupportTicket\SupportTicketResource;
-use App\MoonShine\Resources\SupportTicketManager;
+use App\MoonShine\Resources\SupportTicket\SupportTicketManager;
 use App\MoonShine\Resources\SubscriptionPayment\SubscriptionPaymentResource;
 
 final class MoonShineLayout extends AppLayout
