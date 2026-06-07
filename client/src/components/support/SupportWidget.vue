@@ -1,6 +1,12 @@
 <template>
   <div v-if="isAuthenticated && !isWebApp" class="support-widget">
-    <button class="support-fab" type="button" aria-label="Открыть поддержку" @click="togglePanel">
+    <button
+      :class="['support-fab', { 'is-open': isOpen }]"
+      type="button"
+      aria-label="Открыть поддержку"
+      :aria-pressed="isOpen ? 'true' : 'false'"
+      @click="togglePanel"
+    >
       Помощь
     </button>
 
@@ -221,18 +227,68 @@ onMounted(() => {
 }
 
 .support-fab {
+  position: relative;
+  overflow: hidden;
   width: auto;
   min-width: 76px;
   height: 52px;
   padding: 0 1rem;
   border: 0;
   border-radius: 999px;
-  background: #2563eb;
+  background: linear-gradient(135deg, #2d6df6 0%, #1f4fd1 100%);
   color: #fff;
   font-size: 0.96rem;
   font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 14px 34px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 14px 34px rgba(37, 99, 235, 0.32);
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    filter 180ms ease,
+    background 180ms ease;
+  animation: supportFabFloat 3.2s ease-in-out infinite;
+  will-change: transform;
+}
+
+.support-fab::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0));
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.support-fab::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  opacity: 0;
+  pointer-events: none;
+  animation: supportFabPulse 2.8s ease-out infinite;
+}
+
+.support-fab:hover,
+.support-fab:focus-visible {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 18px 44px rgba(37, 99, 235, 0.42);
+  filter: saturate(1.05);
+}
+
+.support-fab:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.support-fab.is-open {
+  box-shadow: 0 18px 48px rgba(29, 78, 216, 0.48);
+}
+
+.support-fab:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 3px;
 }
 
 .support-page-link {
@@ -429,6 +485,43 @@ onMounted(() => {
   .support-widget {
     right: 0.75rem;
     bottom: 0.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .support-fab {
+    animation: none;
+  }
+
+  .support-fab::after {
+    animation: none;
+  }
+}
+
+@keyframes supportFabFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes supportFabPulse {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.3;
+  }
+
+  70% {
+    transform: scale(1.12);
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 0;
   }
 }
 </style>
