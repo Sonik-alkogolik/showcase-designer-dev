@@ -12,13 +12,27 @@ use MoonShine\UI\Fields\ID;
 use MoonShine\UI\Fields\Text;
 use MoonShine\UI\Fields\Date;
 use MoonShine\UI\Fields\Textarea;
+use MoonShine\UI\Fields\Select;
 
 class SupportTicketResource extends ModelResource
 {
     protected string $model = SupportTicket::class;
     protected string $title = 'Техподдержка';
+    protected string $column = 'subject';
+    protected array $with = ['user', 'messages'];
 
-    // ПОЛЯ ДЛЯ СПИСКА
+    private function replyFields(): array
+    {
+        return [
+            Textarea::make('Ваш ответ', 'admin_response')
+                ->required()
+                ->customAttributes([
+                    'rows' => 6,
+                    'placeholder' => 'Введите ответ администратора...',
+                ]),
+        ];
+    }
+
     protected function indexFields(): iterable
     {
         return [
@@ -29,30 +43,37 @@ class SupportTicketResource extends ModelResource
         ];
     }
 
-    // ПОЛЯ ДЛЯ ПРОСМОТРА (с формой ответа)
+    protected function fields(): iterable
+    {
+        return $this->replyFields();
+    }
+
+    protected function formFields(): iterable
+    {
+        return $this->replyFields();
+    }
+
     protected function detailFields(): iterable
     {
         return [
             ID::make(),
             Text::make('Тема', 'subject'),
             Text::make('Email', 'user_email'),
+            Select::make('Категория', 'category')->options(SupportTicket::CATEGORIES),
+            Select::make('Статус', 'status')->options(SupportTicket::STATUSES),
+            Text::make('URL', 'current_url'),
+            Text::make('Браузер', 'browser'),
+            Textarea::make('Первое сообщение', 'message'),
             HasMany::make('История тикета', 'messages', resource: SupportTicketMessageResource::class),
-            
-            // Форма для ответа администратора
-            Textarea::make('Ваш ответ', 'admin_reply')
-                ->customAttributes(['rows' => 4, 'placeholder' => 'Введите ответ администратора...']),
+            Date::make('Создан', 'created_at')->withTime()->sortable(),
+            Date::make('Последний ответ админа', 'last_admin_replied_at')->withTime()->nullable(),
         ];
     }
 
-    // ПОЛЯ ДЛЯ ФОРМЫ (редактирование)
-    protected function fields(): iterable
+    protected function rules(mixed $item): array
     {
         return [
-            ID::make(),
-            Text::make('Тема', 'subject'),
-            Text::make('Email', 'user_email'),
-            Textarea::make('Ваш ответ', 'admin_reply')
-                ->customAttributes(['rows' => 4, 'placeholder' => 'Введите ответ администратора...']),
+            'admin_response' => ['required', 'string', 'max:5000'],
         ];
     }
 }
