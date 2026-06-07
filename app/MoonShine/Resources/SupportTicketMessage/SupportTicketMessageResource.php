@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\MoonShine\Resources\SupportTicketMessage;
 
+use App\MoonShine\Resources\SupportTicketMessage\Pages\SupportTicketMessageDetailPage;
 use App\Models\SupportTicketMessage;
 use App\MoonShine\Resources\SupportTicket\SupportTicketResource;
 use App\MoonShine\Resources\User\UserResource;
+use MoonShine\Contracts\Core\PageContract;
 use MoonShine\Laravel\Fields\Relationships\BelongsTo;
+use MoonShine\Laravel\Pages\Crud\IndexPage;
 use MoonShine\Laravel\Resources\ModelResource;
 use MoonShine\UI\Fields\Date;
 use MoonShine\UI\Fields\ID;
@@ -25,6 +28,17 @@ class SupportTicketMessageResource extends ModelResource
     protected string $column = 'body';
 
     protected array $with = ['ticket', 'user'];
+
+    /**
+     * @return list<class-string<PageContract>>
+     */
+    protected function pages(): array
+    {
+        return [
+            IndexPage::class,
+            SupportTicketMessageDetailPage::class,
+        ];
+    }
 
     protected function fields(): iterable
     {
