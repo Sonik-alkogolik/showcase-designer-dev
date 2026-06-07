@@ -9,6 +9,7 @@ use App\MoonShine\Resources\SupportTicket\Pages\SupportTicketFormPage;
 use App\MoonShine\Resources\SupportTicketMessage\SupportTicketMessageResource;
 use App\Models\SupportTicket;
 use MoonShine\Contracts\Core\PageContract;
+use MoonShine\Crud\JsonResponse;
 use MoonShine\Laravel\Fields\Relationships\HasMany;
 use MoonShine\Laravel\Pages\Crud\IndexPage;
 use MoonShine\Laravel\Resources\ModelResource;
@@ -104,5 +105,12 @@ class SupportTicketResource extends ModelResource
         return [
             'admin_response' => ['required', 'string', 'max:5000'],
         ];
+    }
+
+    public function modifySaveResponse(JsonResponse $response): JsonResponse
+    {
+        return $response->redirect(
+            $this->getFormPageUrl($this->getCastedData()?->getKey())
+        );
     }
 }
