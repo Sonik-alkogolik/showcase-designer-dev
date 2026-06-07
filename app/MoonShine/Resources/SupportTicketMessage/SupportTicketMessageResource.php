@@ -58,6 +58,23 @@ class SupportTicketMessageResource extends ModelResource
         ];
     }
 
+    protected function detailFields(): iterable
+    {
+        return [
+            ID::make()->sortable(),
+            BelongsTo::make('Тикет', 'ticket', resource: SupportTicketResource::class)->required(),
+            BelongsTo::make('Пользователь', 'user', resource: UserResource::class)->nullable(),
+            Select::make('Отправитель', 'sender_type')->options([
+                'user' => 'Пользователь',
+                'admin' => 'Администратор',
+                'system' => 'Система',
+            ])->required(),
+            Text::make('Имя', 'sender_name')->nullable(),
+            Textarea::make('Сообщение', 'body')->required(),
+            Date::make('Создано', 'created_at')->withTime()->sortable(),
+        ];
+    }
+
     protected function rules(mixed $item): array
     {
         return [
